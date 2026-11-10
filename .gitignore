@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Secrets — never commit keys (.env.example stays tracked as the template)
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Agent tool artifacts & local skill locks
+.agents/
+skills-lock.json
+
+# Private research, manuscript, source records, and temporary reviews
+analysis/
+docs/research/
+.tmp*/
+*.xlsx
+*.docx
+

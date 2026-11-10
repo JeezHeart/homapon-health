@@ -1,0 +1,19 @@
+{
+  "name": "homapon-immunization-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "commonjs",
+  "description": "Backend API for the Barangay Homapon child immunization system (Phase 2).",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "helmet": "^8.3.0"
+  }
+}

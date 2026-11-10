@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Capstone Diagrams | Barangay Homapon</title>
+<style>
+:root{color-scheme:light;--ink:#000000;--muted:#000000;--line:#000000;--wash:#ffffff}*{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font-family:"Courier New",monospace;font-size:15px;line-height:1.65}a{color:#000000;text-underline-offset:3px}a:hover{text-decoration-thickness:2px}button,a,summary{touch-action:manipulation}button{font:inherit;font-weight:bold;background:#ffffff;color:var(--ink);border:1px solid #000000;border-radius:4px;padding:9px 15px;cursor:pointer}button:hover{background:#ffffff}button:disabled{opacity:1;cursor:wait;border-style:dashed}:focus-visible{outline:3px solid #000000;outline-offset:4px}.skip{position:absolute;left:16px;top:-80px;z-index:10;background:#ffffff;padding:10px}.skip:focus{top:10px}.shell{display:grid;grid-template-columns:245px minmax(0,1fr);max-width:1800px;margin:auto}aside{position:sticky;top:0;height:100vh;padding:36px 22px;border-right:1px solid var(--line);overflow:auto;background:#ffffff}.brand{font-size:13px;font-weight:bold;letter-spacing:2px}.nav-title{font-size:12px;color:var(--muted);margin-top:35px}nav a{display:block;padding:10px 7px;text-decoration:none;font-size:13px;border-bottom:1px solid #000000}nav a:hover{background:#ffffff}.aside-note{font-size:12px;color:var(--muted);margin-top:28px}main{min-width:0;padding:50px clamp(20px,4vw,65px)}.eyebrow{letter-spacing:2px;font-size:12px;font-weight:bold;color:var(--muted)}h1{font-size:clamp(25px,3vw,42px);line-height:1.16;letter-spacing:-1.4px;max-width:900px;margin:18px 0}h2{font-size:27px;line-height:1.25;margin:13px 0}.approved-title{font-size:16px;max-width:1000px;line-height:1.6}.intro{max-width:950px;color:var(--muted)}.intro-links{display:flex;gap:20px;flex-wrap:wrap;align-items:center}.notice{border-left:4px solid #000000;background:#ffffff;padding:16px 20px;margin:28px 0 34px;font-size:14px}.legend{display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:12px}.legend span{border-top:2px solid #000000;padding-top:7px}.legend .dashed{border-top-style:dashed}section{scroll-margin-top:20px;background:#ffffff;border:1px solid var(--line);border-radius:6px;padding:clamp(18px,2.4vw,32px);margin:30px 0}.section-top{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;font-size:12px}.figure-number{font-weight:bold;letter-spacing:1.4px}.status{color:var(--muted)}.summary{max-width:1000px;color:var(--muted)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.toolbar button{font-size:12px}.diagram-scroll{overflow-x:auto;border:1px solid #000000;border-radius:3px;background:#ffffff}.diagram-scroll svg{display:block;width:100%;height:auto;min-width:850px}.reading{font-size:14px;border-top:1px solid var(--line);padding-top:18px}details{font-size:13px;color:var(--muted)}summary{cursor:pointer;color:var(--ink);font-weight:bold}.source-links{overflow-wrap:anywhere;line-height:2}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--wash)}.table-scroll{overflow:auto}footer{font-size:12px;color:var(--muted);padding:10px 0 30px}#export-status{position:fixed;bottom:18px;right:18px;max-width:min(440px,90vw);padding:12px 18px;background:var(--ink);color:#ffffff;border-radius:5px;font-size:13px;z-index:5}#export-status:empty{display:none}
+@media(min-width:1600px){.diagram-scroll svg{min-width:0}}@media(max-width:900px){.shell{display:block}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px}.nav-title,.aside-note{display:none}nav{display:flex;gap:8px;overflow:auto;margin-top:12px}nav a{flex-shrink:0;border:1px solid var(--line);padding:7px 10px}main{padding:28px 16px}h2{font-size:23px}}
+@page{size:A4 landscape;margin:10mm}@media print{body{background:#ffffff;font-size:10pt}.shell{display:block}aside,.toolbar,.intro-links,.skip,#export-status,details,footer{display:none}main{padding:0}header{break-after:page}h1{font-size:28pt}h2{font-size:16pt}section{border:0;padding:0;margin:0;break-before:page;break-inside:avoid}.diagram-scroll{overflow:visible;border:0}.diagram-scroll svg{min-width:0!important;width:auto!important;max-width:100%;max-height:135mm;margin:auto}.summary,.reading{font-size:8pt;line-height:1.4}.section-top{font-size:8pt}.notice{padding:12px}.table-scroll{overflow:visible}th,td{font-size:10pt}footer{break-before:avoid}}
+/* Screen-only night mode; exported SVG/PNG and print keep their original colors. */
+@media screen{
+:root{color-scheme:dark;--ink:rgb(230,230,230);--muted:rgb(190,190,190);--line:rgb(85,85,85);--wash:rgb(20,20,20)}
+a{color:var(--ink)}
+aside,section,.notice,.skip,button,.diagram-scroll{background:rgb(26,26,26)}
+button,.diagram-scroll,nav a,.notice,.legend span{border-color:var(--line)}
+button:hover,nav a:hover{background:rgb(42,42,42)}
+:focus-visible{outline-color:var(--ink)}
+.diagram-scroll svg{filter:invert(.9)}
+#export-status{background:rgb(230,230,230);color:rgb(20,20,20)}
+}
+</style></head><body><a class="skip" href="#main">Skip to diagrams</a><div class="shell"><aside><div class="brand">HOMAPON<br>CAPSTONE DIAGRAMS</div><p class="nav-title">PAPER FIGURES 7–14</p><nav aria-label="Diagram index">{{NAV}}<a href="#requirements">Hardware and Software Requirements of the Proposed System</a></nav><p class="aside-note">Reviewed 8 November 2026<br>Courier New throughout<br>Night-mode reading<br>Black-and-white downloads</p></aside>
+<main id="main"><header><p class="eyebrow">CAPSTONE / EXPLAINING THE SYSTEM</p><h1>Understanding<br>the system</h1><p class="approved-title">{{TITLE}}</p><p class="intro">Eight diagrams in simple words, checked against the current program. Figure numbers are kept for the later paper update. Read the explanation below each diagram. You can edit a diagram in draw.io, download an image, or print this collection.</p><div class="intro-links"><button id="print-report" type="button">Print / Save PDF</button><a href="system-architecture.md">Diagram notes</a><a href="{{PAPER}}">Main editable paper</a></div><div class="notice"><strong>What is already working, and what is still planned?</strong> Each diagram says what it describes. Experimental Record Review checks recorded date patterns inside the website. It does not assess health or confirm errors. Model training remains separate. Demo texts do not reach phones. A text accepted by the sending service is not proof that it reached the guardian. The approved project title stays exactly the same.</div><div class="legend"><span>Follow arrows to read steps or connections</span><span class="dashed">Read line labels and the explanation below each diagram</span></div></header>
+{{SECTIONS}}
+<section id="requirements" aria-labelledby="heading-requirements"><div class="section-top"><span class="figure-number">WHAT THE HEALTH CENTER NEEDS</span><span class="status">Planning guide; check the actual equipment first</span></div><h2 id="heading-requirements">Hardware and Software Requirements of the Proposed System</h2><p>Before using the system at the health center, check the computer, internet connection, printer, staff accounts, and online services. The list below is a planning guide, not a promise that every device will work.</p><div class="table-scroll"><table><thead><tr><th>Area</th><th>Basis for this system</th></tr></thead><tbody><tr><td>Health-center computer</td><td>A desktop or laptop with an internet browser, keyboard, and a screen staff can read comfortably. Test the actual device.</td></tr><tr><td>Internet connection</td><td>Needed to sign in, use saved records, and send approved text reminders. This diagram collection can be read offline.</td></tr><tr><td>Printer</td><td>Optional for printed child records. Staff can also save a PDF instead of printing.</td></tr><tr><td>Website and record services</td><td>Online services keep the website available, check staff access, and store records. Render is selected for the main program, but deployment is deferred.</td></tr><tr><td>Text-message service</td><td>Requires an approved account and sending setup. Staff must check unclear sending results before trying again.</td></tr><tr><td>Experimental Record Review</td><td>Runs inside the website using a saved model and nine recorded vaccine dates. It suggests date patterns for staff to check; it does not diagnose health. Training the model is separate from daily use.</td></tr><tr><td>Diagram editing</td><td>Open the editable download in draw.io. Install Courier New on the device to keep the same font.</td></tr></tbody></table></div><p class="source-links">{{REQUIREMENTS_SOURCES}}</p></section>
+<footer>Updated 8 November 2026. Simple words, Courier New, black and white only. The figures describe the inspected program and explicitly marked plans. The paper comparison and replacement of its pictures are deferred to the next task. The manual clinic process remains unverified. Editable diagrams and picture downloads are included.</footer></main></div><div id="export-status" role="status" aria-live="polite"></div>
+<script>
+const status = document.getElementById('export-status');
+document.getElementById('print-report').addEventListener('click', () => window.print());
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = name;
+  document.body.appendChild(link);
+  try { link.click(); } finally { link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+}
+document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', async () => {
+  const id = button.dataset.export, format = button.dataset.format;
+  button.disabled = true;
+  status.textContent = 'Preparing ' + format.toUpperCase() + '…';
+  let imageUrl;
+  try {
+    if (format === 'drawio') {
+      const template = document.getElementById('xml-' + id);
+      download(new Blob([template.content ? template.content.textContent : template.textContent], {type:'application/xml'}), id + '.drawio');
+    } else {
+      const svg = document.querySelector('#' + id + ' svg');
+      const blob = new Blob([new XMLSerializer().serializeToString(svg)], {type:'image/svg+xml;charset=utf-8'});
+      if (format === 'svg') download(blob, id + '.svg');
+      else {
+        imageUrl = URL.createObjectURL(blob);
+        const img = new Image();
+        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = imageUrl; });
+        const canvas = document.createElement('canvas');
+        canvas.width = svg.viewBox.baseVal.width * 3; canvas.height = svg.viewBox.baseVal.height * 3;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas unavailable');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const png = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!png) throw new Error('PNG unavailable');
+        download(png, id + '.png');
+      }
+    }
+    status.textContent = 'Downloaded ' + id + '.' + format;
+  } catch (_) {
+    status.textContent = format === 'png' ? 'PNG export failed. Download the SVG instead.' : 'Download failed. Try again or use the files in docs/diagrams.';
+  } finally {
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    button.disabled = false;
+  }
+}));
+</script></body></html>

@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  /* Soft Blue-Lavender & Clinical Teal (prd.md §4-5):
+     Calming blue-lavender canvas, luminous pale surface, deep midnight navy
+     typography/sidebar, high-contrast healthcare teal primary, and subtle indigo charts. */
+  --color-page: #eaeff8; /* calming soft blue-lavender canvas */
+  --color-surface: #f8fafc; /* crisp luminous pale surface */
+  --color-card: #ffffff; /* pure white cards */
+  --color-navy: #0f172a; /* deep midnight ink text + desktop sidebar */
+  --color-navy-soft: #475569; /* clear slate-600 subtext (WCAG AAA) */
+  --color-accent: #0a7b74; /* refined medical teal (WCAG AA > 5:1 on white) */
+  --color-accent-dark: #075953; /* deep teal for hover/active states */
+  --color-accent-soft: #e6f7f5; /* fresh pale teal for badges/highlights */
+  --color-highlight: #6366f1; /* harmonious indigo/violet for charts */
+  --color-danger: #dc2626; /* crisp red for overdue / alerts */
+  --color-warning: #d97706; /* warm amber for due-today */
+  --color-success: #059669; /* vibrant emerald for completed doses */
+  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-navy);
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures so dates, doses, and counts align in table columns */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print: hide app chrome, show only the printable document */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Dashboard chart entrance motion (presentation only; data unchanged) */
+@keyframes chart-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes chart-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chart-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-anim,
+  .chart-anim-line,
+  .chart-anim-fade,
+  .page-enter,
+  .dialog-pop {
+    animation: none !important;
+  }
+  .accordion-glide {
+    transition: none !important;
+  }
+}
+
+/* System-wide entrance motion: fast, subtle, purposeful */
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dialog-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-enter {
+  animation: page-fade 250ms ease-out both;
+}
+
+.dialog-pop {
+  animation: dialog-pop 160ms ease-out both;
+}
+
+.accordion-glide {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms ease-out;
+}
+
+.accordion-glide[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.accordion-glide-inner {
+  overflow: hidden;
+  min-height: 0;
+}
