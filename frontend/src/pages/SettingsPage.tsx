@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Card from '../components/Card';
+import { apiEnabled } from '../data/api';
 import { SMS_TEMPLATE } from '../data/mockData';
 import { ROLE_LABEL } from '../state/store-context';
 import { useStore } from '../state/store-context';
@@ -33,11 +34,11 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-          Staff session, health-center info, and demo controls
+          Staff session and health-center information
         </p>
       </div>
 
-      <Card title="Signed-in staff (demo)">
+      <Card title={apiEnabled ? "Signed-in staff" : "Signed-in staff (demo)"}>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <dt className="text-[var(--color-navy-soft)]">Name</dt>
           <dd className="font-medium">{demoUser?.name ?? '—'}</dd>
@@ -47,8 +48,7 @@ export default function SettingsPage() {
           </dd>
         </dl>
         <p className="mt-2 text-xs text-[var(--color-navy-soft)]">
-          Demo session only — real passwords and accounts arrive with the
-          backend phase, where the midwife administers accounts.
+          {apiEnabled ? 'Protected staff account. Access is checked by the server using the assigned role.' : 'Local demonstration session.'}
         </p>
         <div className="mt-3">
           <button
@@ -75,12 +75,13 @@ export default function SettingsPage() {
           <p className="text-sm">{SMS_TEMPLATE}</p>
         </div>
         <p className="mt-2 text-xs text-[var(--color-navy-soft)]">
-          One template for the whole system — [Child Name] and [Appointment
-          Date] are filled per child. Sending is simulated in this phase.
+          Guardian, child, appointment date/time, and transaction date are filled automatically.
+          SMS text is normalized for GSM-7. Reminders over 160 characters or 160 SMS units
+          are blocked; full names are not shortened. Demo mode does not send real messages.
         </p>
       </Card>
 
-      <Card title="Demo data">
+      {!apiEnabled && <Card title="Demo data">
         <p className="text-sm text-[var(--color-navy-soft)]">
           All children, records, schedules, and SMS history here are
           fictional. Reset restores the original demo dataset.
@@ -102,15 +103,15 @@ export default function SettingsPage() {
             {confirmReset ? 'Press again to confirm reset' : 'Reset demo data'}
           </button>
         </div>
-      </Card>
+      </Card>}
 
       <Card title="About this system">
         <p className="text-sm text-[var(--color-navy-soft)]">
-          Frontend prototype (Phase 1): React + TypeScript + Tailwind with
-          local demo state. No real database, accounts, AI predictions, or
-          SMS delivery yet — those arrive with the backend phases. AI-assisted
-          risk prediction stays dormant until requirements and real data are
-          confirmed.
+          The system manages child immunization records, appointments, dated growth measurements,
+          and reports. Connected mode uses protected staff accounts and database storage.
+          Experimental Record Review flags unusual date patterns for staff verification;
+          it is not a diagnosis or a validated prediction of missed vaccinations.
+          SMS sending remains disabled until sender-name approval and an authorized live test.
         </p>
       </Card>
     </div>

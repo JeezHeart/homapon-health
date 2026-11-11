@@ -1,3 +1,4 @@
+import type { GrowthMeasurement, NewGrowthMeasurement } from '../utils/growth';
 import type {
   Appointment,
   Child,
@@ -61,6 +62,7 @@ export type DoseSaveOk = { ok: true; record: DoseRecord };
 export type DoseSaveFail = { ok: false; error: string };
 
 export const api = {
+  smsAvailability: () => req<{ ok: true; enabled: boolean }>('/sms-log/availability'),
   me: () =>
     req<{ ok: true; user: { name: string; role: 'midwife' | 'bhw' } }>(
       '/me',
@@ -79,6 +81,11 @@ export const api = {
     }).then((r) => r.child),
   deleteChild: (id: string) =>
     req<{ ok: true }>(`/children/${id}`, { method: 'DELETE' }),
+
+  latestGrowthMeasurements: () => req<{ ok: true; measurements: GrowthMeasurement[] }>('/growth-measurements/latest').then((r) => r.measurements),
+  growthMeasurements: (childId: string) => req<{ ok: true; measurements: GrowthMeasurement[] }>(`/growth-measurements?childId=${encodeURIComponent(childId)}`).then((r) => r.measurements),
+  createGrowthMeasurement: (body: NewGrowthMeasurement) => req<{ ok: true; measurement: GrowthMeasurement }>('/growth-measurements', { method: 'POST', body: JSON.stringify(body) }).then((r) => r.measurement),
+  deleteGrowthMeasurement: (id: string) => req<{ ok: true }>(`/growth-measurements/${id}`, { method: 'DELETE' }),
 
   records: (childId?: string) =>
     req<{ ok: true; records: DoseRecord[] }>(

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import DosesChart from '../components/DosesChart';
@@ -18,6 +18,8 @@ import { vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import { formatDate, formatTime, timeAgo, todayISO } from '../utils/dates';
 import { isRegularClinicDay, nextClinicSession, nextRegularClinicDate } from '../utils/clinicScheduling';
+
+const GrowthSummary = lazy(() => import('../components/GrowthSummary'));
 
 function TopStat({
   label,
@@ -211,6 +213,8 @@ export default function DashboardPage() {
           )}
         </Card>
       </div>
+
+      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
 
       {/* Bottom strip: upcoming list + spotlight + quick actions */}
       <div className="grid gap-4 xl:grid-cols-3">

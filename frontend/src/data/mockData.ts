@@ -1,3 +1,4 @@
+import { renderSmsMessage } from '../utils/sms';
 /**
  * Central fictional sample dataset (prd.md sections 6-7, 11-12).
  * All people, numbers, and dates are invented for the frontend demo.
@@ -71,7 +72,7 @@ export interface Appointment {
 
 export type AppointmentStatus = 'upcoming' | 'due-today' | 'overdue' | 'completed';
 
-export type NewChild = Omit<Child, 'id'>;
+export type NewChild = Omit<Child, 'id'> & { initialMeasurement?: Omit<import('../utils/growth').NewGrowthMeasurement, 'childId'> };
 export type NewDoseRecord = Omit<DoseRecord, 'id'>;
 export type NewAppointment = Omit<Appointment, 'id'>;
 
@@ -94,37 +95,7 @@ export function smsDeliveryLabel(entry: SmsEntry): string {
   return 'Legacy record — handset delivery unverified';
 }
 
-/** Fixed reminder template (prd.md section 11). Single source of truth. */
-export const SMS_TEMPLATE =
-  'Good day! This is Barangay Homapon Health Center. ' +
-  'A vaccination appointment for [Child Name] is scheduled on [Appointment Date]. ' +
-  "Please bring your child's immunization record. " +
-  'For questions, please contact the health center. Thank you.';
-
-export function renderSmsMessage(childName: string, appointmentDate: string, appointmentTime?: string): string {
-  let displayDate = appointmentDate;
-  if (appointmentTime) {
-    const parts = appointmentTime.trim().split(':');
-    if (parts.length >= 2) {
-      const h = Number(parts[0]);
-      const m = Number(parts[1]);
-      if (!Number.isNaN(h) && !Number.isNaN(m)) {
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const hour12 = h % 12 || 12;
-        const minute = String(m).padStart(2, '0');
-        displayDate = `${appointmentDate} at ${hour12}:${minute} ${ampm}`;
-      } else {
-        displayDate = `${appointmentDate} at ${appointmentTime}`;
-      }
-    } else {
-      displayDate = `${appointmentDate} at ${appointmentTime}`;
-    }
-  }
-  return SMS_TEMPLATE.replace('[Child Name]', childName).replace(
-    '[Appointment Date]',
-    displayDate,
-  );
-}
+export { SMS_TEMPLATE, renderSmsMessage } from '../utils/sms';
 
 export const CHILDREN: Child[] = [
   {
@@ -342,21 +313,21 @@ export const SMS_HISTORY: SmsEntry[] = [
   {
     id: 's01',
     childId: 'c03',
-    message: renderSmsMessage('Sofia Ramos', 'Oct 7, 2026'),
+    message: renderSmsMessage(CHILDREN.find((c) => c.id === 'c03')!.guardian, 'Sofia Ramos', daysFromNow(-6), undefined, daysFromNow(-6)),
     sentAt: daysFromNow(-6),
     status: 'Demo sent',
   },
   {
     id: 's02',
     childId: 'c01',
-    message: renderSmsMessage('Althea Reyes', 'Oct 11, 2026'),
+    message: renderSmsMessage(CHILDREN.find((c) => c.id === 'c01')!.guardian, 'Althea Reyes', daysFromNow(-2), undefined, daysFromNow(-2)),
     sentAt: daysFromNow(-2),
     status: 'Demo sent',
   },
   {
     id: 's03',
     childId: 'c06',
-    message: renderSmsMessage('Noah Aquino', 'Oct 10, 2026'),
+    message: renderSmsMessage(CHILDREN.find((c) => c.id === 'c06')!.guardian, 'Noah Aquino', daysFromNow(-3), undefined, daysFromNow(-3)),
     sentAt: daysFromNow(-3),
     status: 'Demo failed',
   },

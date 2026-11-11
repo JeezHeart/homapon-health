@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Child, NewChild } from '../data/mockData';
 import { PUROKS } from '../data/mockData';
-import { todayISO } from '../utils/dates';
+import { smsTodayISO as todayISO } from '../utils/sms';
 
 interface ChildFormProps {
   initial?: Child;
@@ -26,6 +26,11 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
   const [weight, setWeight] = useState(
     initial?.weightKg !== undefined ? String(initial.weightKg) : '',
   );
+  const [measuredOn, setMeasuredOn] = useState(todayISO);
+  const [height, setHeight] = useState('');
+  const [position, setPosition] = useState<'' | 'lying' | 'standing'>('');
+  const [oedema, setOedema] = useState<'' | 'unknown' | 'no' | 'yes'>('');
+  const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
@@ -45,8 +50,16 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
       next.guardianMobile = 'Enter a valid mobile number.';
     if (weight.trim()) {
       const w = Number(weight.trim());
-      if (!Number.isFinite(w) || w <= 0 || w > 300)
+      if (!Number.isFinite(w) || w <= 0 || w > (initial ? 300 : 200))
         next.weight = 'Enter a weight in kg (e.g. 9.5).';
+    }
+    if (!initial) {
+      if (!weight.trim()) next.weight = 'Weight is required for the first growth measurement.';
+      const h = Number(height);
+      if (!height || !Number.isFinite(h) || h <= 0 || h > 250) next.height = 'Enter a length/height above 0 and at most 250 cm.';
+      if (!measuredOn || measuredOn < birthDate || measuredOn > todayISO()) next.measuredOn = 'Measurement date must be between birth and today.';
+      if (!position) next.position = 'Select lying down or standing.';
+      if (!oedema) next.oedema = 'Select the assessment status; choose Not assessed if unknown.';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -54,10 +67,15 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (submitting || !validate()) return;
+    setSubmitting(true);
     setSaveError('');
     try {
       await onSubmit({
+        ...(!initial ? { initialMeasurement: {
+          measuredOn, weightKg: Number(weight), heightCm: Number(height),
+          position: position as 'lying' | 'standing', oedema: oedema as 'unknown' | 'no' | 'yes', notes: '',
+        } } : {}),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         birthDate,
@@ -72,7 +90,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
       setSaveError(
         err instanceof Error ? err.message : 'Could not save the child record.',
       );
-    }
+    } finally { setSubmitting(false); }
   }
 
   function fieldError(name: string) {
@@ -192,7 +210,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="cf-weight" className="mb-1 block text-xs font-semibold">
-            Weight (kg, optional)
+            {initial ? 'Weight (kg, optional)' : 'Weight (kg) *'}
           </label>
           <input
             id="cf-weight"
@@ -205,6 +223,14 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           {fieldError('weight')}
         </div>
       </div>
+      {!initial && <fieldset className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-2">
+        <legend className="px-1 text-sm font-semibold">First growth measurement (required)</legend>
+        <p className="text-xs text-slate-600 sm:col-span-2">Use actual measurements from the selected date. Saving registration adds these to growth history and updates the dashboard summary. Choose Not assessed when swelling has not been checked.</p>
+        <div><label htmlFor="cf-measured" className="mb-1 block text-xs font-semibold">Measurement date *</label><input id="cf-measured" type="date" min={birthDate} max={todayISO()} value={measuredOn} onChange={(e) => setMeasuredOn(e.target.value)} className={inputClass} />{fieldError('measuredOn')}</div>
+        <div><label htmlFor="cf-height" className="mb-1 block text-xs font-semibold">Length / height (cm) *</label><input id="cf-height" inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} className={inputClass} />{fieldError('height')}</div>
+        <div><label htmlFor="cf-position" className="mb-1 block text-xs font-semibold">Measurement position *</label><select id="cf-position" value={position} onChange={(e) => setPosition(e.target.value as typeof position)} className={inputClass}><option value="">Select position</option><option value="lying">Lying down (length)</option><option value="standing">Standing (height)</option></select>{fieldError('position')}</div>
+        <div><label htmlFor="cf-oedema" className="mb-1 block text-xs font-semibold">Swelling of both feet (staff assessment) *</label><select id="cf-oedema" value={oedema} onChange={(e) => setOedema(e.target.value as typeof oedema)} className={inputClass}><option value="">Select assessment</option><option value="unknown">Not assessed</option><option value="no">Absent</option><option value="yes">Present</option></select>{fieldError('oedema')}</div>
+      </fieldset>}
       <div>
         <label htmlFor="cf-notes" className="mb-1 block text-xs font-semibold">
           Notes / remarks
@@ -226,15 +252,17 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
         <button
           type="button"
           onClick={onCancel}
+          disabled={submitting}
           className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-[var(--color-navy)] hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
           Cancel
         </button>
         <button
           type="submit"
+          disabled={submitting}
           className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
         >
-          {initial ? 'Save changes' : 'Register child'}
+          {submitting ? 'Saving...' : initial ? 'Save changes' : 'Register child'}
         </button>
       </div>
     </form>

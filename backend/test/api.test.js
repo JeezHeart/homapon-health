@@ -49,6 +49,7 @@ function makeBuilder(table) {
     'neq',
     'gte',
     'order',
+    'range',
     'single',
   ]) {
     b[m] = (...args) => {
@@ -80,6 +81,7 @@ const fakeSupabase = {
   async rpc(name, args) {
     db.rpcCalls.push({ name, args });
     if (db.rpcHandler) return db.rpcHandler(name, args);
+    if (name === 'register_child_with_growth') return { data: { child: { ...CHILD_ROW, weight_kg: args.p_measurement.weightKg }, measurementId: APPT_ID }, error: null };
     if (name === 'claim_sms_send') return { data: {
       kind: 'claimed', reservation: {
         reminder_key: args.p_key, attempt_id: args.p_attempt_id,
@@ -233,6 +235,7 @@ function assertSafeError(r, status) {
 const CHILD_ID = '11111111-1111-1111-1111-111111111111';
 const APPT_ID = '22222222-2222-2222-2222-222222222222';
 const VALID_CHILD = {
+  initialMeasurement: { measuredOn: '2026-01-01', weightKg: 8, heightCm: 70, position: 'lying', oedema: 'no', notes: '' },
   firstName: 'Ana',
   lastName: 'Santos',
   birthDate: '2025-01-15',
@@ -697,7 +700,7 @@ test('POST /children boolean weight returns 400', async () => {
 });
 
 test('POST /children DB error returns generic 500 without DB details', async () => {
-  db.handler = () => ({
+  db.rpcHandler = () => ({
     data: null,
     error: {
       code: 'XX000',
@@ -1702,3 +1705,144 @@ test('BHW cannot escalate privileges by spoofing midwife role in request body or
 });
 
 
+
+test('SMS template uses server records and current clinic date', async () => {
+  db.handler = smsHandler();
+  const r = await api('POST', '/api/sms-log/send', SEND_BODY);
+  assert.equal(r.status, 201);
+  const inserted = db.calls.find((q) => q.table === 'sms_log' && q.has('insert')).arg('insert')[0];
+  const { todayLocalISO } = require('../src/lib/validate');
+  assert.equal(inserted.message, sms.composeMessage(CHILD_ROW.guardian,
+    `${CHILD_ROW.first_name} ${CHILD_ROW.last_name}`, APPT_ROW.scheduled_date,
+    APPT_ROW.scheduled_time, todayLocalISO()));
+  assert.equal(inserted.sent_at, todayLocalISO());
+});
+
+test('oversized reminders fail before reservation, log insertion, or provider dispatch', async () => {
+  liveSms = true;
+  db.handler = smsHandler({ child: { data: { ...CHILD_ROW, guardian: 'Maria '.repeat(40) }, error: null } });
+  const r = await api('POST', '/api/sms-log/send', SEND_BODY);
+  assert.equal(r.status, 422);
+  assert.equal(sendCalls, 0);
+  assert.equal(db.rpcCalls.length, 0);
+  assert.equal(db.calls.filter((q) => q.table === 'sms_log' && q.has('insert')).length, 0);
+});
+
+const GROWTH_BODY = { childId: CHILD_ID, measuredOn: '2026-01-01', weightKg: 8, heightCm: 70, position: 'lying', oedema: 'no', notes: 'Fictional measurement' };
+function growthHandler(q) {
+  if (q.table === 'children') return { data: { id: CHILD_ID, birth_date: '2025-01-01' }, error: null };
+  if (q.table === 'growth_measurements') {
+    if (q.has('insert')) return { data: { id: APPT_ID, ...q.arg('insert')[0] }, error: null };
+    if (q.has('delete')) return { data: { id: APPT_ID }, error: null };
+    return { data: [], error: null };
+  }
+  if (q.table === 'audit_events') return { data: null, error: null };
+  throw new Error(`Unexpected growth query: ${q.table}`);
+}
+test('growth endpoints require login and staff membership', async () => {
+  for (const [method, endpoint, body] of [['GET', '/api/growth-measurements?childId=' + CHILD_ID], ['POST', '/api/growth-measurements', GROWTH_BODY], ['DELETE', '/api/growth-measurements/' + APPT_ID]]) {
+    assert.equal((await api(method, endpoint, body, { token: null })).status, 401);
+  }
+  db.staffResult = { data: null, error: null };
+  assert.equal((await api('GET', '/api/growth-measurements?childId=' + CHILD_ID)).status, 403);
+});
+test('growth supports BHW create/list but midwife-only deletion', async () => {
+  db.handler = growthHandler;
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  assert.equal((await api('POST', '/api/growth-measurements', GROWTH_BODY)).status, 201);
+  assert.equal((await api('GET', '/api/growth-measurements?childId=' + CHILD_ID)).status, 200);
+  assert.equal((await api('DELETE', '/api/growth-measurements/' + APPT_ID)).status, 403);
+  db.staffResult = null;
+  assert.equal((await api('DELETE', '/api/growth-measurements/' + APPT_ID)).status, 200);
+});
+test('growth rejects invalid input and duplicate dates before successful insertion', async () => {
+  db.handler = growthHandler;
+  assert.equal((await api('GET', '/api/growth-measurements')).status, 400);
+  assert.equal((await api('POST', '/api/growth-measurements', { ...GROWTH_BODY, measuredOn: '2024-01-01' })).status, 422);
+  assert.equal(db.calls.some((q) => q.table === 'growth_measurements' && q.has('insert')), false);
+  db.handler = (q) => q.table === 'growth_measurements' ? { data: null, error: { code: '23505' } } : growthHandler(q);
+  assert.equal((await api('POST', '/api/growth-measurements', GROWTH_BODY)).status, 409);
+});
+
+test('growth dashboard latest endpoint is protected and paginates before selecting latest per child', async () => {
+  assert.equal((await api('GET', '/api/growth-measurements/latest', undefined, { token: null })).status, 401);
+  const row = { id: APPT_ID, child_id: CHILD_ID, measured_on: '2026-01-01', weight_kg: 8, oedema: 'no', notes: '' };
+  db.handler = (q) => {
+    assert.equal(q.table, 'growth_measurements');
+    const start = q.arg('range')[0];
+    return { data: start === 0 ? Array.from({ length: 500 }, () => row) : [{ ...row, measured_on: '2026-02-01' }], error: null };
+  };
+  const response = await api('GET', '/api/growth-measurements/latest');
+  assert.equal(response.status, 200);
+  assert.equal(response.json.measurements.length, 1);
+  assert.equal(response.json.measurements[0].measuredOn, '2026-02-01');
+  assert.equal(db.calls.filter((q) => q.table === 'growth_measurements').length, 2);
+});
+test('growth dashboard latest endpoint propagates data failure rather than returning zero counts', async () => {
+  db.handler = () => ({ data: null, error: { message: 'Fictional unavailable table' } });
+  assert.equal((await api('GET', '/api/growth-measurements/latest')).status, 500);
+});
+
+test('registration requires complete initial measurements before any database mutation', async () => {
+  for (const initialMeasurement of [undefined, null, {}, { ...VALID_CHILD.initialMeasurement, heightCm: undefined }, { ...VALID_CHILD.initialMeasurement, weightKg: 0 }, { ...VALID_CHILD.initialMeasurement, measuredOn: '2024-01-01' }, { ...VALID_CHILD.initialMeasurement, position: undefined }]) {
+    const result = await api('POST', '/api/children', { ...VALID_CHILD, initialMeasurement });
+    assert.ok([400, 422].includes(result.status));
+  }
+  assert.equal(db.rpcCalls.length, 0);
+  assert.equal(db.calls.filter((q) => q.has('insert')).length, 0);
+});
+test('registration saves through one transaction RPC and trusts only authenticated staff identity', async () => {
+  db.handler = () => ({ data: null, error: null });
+  const response = await api('POST', '/api/children', { ...VALID_CHILD, initialMeasurement: { ...VALID_CHILD.initialMeasurement, childId: 'forged-child' }, staffId: 'forged-staff' });
+  assert.equal(response.status, 201);
+  assert.equal(db.rpcCalls.length, 1);
+  assert.equal(db.rpcCalls[0].name, 'register_child_with_growth');
+  assert.equal(db.rpcCalls[0].args.p_staff, STAFF.id);
+  assert.equal(db.calls.some((q) => q.table === 'children' && q.has('insert')), false);
+  assert.equal(response.json.child.weightKg, 8);
+});
+test('registration transaction failure does not fall back to separate child insertion', async () => {
+  db.rpcHandler = () => ({ data: null, error: { message: 'Fictional measurement insert failure' } });
+  const result = await api('POST', '/api/children', VALID_CHILD);
+  assertSafeError(result, 500);
+  assert.equal(db.calls.filter((q) => q.has('insert')).length, 0);
+});
+
+test('registration clearly reports pending database setup without inserting a child', async () => {
+  db.rpcHandler = () => ({ data: null, error: { code: 'PGRST202' } });
+  const response = await api('POST', '/api/children', VALID_CHILD);
+  assert.equal(response.status, 503);
+  assert.match(response.json.error, /database setup/);
+  assert.equal(db.calls.filter((q) => q.has('insert')).length, 0);
+});
+
+test('disabled SMS rejects requests before database or provider work', async () => {
+  const previous = process.env.SMS_ENABLED;
+  process.env.SMS_ENABLED = 'false';
+  try {
+    const response = await api('POST', '/api/sms-log/send', SEND_BODY);
+    assert.equal(response.status, 503);
+    assert.equal(response.json.code, 'SMS_DISABLED');
+    assert.equal(db.rpcCalls.length, 0);
+    assert.equal(sendCalls, 0);
+    assert.equal(db.calls.filter((q) => q.table !== 'staff').length, 0);
+  } finally {
+    if (previous === undefined) delete process.env.SMS_ENABLED;
+    else process.env.SMS_ENABLED = previous;
+  }
+});
+
+test('SMS availability requires sign-in and reports disabled without provider activity', async () => {
+  assert.equal((await api('GET', '/api/sms-log/availability', undefined, { token: null })).status, 401);
+  const previous = process.env.SMS_ENABLED;
+  process.env.SMS_ENABLED = 'false';
+  try {
+    const response = await api('GET', '/api/sms-log/availability');
+    assert.equal(response.status, 200);
+    assert.equal(response.json.enabled, false);
+    assert.equal(sendCalls, 0);
+  } finally {
+    if (previous === undefined) delete process.env.SMS_ENABLED;
+    else process.env.SMS_ENABLED = previous;
+  }
+});

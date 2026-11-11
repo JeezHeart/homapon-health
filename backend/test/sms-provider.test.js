@@ -174,3 +174,13 @@ test('prepared sender freezes provider configuration before reservation/dispatch
   });
   assert.equal((await prepared.send({ to: '09000000000', message: 'Fictional' })).outcome, 'accepted');
 });
+
+for (const message of ['x'.repeat(161), 'x'.repeat(159) + '^', 'Fictional \u{1f600}']) {
+  test('provider guard rejects oversized or unsupported SMS without dispatch', async (t) => {
+    t.mock.method(globalThis, 'fetch', async () => { throw new Error('Provider must not be called'); });
+    const result = await prepareSmsSend('semaphore').send({ to: '09000000000', message });
+    assert.equal(result.outcome, 'not_sent');
+    assert.equal(result.dispatched, false);
+    assert.equal(globalThis.fetch.mock.calls.length, 0);
+  });
+}

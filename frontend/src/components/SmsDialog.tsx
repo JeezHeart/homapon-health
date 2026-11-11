@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useSmsAvailability } from '../utils/useSmsAvailability';
+import { useEffect, useState } from 'react';
 import type { EnrichedAppointment, SmsEntry } from '../data/mockData';
 import { childName, renderSmsMessage } from '../data/mockData';
 import { api, apiEnabled, apiError } from '../data/api';
 import { vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
-import { formatDate, formatTime, todayISO } from '../utils/dates';
+import { formatDate, formatTime } from '../utils/dates';
 import Dialog from './Dialog';
+import { smsMessageError, smsUnits, smsTodayISO as todayISO } from '../utils/sms';
 
 interface SmsDialogProps {
   appointment: EnrichedAppointment;
@@ -19,6 +21,7 @@ interface SmsDialogProps {
  */
 export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
   const { logSms, refreshSms } = useStore();
+  const availability = useSmsAvailability();
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -26,18 +29,31 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
     { status: SmsEntry['status']; dryRun: boolean; provider: string } | null
   >(null);
 
+  const [transactionDate, setTransactionDate] = useState(todayISO);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTransactionDate(todayISO()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   const { child } = appointment;
   const vaccine = vaccineById(appointment.vaccineId);
   const message = renderSmsMessage(
+    child.guardian,
     childName(child),
-    formatDate(appointment.scheduledDate),
+    appointment.scheduledDate,
     appointment.scheduledTime,
+    transactionDate,
   );
+  const messageError = smsMessageError(message);
   // Live backend path when API is configured; otherwise the
   // clearly-labeled demo simulation below.
   const live = apiEnabled;
 
   function handleConfirm() {
+    if (!availability.enabled || sending || messageError) return;
+    if (transactionDate !== todayISO()) {
+      setTransactionDate(todayISO());
+      return;
+    }
     setSending(true);
     setSendError('');
     if (live) {
@@ -64,7 +80,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
     window.setTimeout(() => {
       void (async () => {
         try {
-          await logSms(child.id, message, 'Demo sent', todayISO());
+          await logSms(child.id, message, 'Demo sent', transactionDate);
           setDone(true);
         } catch (err) {
           setSendError(
@@ -92,6 +108,10 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-slate-50 p-4 text-sm">
             <dt className="text-[var(--color-navy-soft)]">Child</dt>
             <dd className="font-medium">{childName(child)}</dd>
+            <dt className="text-[var(--color-navy-soft)]">Parent/Guardian</dt>
+            <dd className="font-medium">{child.guardian}</dd>
+            <dt className="text-[var(--color-navy-soft)]">Transaction Date</dt>
+            <dd className="font-medium">{formatDate(transactionDate)}</dd>
             <dt className="text-[var(--color-navy-soft)]">Guardian mobile</dt>
             <dd className="font-medium">{child.guardianMobile}</dd>
             <dt className="text-[var(--color-navy-soft)]">Appointment</dt>
@@ -105,8 +125,11 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-navy-soft)]">
               Exact message
             </p>
-            <p className="text-sm">{message}</p>
+            <p className="text-sm break-words">{message}</p>
+            <p className="mt-2 text-xs">{message.length}/160 characters | {smsUnits(message)}/160 SMS units</p>
+            {messageError && <p role="alert" className="mt-2 text-sm text-red-700">{messageError}</p>}
           </div>
+          {availability.message && <p role="status" className="text-sm text-amber-800">{availability.message}</p>}
           {sendError && (
             <p role="alert" className="text-sm font-medium text-red-700">
               {sendError}
@@ -124,7 +147,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={sending}
+              disabled={!availability.enabled || sending || Boolean(messageError)}
               className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] disabled:opacity-50"
             >
               {sending

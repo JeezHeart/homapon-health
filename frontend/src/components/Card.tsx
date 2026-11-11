@@ -8,7 +8,7 @@ interface CardProps {
 
 export default function Card({ title, action, children }: CardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
       {(title ?? action) && (
         <div className="mb-4 flex items-center justify-between gap-3">
           {title && (

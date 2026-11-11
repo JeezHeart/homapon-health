@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabase } = require('../db');
 const { audit, requireMidwife } = require('../lib/auth');
+const { validateGrowth } = require('../lib/growth');
 const {
   validateChild,
   isUuid,
@@ -68,13 +69,23 @@ router.post(
   asyncHandler(async (req, res, next) => {
     const err = validateChild(req.body);
     if (err) return res.status(400).json({ ok: false, error: err });
-    const { data, error } = await supabase
-      .from('children')
-      .insert(toDb(req.body))
-      .select()
-      .single();
+    const measurement = req.body.initialMeasurement;
+    if (!measurement || typeof measurement !== 'object' || Array.isArray(measurement) ||
+      measurement.weightKg === undefined || measurement.heightCm === undefined)
+      return res.status(400).json({ ok: false, error: 'The first dated weight and length/height measurement is required.' });
+    const growthError = validateGrowth(measurement, req.body.birthDate.trim());
+    if (growthError) return res.status(422).json({ ok: false, error: growthError });
+    const { data: result, error } = await supabase.rpc('register_child_with_growth', {
+      p_child: { ...toDb(req.body), weight_kg: measurement.weightKg },
+      p_measurement: measurement,
+      p_staff: req.staff.id,
+    });
+    if (error && ['PGRST202', 'PGRST205'].includes(error.code))
+      return res.status(503).json({ ok: false, error: 'Growth registration is not enabled yet. Complete the database setup before registering a child.' });
     if (error) return next(error);
+    const data = result.child;
     audit(req, 'create', 'child', data.id);
+    audit(req, 'create', 'growth-measurement', result.measurementId);
     res.status(201).json({ ok: true, child: toApi(data) });
   }),
 );

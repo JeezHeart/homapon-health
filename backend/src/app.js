@@ -11,7 +11,11 @@ const origins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(helmet({ strictTransportSecurity: false }));
+const authOrigin = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : null;
+app.use(helmet({
+  strictTransportSecurity: process.env.NODE_ENV === 'production' ? undefined : false,
+  contentSecurityPolicy: { directives: { connectSrc: ["'self'", ...(authOrigin ? [authOrigin] : [])] } },
+}));
 app.use(cors({ origin: origins }));
 app.use(express.json({ limit: '256kb' }));
 
@@ -24,6 +28,7 @@ app.use('/api/children', requireAuth, require('./routes/children'));
 app.use('/api/dose-records', requireAuth, require('./routes/doseRecords'));
 app.use('/api/appointments', requireAuth, require('./routes/appointments'));
 app.use('/api/sms-log', requireAuth, require('./routes/smsLog'));
+app.use('/api/growth-measurements', requireAuth, require('./routes/growth'));
 
 // Who am I? Role comes from the staff table, never from the client.
 app.get('/api/me', requireAuth, (req, res) => {
@@ -32,6 +37,8 @@ app.get('/api/me', requireAuth, (req, res) => {
     user: { name: req.staff.name, role: req.staff.role },
   });
 });
+
+if (process.env.NODE_ENV === 'production') require('./lib/frontend').mountFrontend(app);
 
 app.use((_req, res) => {
   res.status(404).json({ ok: false, error: 'Not found.' });

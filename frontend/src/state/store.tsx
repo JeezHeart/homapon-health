@@ -1,3 +1,4 @@
+import type { GrowthMeasurement } from '../utils/growth';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -42,6 +43,7 @@ function fail(e: unknown): Fail {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const [demoGrowth, setDemoGrowth] = useState<GrowthMeasurement[]>([]);
   const [childList, setChildList] = useState<Child[]>(() =>
     apiEnabled ? [] : CHILDREN,
   );
@@ -117,6 +119,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(
     () => ({
+      demoGrowth, setDemoGrowth,
       children: childList,
       records: recordList,
       appointments: appointmentList,
@@ -133,7 +136,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             throw new Error(apiError(e));
           }
         }
-        const child: Child = { ...data, id: nextId('c') };
+        if (!data.initialMeasurement) throw new Error('First growth measurement is required.');
+        const { initialMeasurement, ...childData } = data;
+        const child: Child = { ...childData, id: crypto.randomUUID() };
+        setDemoGrowth((prev) => [...prev, { ...initialMeasurement, id: crypto.randomUUID(), childId: child.id }]);
         setChildList((prev) => [...prev, child]);
         return child;
       },
@@ -159,6 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             return fail(e);
           }
         }
+        setDemoGrowth((prev) => prev.filter((r) => r.childId !== id));
         setChildList((prev) => prev.filter((c) => c.id !== id));
         setRecordList((prev) => prev.filter((r) => r.childId !== id));
         setAppointmentList((prev) => prev.filter((a) => a.childId !== id));
@@ -359,6 +366,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setDataReady(true);
       },
       signOut: () => {
+        setDemoGrowth([]);
         if (supabase) void supabase.auth.signOut();
         setDemoUser(null);
         if (apiEnabled) {
@@ -393,13 +401,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
           return;
         }
+        setDemoGrowth([]);
         setChildList([...CHILDREN]);
         setRecordList([...RECORDS]);
         setAppointmentList([...APPOINTMENTS]);
         setSmsLog([...SMS_HISTORY]);
       },
     }),
-    [childList, recordList, appointmentList, smsLog, demoUser, dataReady, connected],
+    [childList, recordList, appointmentList, smsLog, demoUser, dataReady, connected, demoGrowth],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

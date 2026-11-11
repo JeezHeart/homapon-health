@@ -13,9 +13,11 @@ import SettingsPage from './pages/SettingsPage';
 import SmsPage from './pages/SmsPage';
 import { StoreProvider } from './state/store';
 import { useStore } from './state/store-context';
+import { apiEnabled } from './data/api';
+import { supabase } from './data/supabaseClient';
 
 function Shell() {
-  const { demoUser, dataReady } = useStore();
+  const { demoUser, dataReady, connected, signOut } = useStore();
   if (!dataReady)
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -25,6 +27,7 @@ function Shell() {
       </div>
     );
   if (!demoUser) return <LoginPage />;
+  if (apiEnabled && !connected) return <div className="mx-auto max-w-lg p-8"><h1 className="text-xl font-bold">Records could not be loaded</h1><p role="alert" className="my-4">Your records are unavailable. Check your connection, then try again.</p><button className="mr-4 underline" onClick={() => window.location.reload()}>Reload records</button><button className="underline" onClick={signOut}>Sign out</button></div>;
   return (
     <BrowserRouter>
       <Routes>
@@ -45,6 +48,7 @@ function Shell() {
 }
 
 export default function App() {
+  if (import.meta.env.PROD && (!apiEnabled || !supabase)) return <div className="mx-auto max-w-lg p-8"><h1 className="text-xl font-bold">Website configuration incomplete</h1><p role="alert" className="mt-4">The staff connection is not configured. Please contact the administrator.</p></div>;
   return (
     <StoreProvider>
       <Shell />

@@ -1,7 +1,7 @@
 const express = require('express');
 const { supabase } = require('../db');
 const { audit } = require('../lib/auth');
-const { composeMessage, normalizeNumber, prepareSmsSend } = require('../lib/sms');
+const { composeMessage, smsMessageError, normalizeNumber, prepareSmsSend } = require('../lib/sms');
 const { createSmsRateLimit } = require('../lib/smsRateLimit');
 const { reserveSms, beginDispatch, finishReservation } = require('../lib/smsReservations');
 const {
@@ -17,6 +17,10 @@ const {
 
 const router = express.Router();
 const consumeLiveSend = createSmsRateLimit();
+
+router.get('/availability', (_req, res) => {
+  res.json({ ok: true, enabled: process.env.SMS_ENABLED !== 'false' });
+});
 
 function toApi(r) {
   return {
@@ -55,6 +59,9 @@ router.get(
 router.post(
   '/send',
   asyncHandler(async (req, res, next) => {
+    if (process.env.SMS_ENABLED === 'false') return res.status(503).json({
+      ok: false, code: 'SMS_DISABLED', error: 'SMS sending is disabled while sender-name approval is pending.',
+    });
     if (!isPlainObject(req.body))
       return res
         .status(400)
@@ -97,11 +104,16 @@ router.post(
         .status(404)
         .json({ ok: false, error: 'Appointment not found for this child.' });
 
+    const transactionDate = todayLocalISO();
     const message = composeMessage(
+      child.guardian,
       `${child.first_name} ${child.last_name}`,
       appt.scheduled_date,
       appt.scheduled_time,
+      transactionDate,
     );
+    const messageError = smsMessageError(message);
+    if (messageError) return res.status(422).json({ ok: false, code: 'SMS_MESSAGE_INVALID', error: messageError });
     const to = normalizeNumber(child.guardian_mobile);
     const prepared = prepareSmsSend();
     async function logAttempt(status, deliveryStatus) {
@@ -110,7 +122,7 @@ router.post(
         .insert({
           child_id: cleanChildId,
           message,
-          sent_at: todayLocalISO(),
+          sent_at: transactionDate,
           status,
           delivery_status: deliveryStatus,
         })

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import AppointmentDialog from '../components/AppointmentDialog';
@@ -26,7 +26,10 @@ import { REQUIRED_DOSES, vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import { calcAge, formatDate, formatTime } from '../utils/dates';
 
+const GrowthPanel = lazy(() => import('../components/GrowthPanel'));
+
 const TABS = [
+  { id: 'growth', label: 'Growth monitoring' },
   { id: 'overview', label: 'Overview' },
   { id: 'history', label: 'Dose history' },
   { id: 'schedule', label: 'Schedule' },
@@ -59,7 +62,7 @@ export default function ChildProfilePage() {
   } | null>(null);
   const child = id ? childById(children, id) : undefined;
   const [tab, setTab] = useState<TabId>(
-    searchParams.get('tab') === 'document' ? 'document' : 'overview',
+    TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') as TabId : 'overview',
   );
 
   if (!child) {
@@ -153,6 +156,8 @@ export default function ChildProfilePage() {
           </button>
         ))}
       </div>
+
+      {tab === 'growth' && <Suspense fallback={<p>Loading growth monitoring...</p>}><GrowthPanel key={child.id} child={child} /></Suspense>}
 
       {tab === 'overview' && (
         <div className="grid gap-4 md:grid-cols-2">

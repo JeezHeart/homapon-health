@@ -1,11 +1,13 @@
+import { useSmsAvailability } from '../utils/useSmsAvailability';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Dialog from './Dialog';
+import { smsMessageError, smsUnits, smsTodayISO as todayISO } from '../utils/sms';
 import type { EnrichedAppointment } from '../data/mockData';
 import { childName, renderSmsMessage } from '../data/mockData';
 import { api, apiEnabled, apiError } from '../data/api';
 import { vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
-import { formatDate, formatTime, todayISO } from '../utils/dates';
+import { formatDate, formatTime } from '../utils/dates';
 import { sendBatch } from '../utils/batchSms';
 import type { BatchResult } from '../utils/batchSms';
 
@@ -21,6 +23,7 @@ export default function BatchSmsDialog({
   title = 'Send Batch SMS Reminders',
 }: BatchSmsDialogProps) {
   const { logSms, refreshSms } = useStore();
+  const availability = useSmsAvailability();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(appointments.map((a) => a.id)),
   );
@@ -35,11 +38,20 @@ export default function BatchSmsDialog({
   const [now, setNow] = useState(Date.now);
   const inFlight = useRef(false);
 
+  const [transactionDate, setTransactionDate] = useState(todayISO);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTransactionDate(todayISO()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const preview = (a: EnrichedAppointment) => renderSmsMessage(
+    a.child.guardian, childName(a.child), a.scheduledDate, a.scheduledTime, transactionDate,
+  );
   const live = apiEnabled;
   const selectedAppointments = appointments.filter((a) => selectedIds.has(a.id));
   const retryAt = result?.status === 'rate-limited' ? result.retryAt : null;
   const waitSeconds = retryAt === null ? 0 : Math.max(0, Math.ceil((retryAt - now) / 1000));
   const uncertain = result?.status === 'uncertain';
+  const invalidSelection = (batch ? batch.slice(succeeded) : selectedAppointments).some((a) => Boolean(smsMessageError(preview(a))));
 
   useEffect(() => {
     if (retryAt === null) return;
@@ -67,7 +79,11 @@ export default function BatchSmsDialog({
   }
 
   async function handleSend() {
-    if (inFlight.current || uncertain || (retryAt !== null && Date.now() < retryAt)) return;
+    if (!availability.enabled || inFlight.current || invalidSelection || uncertain || (retryAt !== null && Date.now() < retryAt)) return;
+    if (transactionDate !== todayISO()) {
+      setTransactionDate(todayISO());
+      return;
+    }
     const queue = batch ?? [...selectedAppointments];
     if (queue.length === 0) return;
     inFlight.current = true;
@@ -78,17 +94,16 @@ export default function BatchSmsDialog({
 
     try {
       const outcome = await sendBatch(queue, succeeded, async (appt) => {
+        if (transactionDate !== todayISO()) throw new Error('Transaction date changed. Review the batch before sending further reminders.');
+        const msg = preview(appt);
+        const error = smsMessageError(msg);
+        if (error) throw new Error(error);
         if (live) {
           await api.sendSms(appt.child.id, appt.id);
         } else {
           // Simulated send with slight delay for realistic UI feedback
           await new Promise((r) => setTimeout(r, 200));
-          const msg = renderSmsMessage(
-            childName(appt.child),
-            formatDate(appt.scheduledDate),
-            appt.scheduledTime,
-          );
-          await logSms(appt.child.id, msg, 'Demo sent', todayISO());
+          await logSms(appt.child.id, msg, 'Demo sent', transactionDate);
         }
       }, (count) => {
         setSucceeded(count);
@@ -178,6 +193,9 @@ export default function BatchSmsDialog({
             </p>
           )}
 
+          <p>Transaction Date: {formatDate(transactionDate)}</p>
+          {invalidSelection && <p role="alert" className="text-red-700">Some selected reminders cannot fit one SMS or have missing details. Deselect the affected reminders to continue.</p>}
+          {availability.message && <p role="status" className="text-sm text-amber-800">{availability.message}</p>}
           {/* Selection toolbar */}
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <label className="flex items-center gap-2 font-medium text-xs cursor-pointer">
@@ -203,6 +221,8 @@ export default function BatchSmsDialog({
             {(batch ?? appointments).map((a, index) => {
               const checked = selectedIds.has(a.id);
               const vac = vaccineById(a.vaccineId);
+              const message = preview(a);
+              const error = smsMessageError(message);
               return (
                 <label
                   key={a.id}
@@ -226,6 +246,9 @@ export default function BatchSmsDialog({
                       {a.scheduledTime ? ` · ${formatTime(a.scheduledTime)}` : ''} · Guardian: {a.child.guardian} ({a.child.guardianMobile})
                     </p>
                     <p className="text-[11px] text-slate-500">{a.child.purok}</p>
+                    <p className="mt-2 break-words">{message}</p>
+                    <p>{message.length}/160 characters | {smsUnits(message)}/160 SMS units</p>
+                    {error && <p className="text-red-700">{error}</p>}
                     {batch && (
                       <p className="font-semibold">
                         {index < succeeded ? 'Successfully processed' : uncertain && index === succeeded ? 'Delivery uncertain — check before retrying' : 'Not sent yet'}
@@ -269,7 +292,7 @@ export default function BatchSmsDialog({
             </button>
             <button
               type="button"
-              disabled={sending || selectedIds.size === 0 || waitSeconds > 0 || uncertain}
+              disabled={!availability.enabled || sending || invalidSelection || selectedIds.size === 0 || waitSeconds > 0 || uncertain}
               onClick={handleSend}
               className="rounded-xl bg-[var(--color-accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--color-accent-dark)] disabled:opacity-50"
             >

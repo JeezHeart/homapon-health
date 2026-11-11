@@ -1,3 +1,4 @@
+import type { GrowthMeasurement } from '../utils/growth';
 import { createContext, useContext } from 'react';
 import type {
   Appointment,
@@ -24,6 +25,8 @@ export const ROLE_LABEL: Record<DemoRole, string> = {
 export type SaveResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 export interface StoreValue {
+  demoGrowth: GrowthMeasurement[];
+  setDemoGrowth: (update: (previous: GrowthMeasurement[]) => GrowthMeasurement[]) => void;
   children: Child[];
   records: DoseRecord[];
   appointments: Appointment[];
