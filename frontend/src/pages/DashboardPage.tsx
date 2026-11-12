@@ -13,7 +13,6 @@ import {
   dosesThisMonth,
   isFullyImmunized,
   overdueAppointments,
-  recentActivity,
   upcomingAppointments,
 } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
@@ -90,7 +89,6 @@ export default function DashboardPage() {
   const upcoming = upcomingAppointments(appointments, children, records);
   const session = nextClinicSession(upcoming);
   const overdue = overdueAppointments(appointments, children, records);
-  const recent = recentActivity(records, 6);
   const reminders = [...smsLog]
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
     .slice(0, 6);
@@ -180,7 +178,7 @@ export default function DashboardPage() {
       </Card>
       </div>
 
-      {/* Bottom strip: upcoming list + spotlight + quick actions */}
+      {/* Upcoming appointments, follow-up, and reminders. */}
       <div className="grid gap-4 xl:grid-cols-3">
         <Card
           title={`Upcoming · ${upcoming.length}`}
@@ -275,67 +273,50 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <div className="flex min-w-0 flex-col gap-4">
-          <Card
-            title="Reminders"
-            action={
-              <Link
-                to="/sms"
-                className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
-              >
-                View all
-              </Link>
-            }
-          >
-            {reminders.length === 0 ? (
-              <EmptyState
-                title="No reminders yet"
-                message="SMS reminder history will appear here."
-              />
-            ) : (
-              <ul className="flex flex-col">
-                {reminders.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex items-start gap-3 border-t border-slate-100 py-2.5 first:border-t-0 first:pt-0"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        s.status === 'Demo sent' || s.status === 'Sent'
-                          ? 'bg-emerald-500'
-                          : 'bg-red-500'
-                      }`}
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--color-navy)]">
-                        {s.message}
-                      </p>
-                      <p className="text-xs text-[var(--color-navy-soft)]">
-                        {s.status} · {timeAgo(s.sentAt)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-          <Card title="Recent activity">
-            <ul className="flex flex-col text-sm">
-              {recent.map((r) => (
+        <Card
+          title="Reminders"
+          action={
+            <Link
+              to="/sms"
+              className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
+            >
+              View all
+            </Link>
+          }
+        >
+          {reminders.length === 0 ? (
+            <EmptyState
+              title="No reminders yet"
+              message="SMS reminder history will appear here."
+            />
+          ) : (
+            <ul className="flex flex-col">
+              {reminders.map((s) => (
                 <li
-                  key={r.id}
-                  className="flex items-center justify-between gap-2 border-t border-slate-100 py-1.5 first:border-t-0 first:pt-0"
+                  key={s.id}
+                  className="flex items-start gap-3 border-t border-slate-100 py-2.5 first:border-t-0 first:pt-0"
                 >
-                  <span>{vaccineLabel(r.vaccineId, r.doseNumber)}</span>
-                  <span className="shrink-0 text-xs text-[var(--color-navy-soft)]">
-                    {timeAgo(r.dateAdministered)}
-                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      s.status === 'Demo sent' || s.status === 'Sent'
+                        ? 'bg-emerald-500'
+                        : 'bg-red-500'
+                    }`}
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[var(--color-navy)]">
+                      {s.message}
+                    </p>
+                    <p className="text-xs text-[var(--color-navy-soft)]">
+                      {s.status} · {timeAgo(s.sentAt)}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
-          </Card>
-        </div>
+          )}
+        </Card>
       </div>
 
 
