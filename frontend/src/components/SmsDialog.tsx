@@ -177,7 +177,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-[var(--color-navy)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             >
               Done
             </button>

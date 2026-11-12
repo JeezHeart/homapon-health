@@ -147,7 +147,7 @@ export default function SchedulePage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+          <h1 className="page-title">
             Immunization Schedule
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
@@ -174,7 +174,7 @@ export default function SchedulePage() {
                 onClick={() => setFilter(f.id)}
                 className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                   filter === f.id
-                    ? 'bg-[var(--color-navy)] text-white'
+                    ? 'bg-[var(--color-accent)] text-white'
                     : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200 hover:text-[var(--color-navy)]'
                 }`}
               >
@@ -355,7 +355,7 @@ export default function SchedulePage() {
                           <button
                             type="button"
                             onClick={() => setSmsFor(a)}
-                            className="rounded-lg bg-[var(--color-navy)] px-2 py-1 font-semibold text-white hover:opacity-90"
+                            className="rounded-lg bg-[var(--color-accent)] px-2 py-1 font-semibold text-white hover:opacity-90"
                           >
                             Remind
                           </button>
@@ -381,7 +381,7 @@ export default function SchedulePage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="ui-table w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                   <th className="pb-2 pr-4 font-semibold">Child</th>
@@ -485,7 +485,7 @@ export default function SchedulePage() {
                               <button
                                 type="button"
                                 onClick={() => setSmsFor(a)}
-                                className="rounded-lg bg-[var(--color-navy)] px-2.5 py-1 text-white hover:opacity-90"
+                                className="rounded-lg bg-[var(--color-accent)] px-2.5 py-1 text-white hover:opacity-90"
                               >
                                 Remind
                               </button>

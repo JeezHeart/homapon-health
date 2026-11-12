@@ -1,161 +1,83 @@
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { apiEnabled } from '../data/api';
-import { ROLE_LABEL } from '../state/store-context';
-import { useStore } from '../state/store-context';
+import { ROLE_LABEL, useStore } from '../state/store-context';
+import Dialog from './Dialog';
+import NavIcon from './NavIcon';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/children', label: 'Child Records' },
-  { to: '/schedule', label: 'Schedule' },
-  { to: '/records', label: 'Records' },
-  { to: '/record-review', label: 'Record Review' },
-  { to: '/sms', label: 'SMS' },
-  { to: '/reports', label: 'Reports' },
-  { to: '/settings', label: 'Settings' },
-];
+  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
+  { to: '/children', label: 'Child Records', icon: 'children' },
+  { to: '/schedule', label: 'Schedule', icon: 'calendar' },
+  { to: '/records', label: 'Records', icon: 'records' },
+  { to: '/record-review', label: 'Record Review', icon: 'review' },
+  { to: '/sms', label: 'SMS', icon: 'sms' },
+  { to: '/reports', label: 'Reports', icon: 'reports' },
+  { to: '/settings', label: 'Settings', icon: 'settings' },
+] as const;
 
-const focusRing =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
-
-function sidebarNavClass(isActive: boolean): string {
-  const base = `block w-full rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${focusRing}`;
-  return isActive
-    ? `${base} bg-[var(--color-accent)] text-white`
-    : `${base} text-slate-300 hover:bg-white/10 hover:text-white`;
+export function Brand() {
+  return <div className="flex items-center gap-3">
+    <span aria-hidden="true" className="brand-mark">H<span className="brand-dot" /></span>
+    <div><p className="text-base font-bold tracking-tight">Homapon Health</p><p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">Child immunization care</p></div>
+  </div>;
 }
 
-function topNavClass(isActive: boolean): string {
-  const base = `whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${focusRing}`;
-  return isActive
-    ? `${base} bg-[var(--color-navy)] text-white`
-    : `${base} text-[var(--color-navy-soft)] hover:bg-white`;
-}
-
-function Brand({ dark = false }: { dark?: boolean }) {
-  return (
-    <div className="flex shrink-0 items-center gap-2">
-      <span
-        aria-hidden="true"
-        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--color-accent)] text-sm font-bold text-white"
-      >
-        H
-      </span>
-      <span
-        className={`whitespace-nowrap text-sm font-bold ${dark ? 'text-white' : 'text-[var(--color-navy)]'}`}
-      >
-        Homapon Health
-      </span>
-    </div>
-  );
-}
-
-function WorkerIdentity({ dark = false }: { dark?: boolean }) {
-  const { demoUser } = useStore();
-  const nameClass = dark ? 'text-white' : 'text-[var(--color-navy)]';
-  const subClass = dark ? 'text-slate-300' : 'text-[var(--color-navy-soft)]';
-  return (
-    <div className="flex shrink-0 items-center gap-2">
-      <span
-        aria-hidden="true"
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-bold text-white"
-      >
-        {(demoUser?.name.trim().charAt(0) ?? 'H').toUpperCase()}
-      </span>
-      <span className="whitespace-nowrap text-xs leading-tight">
-        <span className={`block font-semibold ${nameClass}`}>
-          {demoUser?.name ?? 'Health Worker'}
-        </span>
-        <span className={`block ${subClass}`}>
-          {demoUser ? ROLE_LABEL[demoUser.role] : 'Brgy. Homapon'}
-        </span>
-      </span>
-    </div>
-  );
-}
-
-/**
- * App shell: fixed left sidebar on desktop, compact scrollable top
- * bar on mobile. Both render the same nav items. Sidebar and top
- * bar are hidden in print so documents print clean.
- */
 export default function Layout() {
   const location = useLocation();
-  const { connected } = useStore();
-  const showOfflineBanner = apiEnabled && !connected;
-  return (
-    <div className="min-h-screen lg:flex lg:items-stretch">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-[var(--color-navy)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
-      >
-        Skip to main content
-      </a>
+  const { demoUser, connected, signOut } = useStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const current = NAV_ITEMS.find((item) => item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to));
+  const pageTitle = location.pathname.startsWith('/children/') ? 'Child Profile' : current?.label ?? 'Homapon Health';
 
-      {/* Mobile / tablet top bar */}
-      <header className="no-print sticky top-0 z-10 border-b border-slate-200/70 bg-[var(--color-page)]/95 backdrop-blur lg:hidden">
-        <div className="flex items-center gap-4 overflow-x-auto px-4 py-3">
-          <Brand />
-          <nav aria-label="Main navigation" className="flex items-center gap-1">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => topNavClass(isActive)}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const closeOnDesktop = () => { if (desktop.matches) setMenuOpen(false); };
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => desktop.removeEventListener('change', closeOnDesktop);
+  }, []);
+
+  function navigation() {
+    return <nav aria-label="Main navigation"><ul className="space-y-1">
+      {NAV_ITEMS.map((item) => <li key={item.to}><NavLink to={item.to} end={'end' in item ? item.end : false}
+        onClick={() => setMenuOpen(false)}
+        className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
+        <NavIcon name={item.icon} /><span>{item.label}</span>
+      </NavLink></li>)}
+    </ul></nav>;
+  }
+
+  return <div className="app-ui min-h-screen lg:flex lg:items-stretch">
+    <a href="#main-content" className="skip-link">Skip to main content</a>
+    <aside aria-label="Main navigation sidebar" className="app-sidebar no-print">
+      <div className="border-b border-[var(--color-border)] px-6 py-7"><Brand /></div>
+      <div className="flex-1 overflow-y-auto px-4 py-6">{navigation()}</div>
+      <div className="border-t border-[var(--color-border)] p-4">
+        <p className="mb-3 px-3 text-xs leading-relaxed text-[var(--color-navy-soft)]">Barangay Homapon<br />Legazpi City</p>
+        <button type="button" onClick={signOut} className="nav-item w-full text-left"><NavIcon name="logout" />Sign out</button>
+      </div>
+    </aside>
+    <div className="min-w-0 flex-1">
+      <header className="app-header no-print">
+        <div className="flex min-w-0 items-center gap-3">
+          <button ref={menuButton} type="button" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)} className="icon-button lg:hidden"><NavIcon name="menu" /></button>
+          <div className="min-w-0"><p className="truncate text-sm font-semibold">{pageTitle}</p><p className="hidden text-xs text-[var(--color-navy-soft)] sm:block">Barangay Homapon Health Center</p></div>
+        </div>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span aria-hidden="true" className="staff-avatar">{(demoUser?.name.trim().charAt(0) || 'H').toUpperCase()}</span>
+          <div className="hidden min-w-0 text-sm sm:block"><p className="max-w-48 truncate font-semibold">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
         </div>
       </header>
-
-      {/* Desktop left sidebar */}
-      <aside
-        aria-label="Main navigation sidebar"
-        className="no-print sticky top-0 hidden h-screen w-60 shrink-0 flex-col bg-[var(--color-navy)] lg:flex"
-      >
-        <div className="px-5 pb-4 pt-6">
-          <Brand dark />
-        </div>
-        <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3">
-          <ul className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) => sidebarNavClass(isActive)}
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="border-t border-white/10 px-5 py-4">
-          <WorkerIdentity dark />
-        </div>
-      </aside>
-
-      <div className="min-w-0 flex-1 px-4 py-4 lg:px-8 lg:py-6">
-        {showOfflineBanner && (
-          <p
-            role="alert"
-            className="mb-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800"
-          >
-            Could not load records from the server. Check your connection or
-            make sure the backend server is running, then refresh the page.
-          </p>
-        )}
-        <main
-          id="main-content"
-          key={location.pathname}
-          className="page-enter min-w-0 rounded-3xl border border-slate-200/70 bg-[var(--color-surface)] p-4 shadow-sm sm:p-6"
-        >
-          <Outlet />
-        </main>
-      </div>
+      <main id="main-content" tabIndex={-1} key={location.pathname} className="app-content page-enter">
+        {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
+        <Outlet />
+      </main>
     </div>
-  );
+    {menuOpen && <Dialog title="Navigation" variant="drawer" onClose={() => setMenuOpen(false)} returnFocusRef={menuButton}>
+      <div className="mb-6"><Brand /></div>{navigation()}
+      <button type="button" onClick={signOut} className="nav-item mt-6 w-full text-left"><NavIcon name="logout" />Sign out</button>
+    </Dialog>}
+  </div>;
 }

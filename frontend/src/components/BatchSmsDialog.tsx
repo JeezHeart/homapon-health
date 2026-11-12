@@ -152,7 +152,7 @@ export default function BatchSmsDialog({
           <button
             type="button"
             onClick={onClose}
-            className="mx-auto rounded-xl bg-[var(--color-navy)] px-6 py-2 text-sm font-semibold text-white hover:opacity-90"
+            className="mx-auto rounded-xl bg-[var(--color-accent)] px-6 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
             Close
           </button>

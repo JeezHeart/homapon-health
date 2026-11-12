@@ -3,30 +3,10 @@ import type { FormEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
+import { Brand } from '../components/Layout';
 
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
-
-function BrandHead() {
-  return (
-    <div className="flex items-center gap-2">
-      <span
-        aria-hidden="true"
-        className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent)] text-base font-bold text-white"
-      >
-        H
-      </span>
-      <div>
-        <p className="text-lg font-bold leading-tight text-[var(--color-navy)]">
-          Homapon Health
-        </p>
-        <p className="text-xs text-[var(--color-navy-soft)]">
-          Brgy. Homapon · Legazpi City
-        </p>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Sign-in. Two honest modes:
@@ -71,10 +51,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-3xl border border-slate-200/70 bg-[var(--color-surface)] p-6 shadow-md sm:p-8">
-        <BrandHead />
-        <h1 className="mt-6 text-2xl font-bold text-[var(--color-navy)]">
+    <div className="app-ui login-shell">
+      <section className="login-intro" aria-label="Homapon Health">
+        <Brand />
+        <div className="max-w-lg">
+          <p className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">A clear record<br />for every child.</p>
+          <p className="mt-5 max-w-sm text-base leading-relaxed text-[var(--color-navy-soft)]">Child records, vaccination schedules, and growth monitoring in one place.</p>
+          <div className="mt-8 hidden border-t border-[var(--color-accent)]/20 pt-6 md:block"><p className="text-sm font-semibold">Barangay Homapon Health Center</p><p className="mt-1 text-sm text-[var(--color-navy-soft)]">Legazpi City</p></div>
+        </div>
+        <p className="hidden text-xs text-[var(--color-navy-soft)] md:block">For authorized health-center staff</p>
+      </section>
+      <div className="login-form-side"><div className="login-form-panel">
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
           Staff sign-in
         </h1>
 
@@ -84,8 +72,7 @@ export default function LoginPage() {
               role="note"
               className="mt-2 rounded-xl bg-teal-50 px-3 py-2 text-xs font-semibold text-[var(--color-accent-dark)]"
             >
-              Protected sign-in — passwords are checked by our secure server,
-              never stored in this app.
+              Sign in with your assigned staff account.
             </p>
             <form
               onSubmit={(e) => void handleReal(e)}
@@ -139,8 +126,7 @@ export default function LoginPage() {
               role="note"
               className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800"
             >
-              Demo sign-in — pick your role to enter. Real passwords and
-              accounts arrive with the backend phase.
+              Local practice only. These fictional records are separate from the connected website.
             </p>
             <form onSubmit={handleDemo} noValidate className="mt-4 flex flex-col gap-4">
               <div>
@@ -184,7 +170,7 @@ export default function LoginPage() {
             </form>
           </>
         )}
-      </div>
+      </div></div>
     </div>
   );
 }

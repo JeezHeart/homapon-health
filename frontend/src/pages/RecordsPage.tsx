@@ -90,7 +90,7 @@ export default function RecordsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+          <h1 className="page-title">
             Vaccination Records
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
@@ -201,7 +201,7 @@ export default function RecordsPage() {
                 >
                   <div className="accordion-glide-inner">
                     <div className="overflow-x-auto">
-                    <table className="w-full min-w-[620px] text-left text-sm">
+                    <table className="ui-table w-full min-w-[620px] text-left text-sm">
                       <thead>
                         <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                           {[

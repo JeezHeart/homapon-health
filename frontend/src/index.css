@@ -1,22 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* Soft Blue-Lavender & Clinical Teal (prd.md §4-5):
-     Calming blue-lavender canvas, luminous pale surface, deep midnight navy
-     typography/sidebar, high-contrast healthcare teal primary, and subtle indigo charts. */
-  --color-page: #eaeff8; /* calming soft blue-lavender canvas */
-  --color-surface: #f8fafc; /* crisp luminous pale surface */
-  --color-card: #ffffff; /* pure white cards */
-  --color-navy: #0f172a; /* deep midnight ink text + desktop sidebar */
-  --color-navy-soft: #475569; /* clear slate-600 subtext (WCAG AAA) */
-  --color-accent: #0a7b74; /* refined medical teal (WCAG AA > 5:1 on white) */
-  --color-accent-dark: #075953; /* deep teal for hover/active states */
-  --color-accent-soft: #e6f7f5; /* fresh pale teal for badges/highlights */
-  --color-highlight: #6366f1; /* harmonious indigo/violet for charts */
+  --color-page: #f0f3f5;
+  --color-surface: #f8fafb;
+  --color-card: #ffffff;
+  --color-navy: #172b33;
+  --color-navy-soft: #52636b;
+  --color-accent: #176b70;
+  --color-accent-dark: #105156;
+  --color-accent-soft: #e4f1f1;
+  --color-highlight: #786291;
+  --color-lavender-soft: #eee8f4;
+  --color-border: #dce5e8;
   --color-danger: #dc2626; /* crisp red for overdue / alerts */
   --color-warning: #d97706; /* warm amber for due-today */
   --color-success: #059669; /* vibrant emerald for completed doses */
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Segoe UI", system-ui, Roboto, sans-serif;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.875rem;
+  --radius-3xl: 1rem;
 }
 
 body {
@@ -25,6 +27,102 @@ body {
   font-family: var(--font-sans);
   margin: 0;
   -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+  :where(button:not(:disabled), select, summary) { cursor: pointer; }
+  :where(button:disabled) { cursor: not-allowed; }
+  .app-ui :where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 2.75rem;
+    background: var(--color-card);
+    border-color: var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 0.625rem 0.75rem;
+    color: var(--color-navy);
+  }
+  .app-ui :where(input, textarea)::placeholder { color: #647780; opacity: 1; }
+  .app-ui :where(input[type='checkbox'], input[type='radio']) { accent-color: var(--color-accent); }
+  .app-ui :where(input:disabled, select:disabled, textarea:disabled) { background: var(--color-page); }
+}
+
+@layer components {
+  .app-sidebar {
+    position: sticky; top: 0; display: none; height: 100dvh;
+    width: 15.5rem; flex: none; flex-direction: column;
+    border-right: 1px solid var(--color-border); background: var(--color-card);
+  }
+  .app-header {
+    display: flex; min-height: 5rem; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 1rem 2rem; border-bottom: 1px solid var(--color-border);
+    background: var(--color-card);
+  }
+  .app-content { width: 100%; max-width: 100rem; min-width: 0; margin: 0 auto; padding: 2rem; }
+  .page-title { font-size: 1.75rem; font-weight: 650; line-height: 1.25; letter-spacing: -0.035em; color: var(--color-navy); }
+  .app-content h1 { overflow-wrap: anywhere; }
+  .brand-mark {
+    position: relative; display: flex; width: 2.5rem; height: 2.5rem;
+    align-items: center; justify-content: center; flex: none;
+    border-radius: 0.75rem; background: var(--color-accent);
+    color: white; font-weight: 750; font-size: 1.25rem;
+  }
+  .brand-dot { position: absolute; right: -0.125rem; top: -0.125rem; width: 0.625rem; height: 0.625rem; border: 2px solid white; border-radius: 50%; background: #b9a7d0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 0.75rem; min-height: 2.875rem;
+    border-radius: var(--radius-xl); padding: 0.75rem; font-size: 0.875rem;
+    color: var(--color-navy-soft); font-weight: 500; transition: background-color 140ms, color 140ms;
+  }
+  .nav-item:hover { background: var(--color-page); color: var(--color-navy); }
+  .nav-item-active { color: var(--color-accent-dark); background: var(--color-accent-soft); font-weight: 650; }
+  .nav-item-active:hover { background: var(--color-accent-soft); }
+  .icon-button {
+    display: inline-flex; width: 2.75rem; height: 2.75rem; flex: none;
+    align-items: center; justify-content: center; border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); background: white; color: var(--color-navy-soft);
+  }
+  .icon-button:hover { background: var(--color-page); }
+  .staff-avatar { display: flex; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; flex: none; border-radius: 50%; background: var(--color-lavender-soft); color: #604674; font-size: 0.875rem; font-weight: 700; }
+  .skip-link { position: fixed; left: 1rem; top: 1rem; z-index: 70; transform: translateY(-200%); border-radius: var(--radius-xl); background: var(--color-navy); color: white; padding: 0.75rem 1rem; }
+  .skip-link:focus { transform: none; }
+  .health-card { min-width: 0; border: 1px solid #e9eef0; border-radius: 1rem; background: var(--color-card); padding: 1.5rem; box-shadow: 0 2px 8px #172b3302; }
+  .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: #172b3366; }
+  .dialog-panel { width: 100%; max-width: 34rem; max-height: calc(100dvh - 2rem); overflow-y: auto; border: 1px solid var(--color-border); border-radius: 1rem; background: white; padding: 1.5rem; box-shadow: 0 20px 70px #172b3326; }
+  .drawer-backdrop { justify-content: flex-start; padding: 0; }
+  .drawer-panel { max-width: min(20rem, 90vw); height: 100dvh; max-height: 100dvh; border-radius: 0 1rem 1rem 0; padding: 1.25rem; }
+  .summary-stat { display: flex; min-width: 0; min-height: 12rem; flex-direction: column; align-items: stretch; gap: 1rem; padding: 1.25rem; border: 1px solid #e9eef0; border-radius: 0.875rem; background: #f9fbfc; transition: border-color 140ms; }
+  .summary-stat:hover { border-color: #94b8c0; }
+  .summary-stat-highlight { background: #d5e7ed; border-color: #d5e7ed; }
+  .summary-stat-value { display: block; font-size: 2rem; line-height: 1.15; font-weight: 600; letter-spacing: -0.04em; }
+  .summary-stat-icon { display: flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center; flex: none; border-radius: 50%; background: white; color: var(--color-navy); box-shadow: 0 3px 12px #172b3305; }
+  .ui-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+  .ui-table thead { background: var(--color-surface); color: var(--color-navy-soft); }
+  .ui-table th { font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+  .ui-table th, .ui-table td { padding: 0.875rem 1rem; vertical-align: middle; }
+  .ui-table td { border-bottom: 1px solid #edf1f3; }
+  .ui-table tbody tr:hover { background: var(--color-surface); }
+  .ui-table tbody tr:last-child td { border-bottom: 0; }
+  .login-shell { display: grid; min-height: 100dvh; grid-template-columns: minmax(0, 1fr) minmax(24rem, 1fr); }
+  .login-intro { display: flex; flex-direction: column; justify-content: space-between; gap: 4rem; padding: 3rem; background: #e4f1f1; }
+  .login-form-side { display: flex; align-items: center; justify-content: center; padding: 3rem; background: white; }
+  .login-form-panel { width: 100%; max-width: 24rem; }
+  .system-state { display: flex; min-height: 100dvh; align-items: center; justify-content: center; padding: 1.5rem; }
+  .system-state-panel { width: 100%; max-width: 30rem; border: 1px solid var(--color-border); border-radius: 1rem; background: white; padding: 2rem; }
+  @media (min-width: 1024px) { .app-sidebar { display: flex; } }
+  @media (max-width: 767px) {
+    .app-header { min-height: 4.5rem; padding: 0.75rem 1rem; }
+    .app-content { padding: 1.25rem 1rem; }
+    .health-card { padding: 1rem; }
+    .login-shell { grid-template-columns: minmax(0, 1fr); }
+    .login-intro { gap: 1.5rem; padding: 2rem 1.5rem; }
+    .login-form-side { padding: 2rem 1.5rem; }
+    .dialog-panel { padding: 1.25rem; }
+    .app-ui :where(input:not([type='checkbox']):not([type='radio']), select, textarea) { font-size: 1rem; }
+  }
 }
 
 /* Tabular figures so dates, doses, and counts align in table columns */
@@ -37,6 +135,10 @@ table {
   .no-print {
     display: none !important;
   }
+  body, .app-content { background: white; color: black; }
+  .app-content { max-width: none; padding: 0; }
+  .health-card { box-shadow: none; border-color: #999; break-inside: avoid; }
+  .ui-table thead { background: white; color: black; }
 }
 
 /* Dashboard chart entrance motion (presentation only; data unchanged) */

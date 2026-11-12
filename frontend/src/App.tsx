@@ -20,14 +20,12 @@ function Shell() {
   const { demoUser, dataReady, connected, signOut } = useStore();
   if (!dataReady)
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <p role="status" className="text-sm font-medium text-[var(--color-navy-soft)]">
-          Connecting to the server…
-        </p>
+      <div className="app-ui system-state">
+        <div className="system-state-panel" role="status" aria-live="polite"><p className="text-lg font-semibold">Opening Homapon Health</p><p className="mt-2 text-sm text-[var(--color-navy-soft)]">Connecting to the server…</p><div aria-hidden="true" className="mt-5 space-y-3 motion-safe:animate-pulse"><div className="h-3 w-3/4 rounded bg-[var(--color-accent-soft)]" /><div className="h-3 w-1/2 rounded bg-[var(--color-page)]" /></div></div>
       </div>
     );
   if (!demoUser) return <LoginPage />;
-  if (apiEnabled && !connected) return <div className="mx-auto max-w-lg p-8"><h1 className="text-xl font-bold">Records could not be loaded</h1><p role="alert" className="my-4">Your records are unavailable. Check your connection, then try again.</p><button className="mr-4 underline" onClick={() => window.location.reload()}>Reload records</button><button className="underline" onClick={signOut}>Sign out</button></div>;
+  if (apiEnabled && !connected) return <div className="app-ui system-state"><div className="system-state-panel"><h1 className="text-xl font-semibold">Records could not be loaded</h1><p role="alert" className="my-4 text-sm text-[var(--color-navy-soft)]">Your records are unavailable. Check your connection, then try again.</p><div className="flex flex-wrap gap-3"><button className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white" onClick={() => window.location.reload()}>Reload records</button><button className="rounded-xl border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold" onClick={signOut}>Sign out</button></div></div></div>;
   return (
     <BrowserRouter>
       <Routes>
@@ -48,7 +46,7 @@ function Shell() {
 }
 
 export default function App() {
-  if (import.meta.env.PROD && (!apiEnabled || !supabase)) return <div className="mx-auto max-w-lg p-8"><h1 className="text-xl font-bold">Website configuration incomplete</h1><p role="alert" className="mt-4">The staff connection is not configured. Please contact the administrator.</p></div>;
+  if (import.meta.env.PROD && (!apiEnabled || !supabase)) return <div className="app-ui system-state"><div className="system-state-panel"><h1 className="text-xl font-semibold">Website configuration incomplete</h1><p role="alert" className="mt-4 text-sm text-[var(--color-navy-soft)]">The staff connection is not configured. Please contact the administrator.</p></div></div>;
   return (
     <StoreProvider>
       <Shell />

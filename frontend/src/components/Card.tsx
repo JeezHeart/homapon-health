@@ -8,11 +8,11 @@ interface CardProps {
 
 export default function Card({ title, action, children }: CardProps) {
   return (
-    <div className="min-w-0 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
+    <div className="health-card">
       {(title ?? action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           {title && (
-            <h2 className="text-lg font-bold tracking-tight text-[var(--color-navy)]">
+            <h2 className="text-base font-semibold tracking-tight text-[var(--color-navy)]">
               {title}
             </h2>
           )}

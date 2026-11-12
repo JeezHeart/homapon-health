@@ -18,7 +18,7 @@ export default function RecordReviewPage() {
   const ready = (practice || !!childId) && input.problems.length === 0;
   function clear() { setResult(null); }
   return <div className="space-y-6">
-    <h1 className="text-2xl font-bold">Record Review</h1>
+    <h1 className="page-title">Record Review</h1>
     <p className="rounded-xl border border-amber-300 bg-amber-50 p-4">Experimental record review. This checks unusual patterns in recorded vaccine dates. It does not assess health or confirm a mistake or missed vaccination. An advantage over simple checks has not been demonstrated.</p>
     <Card title="Choose information to review">
       <label htmlFor="review-child" className="block font-medium">Child record</label>
@@ -33,7 +33,7 @@ export default function RecordReviewPage() {
       {practice && <p className="mt-3 font-semibold">Practice example: fictional dates, not a saved child record.</p>}
     </Card>
     {(childId || practice) && <Card title="Dates used by the model">
-      <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="p-2">Vaccine</th><th>Dose 1</th><th>Dose 2</th><th>Dose 3</th></tr></thead><tbody>
+      <div className="overflow-x-auto"><table className="ui-table w-full text-left"><thead><tr><th className="p-2">Vaccine</th><th>Dose 1</th><th>Dose 2</th><th>Dose 3</th></tr></thead><tbody>
         {REVIEW_SERIES.map((v, i) => <tr key={v}><th className="p-2">{v === 'penta' ? 'Pentavalent' : v.toUpperCase()}</th>{input.dates.slice(i*3, i*3+3).map((d, j) => <td className="p-2" key={j}>{d || 'Not recorded'}</td>)}</tr>)}
       </tbody></table></div>
       <p className="my-3">The model compares the gaps in days between the first, second, and third doses of these three vaccines.</p>

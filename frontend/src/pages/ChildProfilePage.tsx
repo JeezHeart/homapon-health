@@ -73,7 +73,7 @@ export default function ChildProfilePage() {
         action={
           <Link
             to="/children"
-            className="mt-2 rounded-xl bg-[var(--color-navy)] px-4 py-2 text-sm font-semibold text-white"
+            className="mt-2 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white"
           >
             Back to child records
           </Link>
@@ -105,7 +105,7 @@ export default function ChildProfilePage() {
       </Link>
 
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+        <h1 className="page-title">
           {childName(child)}
         </h1>
         <span
@@ -148,7 +148,7 @@ export default function ChildProfilePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
               tab === t.id
-                ? 'bg-[var(--color-navy)] text-white'
+                ? 'bg-[var(--color-accent)] text-white'
                 : 'bg-white text-[var(--color-navy-soft)] hover:bg-slate-50'
             }`}
           >
@@ -221,7 +221,7 @@ export default function ChildProfilePage() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
+              <table className="ui-table w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                     <th className="pb-2 pr-4 font-semibold">Vaccine / dose</th>
@@ -401,7 +401,7 @@ export default function ChildProfilePage() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-xl bg-[var(--color-navy)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             >
               Print / Save as PDF
             </button>

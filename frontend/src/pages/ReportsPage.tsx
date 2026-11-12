@@ -103,7 +103,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-navy)]">Reports</h1>
+        <h1 className="page-title">Reports</h1>
         <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
           Summaries for the midwife · same data as the dashboard · {children.length} child{children.length === 1 ? '' : 'ren'} on file
         </p>
@@ -127,7 +127,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-xl bg-[var(--color-navy)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
           Print / Save as PDF
         </button>
@@ -190,7 +190,7 @@ export default function ReportsPage() {
       {/* Coverage by Purok (Barangay Outreach) */}
       <Card title="Purok Breakdown (Reaching Every Purok)">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
+          <table className="ui-table w-full min-w-[560px] text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                 <th className="pb-2 pr-4 font-semibold">Purok</th>
@@ -277,7 +277,7 @@ export default function ReportsPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[420px] text-left text-sm">
+            <table className="ui-table w-full min-w-[420px] text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                   <th className="pb-2 pr-4 font-semibold">Vaccine</th>
@@ -366,7 +366,7 @@ export default function ReportsPage() {
       {/* Per-child progress (uses recordsForChild so the import stays honest) */}
       <Card title="Doses per child">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px] text-left text-sm">
+          <table className="ui-table w-full min-w-[500px] text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                 <th className="pb-2 pr-4 font-semibold">Child</th>

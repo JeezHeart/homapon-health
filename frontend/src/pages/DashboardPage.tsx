@@ -25,26 +25,26 @@ function TopStat({
   label,
   value,
   icon,
+  description,
+  to,
+  highlighted = false,
 }: {
   label: string;
   value: number;
   icon: React.ReactNode;
+  description: string;
+  to: string;
+  highlighted?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--color-accent-dark)] shadow-sm"
-      >
-        {icon}
+    <Link to={to} className={`summary-stat ${highlighted ? 'summary-stat-highlight' : ''}`}>
+      <span className="flex items-center gap-3">
+        <span aria-hidden="true" className="summary-stat-icon">{icon}</span>
+        <span className="text-base font-medium">{label}</span>
       </span>
-      <span className="text-xs leading-tight text-[var(--color-navy-soft)]">
-        <span className="block text-xl font-bold leading-none text-[var(--color-navy)]">
-          {value}
-        </span>
-        {label}
-      </span>
-    </div>
+      <span className="summary-stat-value">{value.toLocaleString('en-PH')}</span>
+      <span className="mt-auto block max-w-60 text-xs leading-relaxed text-[var(--color-navy-soft)]">{description}</span>
+    </Link>
   );
 }
 
@@ -100,22 +100,23 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Greeting + top stats (reference header row) */}
+      {/* Summary uses recorded counts, without inferred trend percentages. */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-navy)]">
-            Welcome back
+          <h1 className="page-title">
+            Immunization dashboard
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
             Here is today&apos;s immunization update · {formatDate(todayISO())}
           </p>
         </div>
-        <div className="flex flex-wrap gap-5">
-          <TopStat label="Total children" value={children.length} icon={<ChildrenIcon />} />
-          <TopStat label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} />
-          <TopStat label="Overdue" value={overdue.length} icon={<AlertIcon />} />
-        </div>
       </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <TopStat label="Total children" value={children.length} icon={<ChildrenIcon />} description="Children registered at the health center. View child records." to="/children" />
+          <TopStat label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="Children with all required doses recorded. View child records." to="/children" highlighted />
+          <TopStat label="Overdue appointments" value={overdue.length} icon={<AlertIcon />} description="Scheduled vaccinations past their date. View appointments for follow-up." to="/schedule?filter=overdue" />
+          <TopStat label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description="Vaccination doses recorded this month. View vaccination records." to="/records" />
+        </div>
 
       <Card title="Next clinic session">
         {session ? (
@@ -153,8 +154,10 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {/* Three-column cards (reference card row) */}
-      <div className="grid gap-4 xl:grid-cols-3">
+      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
+
+      {/* Existing vaccination charts. */}
+      <div className="grid gap-4 xl:grid-cols-2">
         <Card
           title="Doses overview"
           action={
@@ -168,53 +171,8 @@ export default function DashboardPage() {
         <Card title="Monthly trend">
           <MonthlyTrendChart records={records} />
         </Card>
-        <Card
-          title="Reminders"
-          action={
-            <Link
-              to="/sms"
-              className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
-            >
-              View all
-            </Link>
-          }
-        >
-          {reminders.length === 0 ? (
-            <EmptyState
-              title="No reminders yet"
-              message="Simulated SMS activity will appear here."
-            />
-          ) : (
-            <ul className="flex flex-col">
-              {reminders.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-start gap-3 border-t border-slate-100 py-2.5 first:border-t-0 first:pt-0"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      s.status === 'Demo sent' || s.status === 'Sent'
-                        ? 'bg-emerald-500'
-                        : 'bg-red-500'
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--color-navy)]">
-                      {s.message}
-                    </p>
-                    <p className="text-xs text-[var(--color-navy-soft)]">
-                      {s.status} · {timeAgo(s.sentAt)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
 
-      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
+      </div>
 
       {/* Bottom strip: upcoming list + spotlight + quick actions */}
       <div className="grid gap-4 xl:grid-cols-3">
@@ -297,7 +255,7 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setSmsOpen(true)}
-                    className="rounded-xl bg-[var(--color-navy)] px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    className="rounded-xl bg-[var(--color-accent)] px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                   >
                     Prepare SMS
                   </button>
@@ -311,7 +269,51 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Card
+            title="Reminders"
+            action={
+              <Link
+                to="/sms"
+                className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
+              >
+                View all
+              </Link>
+            }
+          >
+            {reminders.length === 0 ? (
+              <EmptyState
+                title="No reminders yet"
+                message="SMS reminder history will appear here."
+              />
+            ) : (
+              <ul className="flex flex-col">
+                {reminders.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex items-start gap-3 border-t border-slate-100 py-2.5 first:border-t-0 first:pt-0"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        s.status === 'Demo sent' || s.status === 'Sent'
+                          ? 'bg-emerald-500'
+                          : 'bg-red-500'
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--color-navy)]">
+                        {s.message}
+                      </p>
+                      <p className="text-xs text-[var(--color-navy-soft)]">
+                        {s.status} · {timeAgo(s.sentAt)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
           <Card title="Recent activity">
             <ul className="flex flex-col text-sm">
               {recent.map((r) => (

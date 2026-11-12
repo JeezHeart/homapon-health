@@ -89,7 +89,7 @@ export default function ChildrenPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+          <h1 className="page-title">
             Child Records
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
@@ -121,7 +121,7 @@ export default function ChildrenPage() {
       )}
 
       <Card>
-        <div className="flex flex-col gap-3 md:flex-row">
+        <div className="flex flex-col items-start gap-3 xl:flex-row">
           <input
             type="search"
             aria-label="Search by child or guardian name"
@@ -130,7 +130,7 @@ export default function ChildrenPage() {
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             <select
               aria-label="Filter by purok"
               value={purokFilter}
@@ -194,7 +194,7 @@ export default function ChildrenPage() {
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-          <table className="w-full min-w-[940px] text-left text-sm">
+          <table className="ui-table w-full min-w-[940px] text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                 {['Child', 'Birth / age', 'Guardian', 'Mobile', 'Purok', 'Status', 'Next vaccine', 'Actions'].map(

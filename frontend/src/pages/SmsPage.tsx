@@ -79,7 +79,7 @@ export default function SmsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+        <h1 className="page-title">
           SMS Notifications
         </h1>
         <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
@@ -113,7 +113,7 @@ export default function SmsPage() {
             onClick={() => setTab('all')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'all'
-                ? 'bg-[var(--color-navy)] text-white'
+                ? 'bg-[var(--color-accent)] text-white'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -124,7 +124,7 @@ export default function SmsPage() {
             onClick={() => setTab('tomorrow')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'tomorrow'
-                ? 'bg-[var(--color-navy)] text-white'
+                ? 'bg-[var(--color-accent)] text-white'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -135,7 +135,7 @@ export default function SmsPage() {
             onClick={() => setTab('today')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'today'
-                ? 'bg-[var(--color-navy)] text-white'
+                ? 'bg-[var(--color-accent)] text-white'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -146,7 +146,7 @@ export default function SmsPage() {
             onClick={() => setTab('overdue')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'overdue'
-                ? 'bg-[var(--color-navy)] text-white'
+                ? 'bg-[var(--color-accent)] text-white'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
