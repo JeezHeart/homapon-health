@@ -1,5 +1,5 @@
 import type { Appointment, Child, DoseRecord } from '../data/mockData';
-import { childName, childStatus, completedDoses, extractPurok } from '../data/mockData';
+import { childName, isFullyImmunized, completedDoses, extractPurok } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
 import { calcAge, todayISO } from './dates';
 import { childDirectoryRows } from './childDirectory';
@@ -38,12 +38,11 @@ export function downloadCsv(filename: string, csvContent: string): void {
 }
 
 /**
- * Export DOH Target Client List (TCL) conforming to barangay immunization registry.
+ * Export the current vaccination register for the supplied children.
  */
-export function exportTargetClientList(
+export function exportVaccinationRegister(
   children: Child[],
   records: DoseRecord[],
-  appointments: Appointment[],
 ): void {
   const headers = [
     'Child ID',
@@ -54,7 +53,7 @@ export function exportTargetClientList(
     'Guardian',
     'Contact Number',
     'Purok',
-    'Status',
+    'Vaccination Status',
     'Completed Doses Count',
     'Vaccine',
     'Dose #',
@@ -68,7 +67,7 @@ export function exportTargetClientList(
 
   for (const child of children) {
     const childRecords = records.filter((r) => r.childId === child.id);
-    const status = childStatus(appointments, records, child.id);
+    const status = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
     const age = calcAge(child.birthDate);
 
     if (childRecords.length === 0) {
@@ -117,7 +116,7 @@ export function exportTargetClientList(
   }
 
   const csv = toCsvString(headers, rows);
-  downloadCsv(`Homapon_TCL_Immunization_${todayISO()}.csv`, csv);
+  downloadCsv(`Homapon_Vaccination_Register_${todayISO()}.csv`, csv);
 }
 
 /**
