@@ -69,17 +69,18 @@ body {
 }
 
 @layer components {
-  .app-frame { min-height: 100dvh; background: var(--color-page); }
+  .app-frame { width: 100%; min-height: 100dvh; margin: 0; background: var(--color-page); }
   .app-sidebar {
     position: sticky; top: 0; display: none; height: 100dvh;
     width: 16.25rem; flex: none; flex-direction: column;
-    border-right: 1px solid #e1e6e9; background: #f9fbfc;
+    border-right: 1px solid var(--color-border); background: #f9fbfc;
   }
   .app-header {
     display: flex; min-height: 5rem; align-items: center; justify-content: space-between;
     gap: 1rem; padding: 1rem 2rem; border-bottom: 1px solid var(--color-border);
     background: #f9fbfc;
   }
+  .sidebar-brand { display: flex; height: 5rem; flex: none; align-items: center; border-bottom: 1px solid var(--color-border); padding: 0 1.25rem; }
   .app-content { width: 100%; max-width: 100rem; min-width: 0; margin: 0 auto; padding: 1.5rem; }
   .page-title { font-size: 1.75rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.025em; color: var(--color-navy); }
   .app-content h1 { overflow-wrap: anywhere; }
@@ -98,6 +99,7 @@ body {
   .nav-item:hover { background: var(--color-page); color: var(--color-navy); }
   .nav-item-active { color: var(--color-navy); background: var(--color-accent-soft); font-weight: 400; }
   .nav-item-active:hover { background: var(--color-accent-soft); }
+  .nav-item:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -3px; }
   .icon-button {
     display: inline-flex; width: 2.75rem; height: 2.75rem; flex: none;
     align-items: center; justify-content: center; border: 1px solid var(--color-border);
@@ -202,10 +204,6 @@ body {
   .system-state { display: flex; min-height: 100dvh; align-items: center; justify-content: center; padding: 1.5rem; }
   .system-state-panel { width: 100%; max-width: 30rem; border: 1px solid var(--color-border); border-radius: 1rem; background: white; padding: 2rem; }
   @media (min-width: 1024px) { .app-sidebar { display: flex; } .dashboard-overview { grid-template-columns: minmax(0, 2fr) minmax(17rem, 1fr); } }
-  @media (min-width: 1280px) {
-    .app-frame { --frame-margin: clamp(1.5rem, 5vw, 5rem); width: calc(100% - 3rem); max-width: 89.375rem; min-height: calc(100dvh - 2 * var(--frame-margin)); margin: var(--frame-margin) auto; box-shadow: 0 12px 60px #0f12140a; }
-    .app-frame .app-sidebar { top: var(--frame-margin); height: calc(100dvh - 2 * var(--frame-margin)); }
-  }
   @media (max-width: 767px) {
     .app-header { min-height: 4.5rem; padding: 0.75rem 1rem; }
     .header-actions, .header-identity { gap: 0.5rem; }
