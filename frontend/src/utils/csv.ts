@@ -2,6 +2,7 @@ import type { Appointment, Child, DoseRecord } from '../data/mockData';
 import { childName, childStatus, completedDoses, extractPurok } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
 import { calcAge, todayISO } from './dates';
+import { childDirectoryRows } from './childDirectory';
 
 function escapeCsvField(val: string | number | undefined | null): string {
   if (val === undefined || val === null) return '';
@@ -185,9 +186,10 @@ export function exportChildrenList(
     'Completed Doses',
     'Immunization Status',
     'Notes',
+    'Next appointment status',
   ];
 
-  const rows = children.map((c) => [
+  const rows = childDirectoryRows(children, records, appointments).map(({ child: c, vaccination, next }) => [
     childName(c),
     c.sex,
     c.birthDate,
@@ -196,8 +198,9 @@ export function exportChildrenList(
     c.guardianMobile,
     extractPurok(c.purok),
     completedDoses(records, c.id),
-    childStatus(appointments, records, c.id),
+    vaccination,
     c.notes ?? '',
+    next ? ({ upcoming: 'Upcoming', 'due-today': 'Due today', overdue: 'Overdue', completed: 'Completed' })[next.status] : 'No appointment booked',
   ]);
 
   const csv = toCsvString(headers, rows);

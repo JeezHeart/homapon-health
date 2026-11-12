@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import AppointmentDialog from '../components/AppointmentDialog';
 import ChildForm from '../components/ChildForm';
@@ -15,7 +15,7 @@ import {
   appointmentStatus,
   childById,
   childName,
-  childStatus,
+  isFullyImmunized,
   completedDoses,
   enrichedAppointments,
   nextAppointment,
@@ -42,16 +42,21 @@ type TabId = (typeof TABS)[number]['id'];
 const CHILD_BADGE: Record<string, string> = {
   'Fully immunized': 'bg-emerald-100 text-emerald-800',
   'Partially immunized': 'bg-sky-100 text-sky-800',
-  Overdue: 'bg-red-100 text-red-800',
 };
 
 export default function ChildProfilePage() {
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const returnTo = typeof location.state?.directory === 'string' && /^\/children(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
   const [searchParams] = useSearchParams();
-  const { children, records, appointments, smsLog, addDoseRecord, addAppointment, updateChild, updateAppointment } =
+  const { children, records, appointments, smsLog, demoUser, deleteChild, addDoseRecord, addAppointment, updateChild, updateAppointment } =
     useStore();
   const [addingRecord, setAddingRecord] = useState(false);
   const [editingChild, setEditingChild] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [correcting, setCorrecting] = useState<DoseRecord | null>(null);
   const [rescheduling, setRescheduling] = useState<EnrichedAppointment | null>(null);
   const [smsOpen, setSmsOpen] = useState(false);
@@ -65,14 +70,25 @@ export default function ChildProfilePage() {
     TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') as TabId : 'overview',
   );
 
+  async function removeChild() {
+    if (!child || deleting || demoUser?.role !== 'midwife') return;
+    setDeleting(true); setDeleteError('');
+    try {
+      const result = await deleteChild(child.id);
+      if (!result.ok) { setDeleteError(result.error); return; }
+      navigate(returnTo, { replace: true });
+    } catch (cause) { setDeleteError(cause instanceof Error ? cause.message : 'Could not delete child record.'); }
+    finally { setDeleting(false); }
+  }
+
   if (!child) {
     return (
       <EmptyState
         title="Child not found"
-        message="This record does not exist in the demo registry."
+        message="This child record is not available."
         action={
           <Link
-            to="/children"
+            to={returnTo}
             className="mt-2 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white"
           >
             Back to child records
@@ -90,7 +106,7 @@ export default function ChildProfilePage() {
     .map((a) => ({ ...a, status: appointmentStatus(a, records) as AppointmentStatus }));
   const sms = smsForChild(smsLog, child.id);
   const done = completedDoses(records, child.id);
-  const status = childStatus(appointments, records, child.id);
+  const status = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
   const next = nextAppointment(appointments, children, records, child.id);
   const smsTarget =
     next && next.status !== 'completed' ? next : undefined;
@@ -98,7 +114,7 @@ export default function ChildProfilePage() {
   return (
     <div className="flex flex-col gap-4">
       <Link
-        to="/children"
+        to={returnTo}
         className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
       >
         ← Back to child records
@@ -109,6 +125,7 @@ export default function ChildProfilePage() {
           {childName(child)}
         </h1>
         <span
+          aria-label={`Vaccination status: ${status}`}
           className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${CHILD_BADGE[status]}`}
         >
           {status}
@@ -133,6 +150,7 @@ export default function ChildProfilePage() {
         >
           Edit record
         </button>
+        {demoUser?.role === 'midwife' && <button type="button" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} className="rounded-xl border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Delete child record</button>}
       </div>
       <p className="-mt-2 text-sm text-[var(--color-navy-soft)]">
         Born {formatDate(child.birthDate)} ({calcAge(child.birthDate)}) · {child.sex} ·{' '}
@@ -326,6 +344,13 @@ export default function ChildProfilePage() {
           />
         </Dialog>
       )}
+
+      {confirmDelete && demoUser?.role === 'midwife' && <Dialog title="Delete child record" onClose={() => { if (!deleting) setConfirmDelete(false); }}>
+        <p className="text-sm">Delete the record for <strong>{childName(child)}</strong>?</p>
+        <p className="mt-3 text-sm text-[var(--color-navy-soft)]">This also deletes their vaccination records, appointments, growth measurements, and SMS history. This cannot be undone.</p>
+        {deleteError && <p role="alert" className="mt-3 text-sm text-red-700">{deleteError}</p>}
+        <div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={deleting} onClick={() => setConfirmDelete(false)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm">Keep record</button><button type="button" disabled={deleting} onClick={() => void removeChild()} className="rounded-xl bg-red-700 px-4 py-2 text-sm text-white">{deleting ? 'Deleting...' : 'Delete child record'}</button></div>
+      </Dialog>}
 
       {correcting && (
         <Dialog title="Edit vaccination entry" onClose={() => setCorrecting(null)}>
