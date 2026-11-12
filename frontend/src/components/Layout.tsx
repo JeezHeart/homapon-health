@@ -51,11 +51,11 @@ export default function Layout() {
     </ul></nav>;
   }
 
-  return <div className="app-ui min-h-screen lg:flex lg:items-stretch">
+  return <div className="app-ui app-frame lg:flex lg:items-stretch">
     <a href="#main-content" className="skip-link">Skip to main content</a>
     <aside aria-label="Main navigation sidebar" className="app-sidebar no-print">
-      <div className="border-b border-[var(--color-border)] px-6 py-7"><Brand /></div>
-      <div className="flex-1 overflow-y-auto px-4 py-6">{navigation()}</div>
+      <div className="border-b border-[var(--color-border)] px-5 py-5"><Brand /></div>
+      <div className="flex-1 overflow-y-auto px-3 py-4">{navigation()}</div>
       <div className="border-t border-[var(--color-border)] p-4">
         <button type="button" onClick={signOut} className="nav-item w-full text-left"><NavIcon name="logout" />Sign out</button>
       </div>

@@ -72,11 +72,11 @@ export default function DashboardAppointments() {
           <td><input type="checkbox" aria-label={`Select ${childName(appointment.child)}, ${vaccineLabel(appointment)}`} checked={selected.has(appointment.id)} disabled={appointment.status === 'completed'} onChange={() => setSelected((previous) => { const next = new Set(previous); if (next.has(appointment.id)) next.delete(appointment.id); else next.add(appointment.id); return next; })} /></td>
           <td className="text-xs">{String(index + 1).padStart(2, '0')}</td>
           <td><Link to={`/children/${appointment.child.id}`} className="flex items-center gap-3"><span className="child-avatar" aria-hidden="true">{appointment.child.firstName.charAt(0)}{appointment.child.lastName.charAt(0)}</span><span className="whitespace-nowrap"><span className="block text-sm font-medium">{childName(appointment.child)}</span><span className="block text-xs text-[var(--color-navy-soft)]">{vaccineLabel(appointment)}</span></span></Link></td>
-          <td className="whitespace-nowrap text-xs">{calcAge(appointment.child.birthDate)}</td>
-          <td className="whitespace-nowrap text-xs">{formatDate(appointment.child.birthDate)}</td>
+          <td className="whitespace-nowrap text-sm">{calcAge(appointment.child.birthDate)}</td>
+          <td className="whitespace-nowrap text-sm">{formatDate(appointment.child.birthDate)}</td>
           <td><StatusBadge status={appointment.status} /></td>
-          <td className="whitespace-nowrap text-xs">{appointment.child.guardian}</td>
-          <td className="whitespace-nowrap text-xs">{appointment.child.guardianMobile}</td>
+          <td className="whitespace-nowrap text-sm">{appointment.child.guardian}</td>
+          <td className="whitespace-nowrap text-sm">{appointment.child.guardianMobile}</td>
           <td><div className="flex items-center gap-2"><button type="button" className="table-action" disabled={appointment.status === 'completed'} aria-label={`Reschedule ${childName(appointment.child)}, ${vaccineLabel(appointment)}`} onClick={() => setEditing(appointment)}><NavIcon name="edit" /></button><button type="button" className="table-action table-action-danger" disabled={appointment.status === 'completed'} aria-label={`Remove appointment for ${childName(appointment.child)}, ${vaccineLabel(appointment)}`} onClick={() => { setError(''); setRemoving(appointment); }}><NavIcon name="trash" /></button></div></td>
         </tr>)}</tbody>
       </table></div>
