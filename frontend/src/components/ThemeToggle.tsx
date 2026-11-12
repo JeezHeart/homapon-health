@@ -4,6 +4,7 @@ import NavIcon from './NavIcon';
 export default function ThemeToggle() {
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark');
   useEffect(() => {
+    const syncCurrentPage = () => setDark(document.documentElement.dataset.theme === 'dark');
     const sync = (event: StorageEvent) => {
       if (event.key !== 'homapon-theme' && event.key !== null) return;
       const next = event.newValue === 'dark';
@@ -11,15 +12,20 @@ export default function ThemeToggle() {
       setDark(next);
     };
     window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
+    window.addEventListener('homapon-theme-change', syncCurrentPage);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('homapon-theme-change', syncCurrentPage);
+    };
   }, []);
 
   function toggle() {
-    const next = !dark;
+    const next = document.documentElement.dataset.theme !== 'dark';
     document.documentElement.dataset.theme = next ? 'dark' : 'light';
     setDark(next);
     try { localStorage.setItem('homapon-theme', next ? 'dark' : 'light'); }
     catch { /* The toggle still works when browser storage is restricted. */ }
+    window.dispatchEvent(new Event('homapon-theme-change'));
   }
 
   return <div className="theme-toggle no-print">
