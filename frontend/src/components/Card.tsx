@@ -12,7 +12,7 @@ export default function Card({ title, action, children }: CardProps) {
       {(title ?? action) && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           {title && (
-            <h2 className="text-base font-semibold tracking-tight text-[var(--color-navy)]">
+            <h2 className="text-base font-medium text-[var(--color-navy)]">
               {title}
             </h2>
           )}

@@ -148,7 +148,7 @@ export default function ChildProfilePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
               tab === t.id
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                 : 'bg-white text-[var(--color-navy-soft)] hover:bg-slate-50'
             }`}
           >

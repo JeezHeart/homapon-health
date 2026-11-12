@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
 import Dialog from './Dialog';
 import NavIcon from './NavIcon';
+import { overdueAppointments } from '../data/mockData';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -19,13 +20,15 @@ const NAV_ITEMS = [
 export function Brand() {
   return <div className="flex items-center gap-3">
     <span aria-hidden="true" className="brand-mark">H<span className="brand-dot" /></span>
-    <div><p className="text-base font-bold tracking-tight">Homapon Health</p><p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">Child immunization care</p></div>
+    <p className="text-lg font-semibold tracking-tight">Homapon Health</p>
   </div>;
 }
 
 export default function Layout() {
   const location = useLocation();
-  const { demoUser, connected, signOut } = useStore();
+  const { demoUser, connected, signOut, appointments, children, records } = useStore();
+  const navigate = useNavigate();
+  const overdueCount = overdueAppointments(appointments, children, records).length;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const current = NAV_ITEMS.find((item) => item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to));
@@ -54,20 +57,31 @@ export default function Layout() {
       <div className="border-b border-[var(--color-border)] px-6 py-7"><Brand /></div>
       <div className="flex-1 overflow-y-auto px-4 py-6">{navigation()}</div>
       <div className="border-t border-[var(--color-border)] p-4">
-        <p className="mb-3 px-3 text-xs leading-relaxed text-[var(--color-navy-soft)]">Barangay Homapon<br />Legazpi City</p>
         <button type="button" onClick={signOut} className="nav-item w-full text-left"><NavIcon name="logout" />Sign out</button>
       </div>
     </aside>
     <div className="min-w-0 flex-1">
       <header className="app-header no-print">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <button ref={menuButton} type="button" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)} className="icon-button lg:hidden"><NavIcon name="menu" /></button>
-          <div className="min-w-0"><p className="truncate text-sm font-semibold">{pageTitle}</p><p className="hidden text-xs text-[var(--color-navy-soft)] sm:block">Barangay Homapon Health Center</p></div>
+          <form role="search" className="header-search" key={location.key} onSubmit={(event) => {
+            event.preventDefault();
+            const query = new FormData(event.currentTarget).get('q')?.toString().trim() ?? '';
+            navigate(`/children${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+          }}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+            <input type="search" name="q" aria-label="Search child or guardian" placeholder="Search children" defaultValue={location.pathname === '/children' ? new URLSearchParams(location.search).get('q') ?? '' : ''} />
+          </form>
+          <span className="sr-only">{pageTitle}</span>
         </div>
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="header-actions">
+          <Link to="/schedule?filter=overdue" aria-label={`${overdueCount} overdue appointments`} className="header-icon hidden sm:inline-flex"><NavIcon name="bell" />{overdueCount > 0 && <span className="notification-count">{overdueCount}</span>}</Link>
+          <Link to="/sms" aria-label="SMS reminders" className="header-icon hidden sm:inline-flex"><NavIcon name="mail" /></Link>
+          <div className="header-identity"><div className="hidden min-w-0 text-right sm:block"><p className="max-w-48 truncate text-sm">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
           <span aria-hidden="true" className="staff-avatar">{(demoUser?.name.trim().charAt(0) || 'H').toUpperCase()}</span>
-          <div className="hidden min-w-0 text-sm sm:block"><p className="max-w-48 truncate font-semibold">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
+          </div>
+          <Link to="/settings" aria-label="Settings" className="header-settings"><NavIcon name="settings" /></Link>
         </div>
       </header>
       <main id="main-content" tabIndex={-1} key={location.pathname} className="app-content page-enter">

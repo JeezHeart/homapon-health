@@ -6,9 +6,12 @@ import EmptyState from '../components/EmptyState';
 import MonthlyTrendChart from '../components/MonthlyTrendChart';
 import SmsDialog from '../components/SmsDialog';
 import StatusBadge from '../components/StatusBadge';
+import DashboardCalendar from '../components/DashboardCalendar';
+import NavIcon from '../components/NavIcon';
 import {
   childName,
   dosesThisMonth,
+  enrichedAppointments,
   isFullyImmunized,
   overdueAppointments,
   recentActivity,
@@ -37,14 +40,14 @@ function TopStat({
   highlighted?: boolean;
 }) {
   return (
-    <Link to={to} className={`summary-stat ${highlighted ? 'summary-stat-highlight' : ''}`}>
-      <span className="flex items-center gap-3">
+    <article className={`summary-stat ${highlighted ? 'summary-stat-highlight' : ''}`}>
+      <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-3">
         <span aria-hidden="true" className="summary-stat-icon">{icon}</span>
         <span className="text-base font-medium">{label}</span>
-      </span>
-      <span className="summary-stat-value">{value.toLocaleString('en-PH')}</span>
-      <span className="mt-auto block max-w-60 text-xs leading-relaxed text-[var(--color-navy-soft)]">{description}</span>
-    </Link>
+      </span><Link to={to} aria-label={`View ${label.toLowerCase()}`} className="stat-action">···</Link></div>
+      <Link to={to} className="summary-stat-value" aria-label={`${label}: ${value}`}>{value.toLocaleString('en-PH')}</Link>
+      <p className="mt-auto max-w-60 text-xs leading-relaxed text-[var(--color-navy-soft)]">{description}</p>
+    </article>
   );
 }
 
@@ -97,27 +100,74 @@ export default function DashboardPage() {
   ).length;
   const spotlight = overdue[0] ?? upcoming[0];
   const [smsOpen, setSmsOpen] = useState(false);
+  const [tableFilter, setTableFilter] = useState<'upcoming' | 'today' | 'overdue' | 'all'>('upcoming');
+  const [tableSms, setTableSms] = useState<ReturnType<typeof enrichedAppointments>[number] | null>(null);
+  const allAppointments = enrichedAppointments(appointments, children, records);
+  const tableRows = allAppointments.filter((appointment) => {
+    if (tableFilter === 'today') return appointment.scheduledDate === todayISO();
+    if (tableFilter === 'overdue') return appointment.status === 'overdue';
+    if (tableFilter === 'upcoming') return appointment.status === 'upcoming' || appointment.status === 'due-today';
+    return true;
+  }).sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
 
   return (
     <div className="flex flex-col gap-5">
       {/* Summary uses recorded counts, without inferred trend percentages. */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="sr-only">
         <div>
           <h1 className="page-title">
             Immunization dashboard
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-            Here is today&apos;s immunization update · {formatDate(todayISO())}
-          </p>
         </div>
       </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <TopStat label="Total children" value={children.length} icon={<ChildrenIcon />} description="Children registered at the health center. View child records." to="/children" />
-          <TopStat label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="Children with all required doses recorded. View child records." to="/children" highlighted />
-          <TopStat label="Overdue appointments" value={overdue.length} icon={<AlertIcon />} description="Scheduled vaccinations past their date. View appointments for follow-up." to="/schedule?filter=overdue" />
-          <TopStat label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description="Vaccination doses recorded this month. View vaccination records." to="/records" />
+          <TopStat label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
+          <TopStat label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
+          <TopStat label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" />
+          <TopStat label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description={new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records" />
         </div>
 
+      <div className="dashboard-overview">
+        <Card title="Vaccination overview" action={<span className="chart-legend"><span aria-hidden="true" />Doses recorded</span>}>
+          <MonthlyTrendChart records={records} compact />
+        </Card>
+        <DashboardCalendar />
+      </div>
+
+      <Card title="Appointments" action={<div className="segmented-control" role="group" aria-label="Filter appointments">
+        {(['upcoming', 'today', 'overdue', 'all'] as const).map((filter) => <button key={filter} type="button" aria-pressed={tableFilter === filter} onClick={() => setTableFilter(filter)}>{filter === 'upcoming' ? 'Upcoming' : filter === 'today' ? 'Today' : filter === 'overdue' ? 'Overdue' : 'All'}</button>)}
+      </div>}>
+        <div className="overflow-x-auto"><table className="ui-table dashboard-table min-w-[700px] text-left">
+          <caption className="sr-only">{tableFilter} appointments</caption>
+          <thead><tr>{['Child', 'Guardian', 'Vaccination', 'Date', 'Status', 'Action'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+          <tbody>{tableRows.slice(0, 8).map((appointment) => <tr key={appointment.id}>
+            <td><Link to={`/children/${appointment.child.id}`} className="flex items-center gap-3 font-medium"><span className="child-avatar" aria-hidden="true">{appointment.child.firstName.charAt(0)}{appointment.child.lastName.charAt(0)}</span><span>{childName(appointment.child)}</span></Link></td>
+            <td>{appointment.child.guardian}</td><td>{vaccineLabel(appointment.vaccineId, appointment.doseNumber)}</td>
+            <td>{formatDate(appointment.scheduledDate)}{appointment.scheduledTime && <span className="block text-xs text-[var(--color-navy-soft)]">{formatTime(appointment.scheduledTime)}</span>}</td>
+            <td><StatusBadge status={appointment.status} /></td>
+            <td><div className="flex items-center gap-2"><Link to={`/children/${appointment.child.id}`} className="table-action" aria-label={`Open ${childName(appointment.child)} profile`}><NavIcon name="review" /></Link><button type="button" className="table-action" aria-label={`Prepare SMS for ${childName(appointment.child)}`} disabled={appointment.status === 'completed'} onClick={() => setTableSms(appointment)}><NavIcon name="mail" /></button></div></td>
+          </tr>)}</tbody>
+        </table></div>
+        {tableRows.length === 0 && <p role="status" className="py-8 text-center text-sm text-[var(--color-navy-soft)]">No appointments in this view.</p>}
+        <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--color-navy-soft)]"><span>{Math.min(8, tableRows.length)} of {tableRows.length} appointments</span><Link to={`/schedule${tableFilter === 'all' ? '' : `?filter=${tableFilter}`}`} className="font-medium hover:underline">View schedule</Link></div>
+      </Card>
+
+
+
+      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
+
+      {/* Additional recorded activity. */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card
+          title="Doses overview"
+          action={
+            <span className="text-xs font-medium text-[var(--color-navy-soft)]">
+              {dosesThisMonth(records)} this month
+            </span>
+          }
+        >
+          <DosesChart records={records} />
+        </Card>
       <Card title="Next clinic session">
         {session ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -153,25 +203,6 @@ export default function DashboardPage() {
           </div>
         )}
       </Card>
-
-      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
-
-      {/* Existing vaccination charts. */}
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Card
-          title="Doses overview"
-          action={
-            <span className="text-xs font-medium text-[var(--color-navy-soft)]">
-              {dosesThisMonth(records)} this month
-            </span>
-          }
-        >
-          <DosesChart records={records} />
-        </Card>
-        <Card title="Monthly trend">
-          <MonthlyTrendChart records={records} />
-        </Card>
-
       </div>
 
       {/* Bottom strip: upcoming list + spotlight + quick actions */}
@@ -332,14 +363,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <p className="text-xs text-[var(--color-navy-soft)]" aria-label="Status legend">
-        Status legend:{' '}
-        <span className="font-medium">Upcoming · Due today · Overdue · Completed</span>
-      </p>
 
       {spotlight && smsOpen && (
         <SmsDialog appointment={spotlight} onClose={() => setSmsOpen(false)} />
       )}
+      {tableSms && <SmsDialog appointment={tableSms} onClose={() => setTableSms(null)} />}
     </div>
   );
 }

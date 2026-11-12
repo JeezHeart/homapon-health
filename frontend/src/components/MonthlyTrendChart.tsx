@@ -4,14 +4,17 @@ import { dosesPerMonth } from '../data/mockData';
 /** Hand-rolled SVG line chart: doses per month. No chart dependency. */
 export default function MonthlyTrendChart({
   records,
+  compact = false,
 }: {
   records: DoseRecord[];
+  compact?: boolean;
 }) {
   const buckets = dosesPerMonth(records, 6);
-  const max = Math.max(1, ...buckets.map((b) => b.count));
-  const width = 560;
-  const height = 220;
-  const padX = 28;
+  const step = Math.max(1, Math.ceil(Math.max(1, ...buckets.map((b) => b.count)) / 4));
+  const max = step * 4;
+  const width = 720;
+  const height = 300;
+  const padX = 38;
   const padTop = 20;
   const padBottom = 32;
 
@@ -31,23 +34,27 @@ export default function MonthlyTrendChart({
       role="img"
       aria-label={`Line chart of doses per month for the last 6 months. Total ${total} doses.`}
     >
-      <p className="text-xs text-[var(--color-navy-soft)]">Last 6 months</p>
-      <p className="text-3xl font-bold text-[var(--color-navy)]">
+      <p className="mb-3 text-xs text-[var(--color-navy-soft)]">Last 6 months</p>
+      {!compact && <p className="text-3xl font-bold text-[var(--color-navy)]">
         {last.count}
         <span className="ml-2 align-middle text-xs font-medium text-[var(--color-navy-soft)]">
           doses in {last.label}
         </span>
-      </p>
+      </p>}
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="mt-2 w-full"
+        className="w-full"
         aria-hidden="true"
       >
+        {Array.from({ length: 5 }, (_, i) => i * step).map((value) => <g key={value}>
+          <line x1={padX} y1={y(value)} x2={width - padX} y2={y(value)} stroke="#e8edf0" />
+          <text x={padX - 12} y={y(value) + 4} textAnchor="end" fontSize={12} fill="var(--color-navy-soft)">{value}</text>
+        </g>)}
         <polyline
           points={points}
           fill="none"
-          stroke="var(--color-highlight)"
-          strokeWidth={2.5}
+          stroke="var(--color-chart-teal)"
+          strokeWidth={3}
           strokeLinejoin="round"
           strokeLinecap="round"
           pathLength={1}
@@ -62,8 +69,10 @@ export default function MonthlyTrendChart({
             <circle
               cx={x(i)}
               cy={y(b.count)}
-              r={4}
-              fill="var(--color-highlight)"
+              r={5}
+              fill="var(--color-card)"
+              stroke="var(--color-chart-teal)"
+              strokeWidth={2.5}
               className="chart-anim-fade"
               style={{
                 transformBox: 'fill-box',
@@ -71,12 +80,12 @@ export default function MonthlyTrendChart({
                 animation: 'chart-fade 400ms ease-out both',
                 animationDelay: `${500 + i * 80}ms`,
               }}
-            />
+            ><title>{b.label}: {b.count} doses</title></circle>
             <text
               x={x(i)}
               y={height - 10}
               textAnchor="middle"
-              fontSize={11}
+              fontSize={12}
               fill="var(--color-navy-soft)"
             >
               {b.label}

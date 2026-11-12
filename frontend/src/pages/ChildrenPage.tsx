@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import ChildForm from '../components/ChildForm';
 import Dialog from '../components/Dialog';
@@ -28,8 +28,22 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function ChildrenPage() {
   const { children, records, appointments, addChild, updateChild, deleteChild } = useStore();
-  const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q') ?? '';
+  function setQuery(value: string) {
+    setSearchParams((previous) => {
+      if (value) previous.set('q', value); else previous.delete('q');
+      return previous;
+    }, { replace: true });
+  }
+  const requestedStatus = searchParams.get('status');
+  const statusFilter: StatusFilter = requestedStatus === 'Fully immunized' || requestedStatus === 'Partially immunized' || requestedStatus === 'Overdue' ? requestedStatus : 'all';
+  function setStatusFilter(value: StatusFilter) {
+    setSearchParams((previous) => {
+      if (value === 'all') previous.delete('status'); else previous.set('status', value);
+      return previous;
+    }, { replace: true });
+  }
   const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>('all');
   const [purokFilter, setPurokFilter] = useState<string>('all');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);

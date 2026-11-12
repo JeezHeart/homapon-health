@@ -113,7 +113,7 @@ export default function SmsPage() {
             onClick={() => setTab('all')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'all'
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -124,7 +124,7 @@ export default function SmsPage() {
             onClick={() => setTab('tomorrow')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'tomorrow'
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -135,7 +135,7 @@ export default function SmsPage() {
             onClick={() => setTab('today')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'today'
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >
@@ -146,7 +146,7 @@ export default function SmsPage() {
             onClick={() => setTab('overdue')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === 'overdue'
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                 : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200'
             }`}
           >

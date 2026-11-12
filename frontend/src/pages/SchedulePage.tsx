@@ -174,7 +174,7 @@ export default function SchedulePage() {
                 onClick={() => setFilter(f.id)}
                 className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                   filter === f.id
-                    ? 'bg-[var(--color-accent)] text-white'
+                    ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                     : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200 hover:text-[var(--color-navy)]'
                 }`}
               >
@@ -254,7 +254,7 @@ export default function SchedulePage() {
                     onClick={() => setSelectedDay(iso)}
                     className={`flex flex-col items-center rounded-xl p-2 transition-colors ${
                       isSelected
-                        ? 'bg-[var(--color-accent)] text-white'
+                        ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
                         : isToday
                           ? 'bg-amber-100 font-bold text-amber-900'
                           : 'hover:bg-slate-100'

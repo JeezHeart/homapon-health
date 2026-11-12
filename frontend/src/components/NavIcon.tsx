@@ -9,6 +9,8 @@ const paths = {
   settings: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M9 3l1-1h4l1 3 3 1 3-1 2 4-2 2v3l2 2-2 4-3-1-3 1-1 3h-4l-1-3-3-1-3 1-2-4 2-2v-3L1 9l2-4 3 1 3-1z',
   logout: 'M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4 M16 17l5-5-5-5 M21 12H9',
   menu: 'M4 6h16 M4 12h16 M4 18h16',
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',
+  mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2 M2 6l10 7L22 6',
 } as const;
 
 export default function NavIcon({ name }: { name: keyof typeof paths }) {
