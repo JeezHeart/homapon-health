@@ -21,7 +21,7 @@ export default function MonthlyTrendChart({ records, appointments }: { records: 
   const selected = active === null ? null : buckets[active];
   return <div className="overview-chart">
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Recorded doses and scheduled appointments over the last six months">
-      {Array.from({ length: 6 }, (_, index) => index * step).map((value) => <g key={value}><line x1={left} y1={y(value)} x2={right} y2={y(value)} stroke="#e9edf0" /><text x={left - 13} y={y(value) + 4} textAnchor="end" fontSize="12" fill="var(--color-navy-soft)">{value}</text></g>)}
+      {Array.from({ length: 6 }, (_, index) => index * step).map((value) => <g key={value}><line x1={left} y1={y(value)} x2={right} y2={y(value)} stroke="var(--color-chart-grid)" /><text x={left - 13} y={y(value) + 4} textAnchor="end" fontSize="12" fill="var(--color-navy-soft)">{value}</text></g>)}
       {active !== null && <rect x={x(active) - 16} y={top} width="32" height={bottom - top} rx="8" fill="var(--color-chart-teal)" opacity="0.1" />}
       <path d={curve('appointments')} className="overview-line-lavender" />
       <path d={curve('doses')} className="overview-line-teal" />

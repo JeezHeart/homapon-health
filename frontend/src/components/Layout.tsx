@@ -4,6 +4,7 @@ import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
 import Dialog from './Dialog';
 import NavIcon from './NavIcon';
+import ThemeToggle from './ThemeToggle';
 import { overdueAppointments } from '../data/mockData';
 
 const NAV_ITEMS = [
@@ -76,9 +77,10 @@ export default function Layout() {
           <span className="sr-only">{pageTitle}</span>
         </div>
         <div className="header-actions">
+          <ThemeToggle />
           <Link to="/schedule?filter=overdue" aria-label={`${overdueCount} overdue appointments`} className="header-icon hidden sm:inline-flex"><NavIcon name="bell" />{overdueCount > 0 && <span className="notification-count">{overdueCount}</span>}</Link>
           <Link to="/sms" aria-label="SMS reminders" className="header-icon hidden sm:inline-flex"><NavIcon name="mail" /></Link>
-          <div className="header-identity"><div className="hidden min-w-0 text-right sm:block"><p className="max-w-48 truncate text-sm">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
+          <div className="header-identity"><div className="hidden min-w-0 text-right lg:block"><p className="max-w-28 truncate text-sm xl:max-w-48">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
           <span aria-hidden="true" className="staff-avatar">{(demoUser?.name.trim().charAt(0) || 'H').toUpperCase()}</span>
           </div>
           <Link to="/settings" aria-label="Settings" className="header-settings"><NavIcon name="settings" /></Link>

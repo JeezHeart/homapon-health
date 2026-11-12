@@ -4,6 +4,7 @@ import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
 import { Brand } from '../components/Layout';
+import ThemeToggle from '../components/ThemeToggle';
 
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
@@ -62,9 +63,12 @@ export default function LoginPage() {
         <p className="hidden text-xs text-[var(--color-navy-soft)] md:block">For authorized health-center staff</p>
       </section>
       <div className="login-form-side"><div className="login-form-panel">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
           Staff sign-in
         </h1>
+        <ThemeToggle />
+        </div>
 
         {apiEnabled ? (
           <>

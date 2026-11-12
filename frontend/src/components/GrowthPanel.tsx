@@ -35,14 +35,14 @@ function Chart({ rows, child, metric }: { rows: GrowthMeasurement[]; child: Chil
   const line = (p: { days: number; value: number }[]) => p.map((v) => `${x(v.days)},${y(v.value)}`).join(' ');
   return <>
     <svg viewBox="0 0 600 265" role="img" aria-label={`${metric} chart. Points are recorded measurements; dashed lines are WHO minus and plus two standard deviations, solid gray is the median. Values are in the measurement history below.`} className="w-full">
-      <path d="M55 25V220H565" fill="none" stroke="#475569" />
+      <path d="M55 25V220H565" fill="none" stroke="var(--color-navy-soft)" />
       {[0, 1, 2, 3, 4].map((n) => {
         const value = min + n / 4 * (max - min);
-        return <g key={n}><text x="48" y={y(value) + 4} textAnchor="end" fontSize="11">{value.toFixed(1)}</text><path d={`M55 ${y(value)}H565`} stroke="#e2e8f0" /></g>;
+        return <g key={n}><text x="48" y={y(value) + 4} textAnchor="end" fontSize="11">{value.toFixed(1)}</text><path d={`M55 ${y(value)}H565`} stroke="var(--color-chart-grid)" /></g>;
       })}
-      {(['low', 'mid', 'high'] as const).map((band) => <polyline key={band} points={line(refs.map((r) => ({ days: r.days, value: r[band] })))} fill="none" stroke="#64748b" strokeDasharray={band === 'mid' ? undefined : '5 4'} />)}
-      <polyline points={line(points)} fill="none" stroke="#0f766e" strokeWidth="2" />
-      {points.map((p) => <circle key={p.date} cx={x(p.days)} cy={y(p.value)} r="4" fill="#0f766e"><title>{p.date}: {p.value.toFixed(1)} {metric === 'weight' ? 'kg' : 'cm'}</title></circle>)}
+      {(['low', 'mid', 'high'] as const).map((band) => <polyline key={band} points={line(refs.map((r) => ({ days: r.days, value: r[band] })))} fill="none" stroke="var(--color-chart-reference)" strokeDasharray={band === 'mid' ? undefined : '5 4'} />)}
+      <polyline points={line(points)} fill="none" stroke="var(--color-chart-measurement)" strokeWidth="2" />
+      {points.map((p) => <circle key={p.date} cx={x(p.days)} cy={y(p.value)} r="4" fill="var(--color-chart-measurement)"><title>{p.date}: {p.value.toFixed(1)} {metric === 'weight' ? 'kg' : 'cm'}</title></circle>)}
       {[0, 1, 2, 3, 4].map((n) => <text key={n} x={x(maxAge * n / 4)} y="238" textAnchor="middle" fontSize="11">{(maxAge * n / 4 / 30.4375).toFixed(0)}</text>)}
       <text x="300" y="258" textAnchor="middle" fontSize="12">Age in months</text>
       <text x="58" y="15" fontSize="12">{metric === 'weight' ? 'Weight (kg)' : 'Position-adjusted length/height (cm)'}</text>

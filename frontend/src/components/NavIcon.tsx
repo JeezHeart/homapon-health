@@ -13,6 +13,8 @@ const paths = {
   mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2 M2 6l10 7L22 6',
   edit: 'm16 3 5 5 M3 21l5-1L21 7a2 2 0 0 0-5-5L3 15z',
   trash: 'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
+  sun: 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
+  moon: 'M21 13a9 9 0 0 1-10-10 9 9 0 1 0 10 10z',
 } as const;
 
 export default function NavIcon({ name }: { name: keyof typeof paths }) {
