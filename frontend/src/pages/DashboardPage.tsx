@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import MagicBento from '../components/MagicBento';
 import ChildForm from '../components/ChildForm';
 import AppointmentDialog from '../components/AppointmentDialog';
 import Dialog from '../components/Dialog';
@@ -84,7 +85,7 @@ export default function DashboardPage() {
   const smsLabel = { checking: 'Checking...', enabled: 'Enabled', disabled: 'Disabled', unavailable: 'Unavailable', practice: 'Practice only' }[sms.status];
 
   return (
-    <div className="flex flex-col gap-5">
+    <><MagicBento className="flex flex-col gap-5" enableBorderGlow enableSpotlight spotlightRadius={300}>
       <div className="dashboard-toolbar">
         <p role="status" aria-live="polite" className="text-sm text-[var(--color-navy-soft)]"><Link to="/sms">SMS: <strong className="font-medium">{smsLabel}</strong></Link></p>
         <div className="flex flex-wrap gap-2">
@@ -118,9 +119,10 @@ export default function DashboardPage() {
 
 
       <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
+    </MagicBento>
 
       {action === 'child' && <Dialog title="Register child" onClose={() => setAction(null)}><ChildForm onSubmit={async (data) => { await addChild(data); setAction(null); }} onCancel={() => setAction(null)} /></Dialog>}
       {action === 'appointment' && <Dialog title="Book appointment" onClose={() => setAction(null)}><AppointmentDialog childList={children} records={records} onSave={async (data) => { await addAppointment(data); }} onClose={() => setAction(null)} /></Dialog>}
-    </div>
+    </>
   );
 }
