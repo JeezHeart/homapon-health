@@ -48,8 +48,8 @@ export default function ChildProfilePage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const returnTo = typeof location.state?.directory === 'string' && /^\/(?:children|schedule)(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
-  const backLabel = returnTo.startsWith('/schedule') ? 'Back to schedule' : 'Back to child records';
+  const returnTo = typeof location.state?.directory === 'string' && /^\/(?:children|schedule|records)(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
+  const backLabel = returnTo.startsWith('/schedule') ? 'Back to schedule' : returnTo.startsWith('/records') ? 'Back to vaccination records' : 'Back to child records';
   const [searchParams] = useSearchParams();
   const { children, records, appointments, smsLog, demoUser, deleteChild, addDoseRecord, addAppointment, updateChild, updateAppointment } =
     useStore();
