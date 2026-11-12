@@ -48,7 +48,8 @@ export default function ChildProfilePage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const returnTo = typeof location.state?.directory === 'string' && /^\/children(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
+  const returnTo = typeof location.state?.directory === 'string' && /^\/(?:children|schedule)(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
+  const backLabel = returnTo.startsWith('/schedule') ? 'Back to schedule' : 'Back to child records';
   const [searchParams] = useSearchParams();
   const { children, records, appointments, smsLog, demoUser, deleteChild, addDoseRecord, addAppointment, updateChild, updateAppointment } =
     useStore();
@@ -91,7 +92,7 @@ export default function ChildProfilePage() {
             to={returnTo}
             className="mt-2 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white"
           >
-            Back to child records
+            {backLabel}
           </Link>
         }
       />
@@ -117,7 +118,7 @@ export default function ChildProfilePage() {
         to={returnTo}
         className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
       >
-        ← Back to child records
+        ← {backLabel}
       </Link>
 
       <div className="flex flex-wrap items-center gap-3">

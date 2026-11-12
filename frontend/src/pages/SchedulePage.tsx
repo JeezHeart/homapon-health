@@ -19,15 +19,17 @@ import { useStore } from '../state/store-context';
 import {
   formatDate,
   formatTime,
-  isoWeekRange,
   monthCells,
   shiftMonthCursor,
   todayISO,
 } from '../utils/dates';
 
-type ScheduleFilter = 'today' | 'week' | 'upcoming' | 'overdue' | 'completed';
+import { filterSchedule, validScheduleDate } from '../utils/scheduleDirectory';
+import type { ScheduleFilter } from '../utils/scheduleDirectory';
+import { directoryPage } from '../utils/childDirectory';
 
 const FILTERS: { id: ScheduleFilter; label: string }[] = [
+  { id: 'all', label: 'All appointments' },
   { id: 'today', label: 'Today' },
   { id: 'week', label: 'This week' },
   { id: 'upcoming', label: 'Upcoming' },
@@ -47,22 +49,25 @@ const FOLLOW_UP_BADGE: Record<FollowUpStatus, string> = {
 export default function SchedulePage() {
   const { children, records, appointments, addAppointment, updateAppointment } =
     useStore();
-  const [searchParams] = useSearchParams();
-  const initialFilter = FILTERS.some((f) => f.id === searchParams.get('filter'))
-    ? (searchParams.get('filter') as ScheduleFilter)
-    : 'upcoming';
-  const [filter, setFilter] = useState<ScheduleFilter>(initialFilter);
-  const [purokFilter, setPurokFilter] = useState<string>('all');
-  const dateParam = searchParams.get('date') ?? '';
-  const initialDay = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) &&
-    !Number.isNaN(Date.parse(dateParam)) && new Date(dateParam).toISOString().slice(0, 10) === dateParam
-    ? dateParam : null;
-  const [tYear, tMonth] = (initialDay ?? todayISO()).split('-').map(Number);
-  const [monthCursor, setMonthCursor] = useState({
-    year: tYear,
-    month: tMonth - 1,
-  });
-  const [selectedDay, setSelectedDay] = useState<string | null>(initialDay);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = FILTERS.find((item) => item.id === searchParams.get('filter'))?.id ?? 'upcoming';
+  const query = searchParams.get('q') ?? '';
+  const purokFilter = PUROKS.find((purok) => purok === searchParams.get('purok')) ?? 'all';
+  const selectedDay = validScheduleDate(searchParams.get('date'));
+  const monthDate = validScheduleDate(`${searchParams.get('month')}-01`) ?? selectedDay ?? todayISO();
+  const [year, month] = monthDate.split('-').map(Number);
+  const monthCursor = { year, month: month - 1 };
+  const size = [5, 10, 25].find((value) => value === Number(searchParams.get('size'))) ?? 10;
+  const returnTo = `/schedule${searchParams.size ? `?${searchParams.toString()}` : ''}`;
+  function update(patch: Record<string, string | number>) {
+    const next = new URLSearchParams(searchParams);
+    next.delete('page');
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === '' || value === 'all' && key === 'purok' || key === 'size' && value === 10 || key === 'page' && value === 1) next.delete(key);
+      else next.set(key, String(value));
+    }
+    setSearchParams(next, { replace: true });
+  }
   const [smsFor, setSmsFor] = useState<EnrichedAppointment | null>(null);
   const [followUpFor, setFollowUpFor] = useState<EnrichedAppointment | null>(null);
   const [booking, setBooking] = useState(false);
@@ -74,56 +79,16 @@ export default function SchedulePage() {
     [appointments, children, records],
   );
 
-  const filtered = useMemo(() => {
-    const today = todayISO();
-    const { start: weekStart, end: weekEnd } = isoWeekRange(today);
-    let list: EnrichedAppointment[] = [];
-    switch (filter) {
-      case 'today':
-        list = all.filter(
-          (a) => a.scheduledDate === today && a.status !== 'completed',
-        );
-        break;
-      case 'week':
-        list = all.filter(
-          (a) =>
-            a.scheduledDate >= weekStart &&
-            a.scheduledDate <= weekEnd &&
-            a.status !== 'completed',
-        );
-        break;
-      case 'upcoming':
-        list = all.filter(
-          (a) => a.status === 'upcoming' || a.status === 'due-today',
-        );
-        break;
-      case 'overdue':
-        list = all.filter((a) => a.status === 'overdue');
-        break;
-      case 'completed':
-        list = all.filter((a) => a.status === 'completed');
-        break;
-    }
-
-    if (purokFilter !== 'all') {
-      list = list.filter((a) => extractPurok(a.child.purok) === purokFilter);
-    }
-    return list;
-  }, [all, filter, purokFilter]);
-
-  const byDay = useMemo(() => {
-    const map = new Map<string, EnrichedAppointment[]>();
-    for (const a of filtered) {
-      const list = map.get(a.scheduledDate) ?? [];
-      list.push(a);
-      map.set(a.scheduledDate, list);
-    }
-    return map;
-  }, [filtered]);
-
-  const selected = selectedDay
-    ? (byDay.get(selectedDay) ?? [])
-    : [];
+  const calendarRows = filterSchedule(all, { query, purok: purokFilter, filter: 'all' });
+  const filtered = filterSchedule(all, { query, purok: purokFilter, filter, date: selectedDay });
+  const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), size);
+  const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming');
+  const byDay = new Map<string, EnrichedAppointment[]>();
+  for (const appointment of calendarRows) {
+    const day = byDay.get(appointment.scheduledDate) ?? [];
+    day.push(appointment);
+    byDay.set(appointment.scheduledDate, day);
+  }
 
   const monthLabel = new Date(
     monthCursor.year,
@@ -131,13 +96,10 @@ export default function SchedulePage() {
     1,
   ).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
 
-  const cells = useMemo(
-    () => monthCells(monthCursor.year, monthCursor.month),
-    [monthCursor],
-  );
-
+  const cells = monthCells(monthCursor.year, monthCursor.month);
   function shiftMonth(delta: number) {
-    setMonthCursor((c) => shiftMonthCursor(c, delta));
+    const cursor = shiftMonthCursor(monthCursor, delta);
+    update({ month: `${cursor.year}-${String(cursor.month + 1).padStart(2, '0')}` });
   }
 
   const selectClass =
@@ -151,7 +113,7 @@ export default function SchedulePage() {
             Immunization Schedule
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-            What's due and when · book, reschedule, and track overdue follow-ups
+            Book vaccinations and manage follow-ups.
           </p>
         </div>
         <button
@@ -163,55 +125,24 @@ export default function SchedulePage() {
         </button>
       </div>
 
-      {/* Filter tabs & Purok selector */}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilter(f.id)}
-                className={`rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                  filter === f.id
-                    ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
-                    : 'bg-slate-100 text-[var(--color-navy-soft)] hover:bg-slate-200 hover:text-[var(--color-navy)]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="sched-purok" className="text-xs font-semibold text-[var(--color-navy-soft)]">
-              Purok:
-            </label>
-            <select
-              id="sched-purok"
-              value={purokFilter}
-              onChange={(e) => setPurokFilter(e.target.value)}
-              className={selectClass}
-            >
-              <option value="all">All puroks</option>
-              {PUROKS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <input type="search" aria-label="Search appointments by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="min-w-0 w-full flex-none rounded-xl border border-slate-300 px-3 py-2 text-sm sm:w-auto sm:flex-1" />
+          <select aria-label="Appointment status filter" value={filter} onChange={(event) => update({ filter: event.target.value, date: '' })} className={selectClass}>{FILTERS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+          <select aria-label="Filter by purok" value={purokFilter} onChange={(event) => update({ purok: event.target.value })} className={selectClass}><option value="all">All puroks</option>{PUROKS.map((purok) => <option key={purok}>{purok}</option>)}</select>
+          {activeFilters && <button type="button" onClick={() => update({ q: '', purok: '', date: '', filter: 'upcoming' })} className={selectClass}>Clear filters</button>}
         </div>
       </Card>
 
-      {/* Calendar + day detail */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="min-w-0">
           <Card title={monthLabel}>
             <div className="flex items-center justify-between pb-3">
               <span className="text-xs font-medium text-[var(--color-navy-soft)]">
-                Click a day to view appointments
+                Select a date
               </span>
               <div className="flex gap-1">
+                <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })} className="rounded-lg border border-slate-300 px-2 py-1 text-xs">Today</button>
                 <button
                   type="button"
                   onClick={() => shiftMonth(-1)}
@@ -251,7 +182,10 @@ export default function SchedulePage() {
                   <button
                     key={iso}
                     type="button"
-                    onClick={() => setSelectedDay(iso)}
+                    onClick={() => update({ date: iso, filter: 'all' })}
+                    aria-pressed={isSelected}
+                    aria-current={isToday ? 'date' : undefined}
+                    aria-label={`${formatDate(iso)}: ${count} appointment${count === 1 ? '' : 's'}`}
                     className={`flex flex-col items-center rounded-xl p-2 transition-colors ${
                       isSelected
                         ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
@@ -261,161 +195,49 @@ export default function SchedulePage() {
                     }`}
                   >
                     <span>{dayNumber}</span>
-                    {count > 0 && (
-                      <span
-                        className={`mt-1 h-1.5 w-1.5 rounded-full ${
-                          isSelected
-                            ? 'bg-white'
-                            : hasOverdue
-                              ? 'bg-red-500'
-                              : 'bg-sky-500'
-                        }`}
-                      />
-                    )}
+                    <span className={`mt-1 text-[10px] ${hasOverdue ? 'font-semibold text-red-700' : 'text-[var(--color-navy-soft)]'}`}>{count > 0 ? count : '\u00a0'}</span>
                   </button>
                 );
               })}
             </div>
+            <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Counts include all statuses matching search and purok. Select a date to view its appointments.</p>
+            {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="mt-3 text-xs font-medium underline">Clear selected date</button>}
           </Card>
         </div>
 
-        {/* Selected day panel */}
-        <Card
-          title={
-            selectedDay ? formatDate(selectedDay) : 'Select a date'
-          }
-        >
-          {!selectedDay ? (
-            <EmptyState
-              title="No day selected"
-              message="Choose a date on the calendar to see who is scheduled."
-            />
-          ) : selected.length === 0 ? (
-            <EmptyState
-              title="No appointments"
-              message="No scheduled or overdue doses for this date."
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {selected.map((a) => {
-                const v = vaccineById(a.vaccineId);
-                return (
-                  <li
-                    key={a.id}
-                    className="flex flex-col gap-1 rounded-xl border border-slate-200 p-2.5 text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-[var(--color-navy)]">
-                        {childName(a.child)}
-                      </span>
-                      <StatusBadge status={a.status} />
-                    </div>
-                    <p className="text-[var(--color-navy-soft)]">
-                      {v?.shortName} · Dose {a.doseNumber}
-                      {a.scheduledTime ? ` · ${formatTime(a.scheduledTime)}` : ''}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {extractPurok(a.child.purok)} · Guardian: {a.child.guardian}
-                    </p>
-                    {a.scheduleExceptionReason && (
-                      <p className="break-words text-xs text-amber-950">
-                        Schedule exception: {a.scheduleExceptionReason}
-                      </p>
-                    )}
-                    {a.status === 'overdue' && a.daysOverdue && (
-                      <p className="font-semibold text-red-700">
-                        {a.daysOverdue} day{a.daysOverdue === 1 ? '' : 's'} overdue
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <Link
-                        to={`/children/${a.child.id}`}
-                        className="rounded-lg border border-slate-300 px-2 py-1 font-semibold hover:bg-slate-50"
-                      >
-                        Profile
-                      </Link>
-                      {a.status === 'overdue' && (
-                        <button
-                          type="button"
-                          onClick={() => setFollowUpFor(a)}
-                          className="rounded-lg border border-red-300 bg-red-50 px-2 py-1 font-semibold text-red-700 hover:bg-red-100"
-                        >
-                          Follow-up
-                        </button>
-                      )}
-                      {a.status !== 'completed' && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setRescheduling(a)}
-                            className="rounded-lg border border-slate-300 px-2 py-1 font-semibold hover:bg-slate-50"
-                          >
-                            Reschedule
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSmsFor(a)}
-                            className="rounded-lg bg-[var(--color-accent)] px-2 py-1 font-semibold text-white hover:opacity-90"
-                          >
-                            Remind
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      {/* Full filtered list */}
+        <div className="min-w-0">
       <Card
-        title={`${FILTERS.find((f) => f.id === filter)?.label} list (${filtered.length})`}
+        title={`${selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} (${filtered.length})`}
       >
         {filtered.length === 0 ? (
           <EmptyState
-            title="Nothing here"
-            message="No appointments match this filter."
+            title="No matching appointments"
+            message="Try another date or clear the filters."
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="ui-table w-full min-w-[760px] text-left text-sm">
+            <table className="ui-table w-full min-w-[700px] text-left text-sm">
+              <caption className="sr-only">Vaccination appointments</caption>
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                  <th className="pb-2 pr-4 font-semibold">Child</th>
-                  <th className="pb-2 pr-4 font-semibold">Purok</th>
-                  <th className="pb-2 pr-4 font-semibold">Vaccine / dose</th>
-                  <th className="pb-2 pr-4 font-semibold">Scheduled Date</th>
-                  <th className="pb-2 pr-4 font-semibold">Contact</th>
-                  <th className="pb-2 pr-4 font-semibold">Status</th>
-                  {filter === 'overdue' && (
-                    <th className="pb-2 pr-4 font-semibold">Follow-up Log</th>
-                  )}
-                  <th className="pb-2 font-semibold">Actions</th>
+                  <th scope="col" className="pb-2 pr-4 font-semibold">Child</th>
+                  <th scope="col" className="pb-2 pr-4 font-semibold">Vaccination</th>
+                  <th scope="col" className="pb-2 pr-4 font-semibold">Guardian</th>
+                  <th scope="col" className="pb-2 pr-4 font-semibold">Status</th>
+                  <th scope="col" className="pb-2 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((a) => {
+                {pagination.visible.map((a) => {
                   const v = vaccineById(a.vaccineId);
                   const followUp = a.followUpStatus ?? 'Pending';
                   return (
                     <tr key={a.id} className="border-t border-slate-100">
-                      <td className="py-2.5 pr-4 font-medium">
-                        {childName(a.child)}
-                      </td>
+                      <td className="py-2.5 pr-4"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></td>
                       <td className="py-2.5 pr-4">
-                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                          {extractPurok(a.child.purok)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-4">
-                        {v?.shortName} · Dose {a.doseNumber}
-                      </td>
-                      <td className="py-2.5 pr-4">
-                        <div className="flex flex-col">
-                          <span>{formatDate(a.scheduledDate)}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{v?.shortName} · Dose {a.doseNumber}</span>
+                          <span className="whitespace-nowrap text-xs">{formatDate(a.scheduledDate)}</span>
                           {a.scheduleExceptionReason && (
                             <span className="max-w-xs whitespace-normal break-words text-xs text-amber-950">
                               Schedule exception: {a.scheduleExceptionReason}
@@ -433,64 +255,22 @@ export default function SchedulePage() {
                           )}
                         </div>
                       </td>
-                      <td className="py-2.5 pr-4">{a.child.guardianMobile}</td>
+                      <td className="py-2.5 pr-4"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></td>
                       <td className="py-2.5 pr-4">
                         <StatusBadge status={a.status} />
+                        {a.status === 'overdue' && <div className="mt-2"><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${FOLLOW_UP_BADGE[followUp]}`}>{followUp}</span>{a.followUpNotes && <p className="mt-1 max-w-[150px] break-words text-xs text-[var(--color-navy-soft)]">{a.followUpNotes}</p>}</div>}
                       </td>
-                      {filter === 'overdue' && (
-                        <td className="py-2.5 pr-4">
-                          <span
-                            className={`inline-block rounded-full border px-2 py-0.5 text-xs font-semibold ${
-                              FOLLOW_UP_BADGE[followUp]
-                            }`}
-                          >
-                            {followUp}
-                          </span>
-                          {a.followUpNotes && (
-                            <p
-                              title={a.followUpNotes}
-                              className="mt-0.5 max-w-[180px] truncate text-[11px] text-slate-500"
-                            >
-                              {a.followUpNotes}
-                            </p>
-                          )}
-                        </td>
-                      )}
                       <td className="py-2.5">
-                        <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
-                          <Link
-                            to={`/children/${a.child.id}`}
-                            className="rounded-lg border border-slate-300 px-2.5 py-1 hover:bg-slate-50"
-                          >
-                            Profile
-                          </Link>
-                          {a.status === 'overdue' && (
-                            <button
-                              type="button"
-                              onClick={() => setFollowUpFor(a)}
-                              className="rounded-lg border border-red-300 bg-red-50 px-2.5 py-1 text-red-700 hover:bg-red-100"
-                            >
-                              Follow-up
-                            </button>
-                          )}
-                          {a.status !== 'completed' && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => setRescheduling(a)}
-                                className="rounded-lg border border-slate-300 px-2.5 py-1 hover:bg-slate-50"
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setSmsFor(a)}
-                                className="rounded-lg bg-[var(--color-accent)] px-2.5 py-1 text-white hover:opacity-90"
-                              >
-                                Remind
-                              </button>
-                            </>
-                          )}
+                        <div className="flex flex-col items-start gap-2 text-xs font-medium">
+                          <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50">View record</Link>
+                          {a.status !== 'completed' && <details className="min-w-[100px]">
+                            <summary className="cursor-pointer rounded-lg border border-slate-300 px-2.5 py-1.5">More</summary>
+                            <div className="mt-2 flex flex-col items-start gap-2">
+                              {a.status === 'overdue' && <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setFollowUpFor(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-red-700 hover:bg-red-50">Follow-up</button>}
+                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setRescheduling(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-50">Reschedule</button>
+                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setSmsFor(a); }} className="whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-2.5 py-1.5 text-white">Prepare SMS</button>
+                            </div>
+                          </details>}
                         </div>
                       </td>
                     </tr>
@@ -501,6 +281,12 @@ export default function SchedulePage() {
           </div>
         )}
       </Card>
+      {filtered.length > 0 && <nav aria-label="Schedule pagination" className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <p role="status" aria-live="polite">{pagination.first}–{pagination.last} of {filtered.length} appointments</p>
+        <div className="flex flex-wrap items-center gap-2"><label htmlFor="schedule-size" className="text-xs">Rows per page</label><select id="schedule-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>
+      </nav>}
+        </div>
+      </div>
 
       {smsFor && <SmsDialog appointment={smsFor} onClose={() => setSmsFor(null)} />}
 
