@@ -216,6 +216,7 @@ export default function BatchSmsDialog({
             </span>
           </div>
 
+          <p className="text-xs text-[var(--color-navy-soft)]">Each selected appointment prepares a separate SMS, including appointments for the same child.</p>
           {/* Recipients List */}
           <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 rounded-xl border border-slate-200">
             {(batch ?? appointments).map((a, index) => {
@@ -302,7 +303,7 @@ export default function BatchSmsDialog({
                   ? 'Stopped — review delivery'
                   : batch
                     ? waitSeconds > 0 ? `Resume in ${waitSeconds}s` : `Resume ${batch.length - succeeded} remaining`
-                    : `Send to ${selectedIds.size} Guardian${selectedIds.size === 1 ? '' : 's'}`}
+                    : `Send ${selectedIds.size} reminder${selectedIds.size === 1 ? '' : 's'}`}
             </button>
           </div>
         </div>
