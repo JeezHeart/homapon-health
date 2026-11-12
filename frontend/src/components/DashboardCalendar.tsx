@@ -11,25 +11,34 @@ export default function DashboardCalendar() {
   const [year, month] = today.split('-').map(Number);
   const [cursor, setCursor] = useState({ year, month: month - 1 });
   const cells = monthCells(cursor.year, cursor.month);
+  const firstWeekday = new Date(Date.UTC(cursor.year, cursor.month, 1)).getUTCDay();
   const counts = new Map<string, number>();
+  const statuses = new Map<string, Set<string>>();
   for (const appointment of enrichedAppointments(appointments, children, records)) {
-    if (appointment.status !== 'completed') counts.set(appointment.scheduledDate, (counts.get(appointment.scheduledDate) ?? 0) + 1);
+    if (appointment.status !== 'completed') {
+      counts.set(appointment.scheduledDate, (counts.get(appointment.scheduledDate) ?? 0) + 1);
+      const group = statuses.get(appointment.scheduledDate) ?? new Set<string>();
+      group.add(appointment.status); statuses.set(appointment.scheduledDate, group);
+    }
   }
   const label = new Date(Date.UTC(cursor.year, cursor.month, 1)).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   return <Card title="Calendar">
-    <div className="mb-5 flex items-center justify-between gap-3">
+    <div className="calendar-month-nav">
       <button type="button" className="calendar-arrow" aria-label="Previous month" onClick={() => setCursor(shiftMonthCursor(cursor, -1))}>‹</button>
       <p aria-live="polite" className="text-sm">{label}</p>
       <button type="button" className="calendar-arrow" aria-label="Next month" onClick={() => setCursor(shiftMonthCursor(cursor, 1))}>›</button>
     </div>
     <div className="dashboard-calendar">
       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => <span key={i} className="calendar-weekday" aria-hidden="true">{day}</span>)}
-      {cells.map((date, i) => date ? <Link key={date} to={`/schedule?date=${date}&filter=${date < today ? 'overdue' : 'upcoming'}`} aria-current={date === today ? 'date' : undefined}
+      {cells.map((cell, i) => {
+        const date = cell ?? new Date(Date.UTC(cursor.year, cursor.month, 1 - firstWeekday + i)).toISOString().slice(0, 10);
+        return <Link key={date} to={`/schedule?date=${date}&filter=${date < today ? 'overdue' : 'upcoming'}`} aria-current={date === today ? 'date' : undefined}
         aria-label={`${formatDate(date)}, ${counts.get(date) ?? 0} appointments`}
-        className={`calendar-day ${date === today ? 'calendar-today' : ''}`}>
-        <span>{Number(date.slice(-2))}</span>{counts.has(date) && <span className="calendar-dot" aria-hidden="true" />}
-      </Link> : <span key={`blank-${i}`} />)}
+        className={`calendar-day ${date === today ? 'calendar-today' : ''} ${cell ? '' : 'calendar-outside'}`}>
+        <span>{Number(date.slice(-2))}</span><span className="calendar-day-dots" aria-hidden="true">{Array.from(statuses.get(date) ?? []).map((status) => <span key={status} className={`calendar-status-dot calendar-status-${status}`} />)}</span>
+      </Link>;
+      })}
     </div>
-    <p className="mt-4 flex items-center gap-2 text-xs text-[var(--color-navy-soft)]"><span className="calendar-dot static" aria-hidden="true" />Appointments</p>
+    <div className="calendar-status-legend"><span><i className="calendar-status-dot calendar-status-upcoming" aria-hidden="true" />Upcoming</span><span><i className="calendar-status-dot calendar-status-due-today" aria-hidden="true" />Due today</span><span><i className="calendar-status-dot calendar-status-overdue" aria-hidden="true" />Overdue</span></div>
   </Card>;
 }

@@ -11,6 +11,8 @@ const paths = {
   menu: 'M4 6h16 M4 12h16 M4 18h16',
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',
   mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2 M2 6l10 7L22 6',
+  edit: 'm16 3 5 5 M3 21l5-1L21 7a2 2 0 0 0-5-5L3 15z',
+  trash: 'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
 } as const;
 
 export default function NavIcon({ name }: { name: keyof typeof paths }) {
