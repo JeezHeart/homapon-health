@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from './Card';
 import { useStore } from '../state/store-context';
-import { enrichedAppointments } from '../data/mockData';
+import { enrichedAppointments, upcomingAppointments } from '../data/mockData';
+import { isRegularClinicDay, nextClinicSession, nextRegularClinicDate } from '../utils/clinicScheduling';
 import { formatDate, monthCells, shiftMonthCursor, todayISO } from '../utils/dates';
 
 export default function DashboardCalendar() {
   const { appointments, children, records } = useStore();
   const today = todayISO();
+  const session = nextClinicSession(upcomingAppointments(appointments, children, records));
   const [year, month] = today.split('-').map(Number);
   const [cursor, setCursor] = useState({ year, month: month - 1 });
   const cells = monthCells(cursor.year, cursor.month);
@@ -40,5 +42,10 @@ export default function DashboardCalendar() {
       })}
     </div>
     <div className="calendar-status-legend"><span><i className="calendar-status-dot calendar-status-upcoming" aria-hidden="true" />Upcoming</span><span><i className="calendar-status-dot calendar-status-due-today" aria-hidden="true" />Due today</span><span><i className="calendar-status-dot calendar-status-overdue" aria-hidden="true" />Overdue</span></div>
+    <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+      <h3 className="text-xs font-medium">Next clinic session</h3>
+      {session ? <Link className="mt-1 block text-sm hover:underline" to={`/schedule?date=${session.date}&filter=upcoming`}>{formatDate(session.date)}<span className="block text-xs text-[var(--color-navy-soft)]">{session.childCount} {session.childCount === 1 ? 'child' : 'children'} · {session.appointmentCount} appointments{!isRegularClinicDay(session.date) && ' · Different clinic day'}</span></Link>
+        : <p className="mt-1 text-xs text-[var(--color-navy-soft)]">No appointments booked. Next regular Wednesday: {formatDate(nextRegularClinicDate())}. Confirm holiday changes with staff.</p>}
+    </div>
   </Card>;
 }

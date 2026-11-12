@@ -9,11 +9,11 @@ import { summarizeGrowth } from '../utils/growthSummary';
 import type { GrowthGroup } from '../utils/growthSummary';
 import { formatDate } from '../utils/dates';
 
-const groups: { id: GrowthGroup; label: string; color: string }[] = [
-  { id: 'review', label: 'Needs staff review', color: 'bg-amber-600' },
-  { id: 'within', label: 'Comparisons within range', color: 'bg-teal-700' },
-  { id: 'incomplete', label: 'Incomplete / unavailable comparisons', color: 'bg-slate-500' },
-  { id: 'missing', label: 'No dated measurements', color: 'bg-slate-300' },
+const groups: { id: GrowthGroup; label: string }[] = [
+  { id: 'review', label: 'Needs staff review' },
+  { id: 'within', label: 'Comparisons within range' },
+  { id: 'incomplete', label: 'Incomplete / unavailable comparisons' },
+  { id: 'missing', label: 'No dated measurements' },
 ];
 
 export default function GrowthSummary() {
@@ -39,16 +39,16 @@ export default function GrowthSummary() {
       : error || (apiEnabled && !connected) ? <div role="alert"><p>Growth summary unavailable. {error || 'Child records are unavailable. Restore the connection and reload the page.'}</p><button className="mt-2 underline" type="button" onClick={() => { setLoading(true); setError(''); setAttempt((n) => n + 1); }}>Retry growth summary</button></div>
       : <>
         <p className="mb-4 text-sm"><strong>{recorded}</strong> of {children.length} registered children have dated measurements. {!apiEnabled && 'Demo records only.'}</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {groups.map((group) => {
             const count = rows.filter((r) => r.group === group.id).length;
             return <button key={group.id} type="button" aria-pressed={selected === group.id} onClick={() => setSelected(group.id)} className="rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700">
-              <span className="flex justify-between gap-3 text-sm"><span>{group.label}</span><strong>{count}</strong></span>
-              <span className="mt-2 block h-3 overflow-hidden rounded bg-slate-100" aria-hidden="true"><span className={`block h-full ${group.color}`} style={{ width: `${children.length ? count / children.length * 100 : 0}%` }} /></span>
+              <span className="mb-1 block text-xl font-semibold">{count}</span><span className="block text-xs">{group.label}</span>
             </button>;
           })}
         </div>
-        <p className="mt-3 text-xs text-slate-600">Each child is counted once using their latest dated record. Review includes out-of-range indicators or measurements needing verification. Incomplete comparisons include missing inputs, unassessed swelling, or age outside the supported WHO range. These are review indicators, not diagnoses.</p>
+        <p className="mt-3 text-xs text-slate-600">Growth comparisons are review indicators, not diagnoses.</p>
+        <details className="mt-2 text-xs text-slate-600"><summary className="w-fit cursor-pointer">How counts work</summary><p className="mt-2 max-w-prose">Each child is counted once using their latest dated record. Review includes out-of-range indicators or measurements needing verification. Incomplete comparisons include missing inputs, unassessed swelling, or age outside the supported WHO range.</p></details>
         {selected !== null && <div className="mt-4">
           <h3 className="mb-2 font-semibold">{selected === 'all' ? 'All growth records' : groups.find((g) => g.id === selected)?.label}</h3>
           {!listed.length ? <p className="text-sm">No children in this group.</p> : <ul className="max-h-72 overflow-y-auto divide-y divide-slate-100">{listed.map(({ child, measurement, group }) => <li key={child.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span><span className="font-medium">{childName(child)}</span><span className="block text-xs text-slate-600">{groups.find((g) => g.id === group)?.label}{measurement ? ` - ${formatDate(measurement.measuredOn)}` : ''}</span></span><Link className="shrink-0 font-semibold text-[var(--color-accent-dark)] underline" to={`/children/${child.id}?tab=growth`}>View growth<span className="sr-only"> for {childName(child)}</span></Link></li>)}</ul>}
