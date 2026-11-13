@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import './DashboardPalette.css';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
@@ -26,6 +27,10 @@ export function Brand() {
 
 export default function Layout() {
   const location = useLocation();
+  useLayoutEffect(() => {
+    document.documentElement.toggleAttribute('data-dashboard-palette', location.pathname === '/');
+    return () => document.documentElement.removeAttribute('data-dashboard-palette');
+  }, [location.pathname]);
   const { demoUser, connected, signOut, appointments, children, records } = useStore();
   const navigate = useNavigate();
   const overdueCount = overdueAppointments(appointments, children, records).length;

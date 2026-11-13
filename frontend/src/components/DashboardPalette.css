@@ -1,0 +1,71 @@
+/* Dashboard palette preview. Other routes keep their existing palette. */
+@media screen {
+  :root[data-dashboard-palette] {
+    --color-body: #f5f7fb;
+    --color-page: #f5f7fb;
+    --color-surface: #ffffff;
+    --color-card: #ffffff;
+    --color-navy: #172033;
+    --color-navy-soft: #526077;
+    --color-accent: #4f46e5;
+    --color-accent-dark: #4338ca;
+    --color-accent-soft: #eeecff;
+    --color-highlight: #7c3aed;
+    --color-reference-blue: #c7d2fe;
+    --color-reference-lavender: #c4b5fd;
+    --color-lavender-soft: #ede9fe;
+    --color-border: #e2e6ef;
+    --color-avatar-ink: #6d28d9;
+    --color-chart-teal: #0891b2;
+    --color-chart-lavender: #7c3aed;
+    --color-chart-grid: #e2e6ef;
+    --color-chart-reference: #64748b;
+    --color-chart-measurement: #0f766e;
+    --color-slate-50: #fafafa; --color-slate-100: #f4f4f5; --color-slate-200: #e4e4e7;
+    --color-slate-300: #d4d4d8; --color-slate-400: #71717a; --color-slate-500: #71717a;
+    --color-slate-600: #52525b; --color-slate-700: #3f3f46;
+    --dashboard-glow-rgb: 6 182 212;
+    --dashboard-glow-alt-rgb: 139 92 246;
+    --dashboard-spot-alpha: 0.1;
+  }
+  :root[data-dashboard-palette][data-theme="dark"] {
+    --color-body: #09090b;
+    --color-page: #09090b;
+    --color-surface: #18181b;
+    --color-card: #202023;
+    --color-navy: #f4f4f5;
+    --color-navy-soft: #a1a1aa;
+    --color-accent: #4f46e5;
+    --color-accent-dark: #a5b4fc;
+    --color-accent-soft: #252143;
+    --color-highlight: #a78bfa;
+    --color-reference-blue: #c7d2fe;
+    --color-reference-lavender: #a78bfa;
+    --color-lavender-soft: #2e2445;
+    --color-border: #3f3f46;
+    --color-on-ink: #09090b;
+    --color-avatar-ink: #ddd6fe;
+    --color-chart-teal: #22d3ee;
+    --color-chart-lavender: #a78bfa;
+    --color-chart-grid: #3f3f46;
+    --color-chart-reference: #a1a1aa;
+    --color-chart-measurement: #6ee7b7;
+    --color-slate-50: #202023; --color-slate-100: #27272a; --color-slate-200: #3f3f46;
+    --color-slate-300: #52525b; --color-slate-400: #a1a1aa; --color-slate-500: #a1a1aa;
+    --color-slate-600: #d4d4d8; --color-slate-700: #e4e4e7;
+    --dashboard-glow-rgb: 34 211 238;
+    --dashboard-glow-alt-rgb: 167 139 250;
+    --dashboard-spot-alpha: 0.13;
+  }
+  :root[data-dashboard-palette] :is(.health-card, .summary-stat) { border-color: var(--color-border); }
+  :root[data-dashboard-palette] .summary-stat:hover { border-color: var(--color-highlight); }
+  :root[data-dashboard-palette] .brand-dot { background: var(--color-highlight); border-color: var(--color-surface); }
+  :root[data-dashboard-palette] .theme-switch[aria-checked="true"] { background: #4f46e5; }
+  :root[data-dashboard-palette] .theme-switch > span { background: #ede9fe; }
+  :root[data-dashboard-palette] .app-ui :where(input, textarea)::placeholder { color: var(--color-navy-soft); }
+  :root[data-dashboard-palette] .calendar-arrow { border-color: var(--color-navy-soft); }
+  :root[data-dashboard-palette] .dialog-backdrop { background: #09090b99; }
+  :root[data-dashboard-palette][data-theme="dark"] .app-ui :is(button, a)[class~="bg-[var(--color-accent)]"] { color: #fff; }
+  :root[data-dashboard-palette][data-theme="dark"] .app-ui :is(button, a)[class~="hover:bg-[var(--color-accent-dark)]"]:hover { background-color: #4338ca; }
+  :root[data-dashboard-palette][data-theme="dark"] :where(button, a, input, select, textarea, [tabindex]):focus-visible { outline-color: #a78bfa; }
+}
