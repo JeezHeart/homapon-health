@@ -1,0 +1,10 @@
+.dashboard-count { display: inline-block; font-variant-numeric: tabular-nums; }
+/* Visible by default, including when animation APIs are unavailable. */
+.dashboard-fade { opacity: 1; }
+@media (prefers-reduced-motion: reduce), print {
+  .dashboard-fade { opacity: 1 !important; }
+}
+@media print {
+  .dashboard-count > span { display: none; }
+  .dashboard-count::after { content: attr(data-count-final); }
+}

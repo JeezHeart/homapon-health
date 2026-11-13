@@ -1,15 +1,18 @@
 /* React Bits Magic Bento effects adapted for the existing clinic dashboard.
    See MagicBento.LICENSE.md. No default sample content, artwork, or fixed rows. */
-.magic-bento-preview { --mb-glow-rgb: var(--dashboard-glow-rgb, 70 125 143); --mb-glow-alt-rgb: var(--dashboard-glow-alt-rgb, 165 141 185); --mb-spot-alpha: var(--dashboard-spot-alpha, 0.075); }
-:root[data-theme="dark"] .magic-bento-preview { --mb-glow-rgb: var(--dashboard-glow-rgb, 157 208 222); --mb-spot-alpha: var(--dashboard-spot-alpha, 0.085); }
+.magic-bento-preview { --mb-glow-rgb: 15 118 110; --mb-glow-alt-rgb: 3 105 161; --mb-spot-alpha: 0.09; }
+:root[data-theme="dark"] .magic-bento-preview { --mb-glow-rgb: 45 212 191; --mb-glow-alt-rgb: 56 189 248; --mb-spot-alpha: 0.065; }
 
 @media screen and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .magic-bento-preview[data-mb-active] :is(.summary-stat, .health-card) {
+  .magic-bento-preview[data-mb-active]:not([data-mb-summary-only]) :is(.summary-stat, .health-card),
+  .magic-bento-preview[data-mb-active][data-mb-summary-only] .summary-stat {
     position: relative;
     isolation: isolate;
   }
-  .magic-bento-preview[data-mb-active] :is(.summary-stat, .health-card)::before,
-  .magic-bento-preview[data-mb-active] :is(.summary-stat, .health-card)::after {
+  .magic-bento-preview[data-mb-active]:not([data-mb-summary-only]) :is(.summary-stat, .health-card)::before,
+  .magic-bento-preview[data-mb-active][data-mb-summary-only] .summary-stat::before,
+  .magic-bento-preview[data-mb-active]:not([data-mb-summary-only]) :is(.summary-stat, .health-card)::after,
+  .magic-bento-preview[data-mb-active][data-mb-summary-only] .summary-stat::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -17,7 +20,8 @@
     pointer-events: none;
     z-index: -1;
   }
-  .magic-bento-preview[data-mb-active] :is(.summary-stat, .health-card)::before {
+  .magic-bento-preview[data-mb-active]:not([data-mb-summary-only]) :is(.summary-stat, .health-card)::before,
+  .magic-bento-preview[data-mb-active][data-mb-summary-only] .summary-stat::before {
     padding: 1px;
     background: radial-gradient(var(--mb-radius, 300px) circle at var(--mb-x, -999px) var(--mb-y, -999px), rgb(var(--mb-glow-rgb) / 0.95), transparent 65%), radial-gradient(var(--mb-radius, 300px) circle at var(--mb-x, -999px) var(--mb-y, -999px), rgb(var(--mb-glow-alt-rgb) / 0.85), transparent 85%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -26,7 +30,8 @@
     mask-composite: exclude;
     opacity: var(--mb-edge-opacity, 0);
   }
-  .magic-bento-preview[data-mb-active] :is(.summary-stat, .health-card)::after {
+  .magic-bento-preview[data-mb-active]:not([data-mb-summary-only]) :is(.summary-stat, .health-card)::after,
+  .magic-bento-preview[data-mb-active][data-mb-summary-only] .summary-stat::after {
     background: radial-gradient(var(--mb-radius, 300px) circle at var(--mb-x, -999px) var(--mb-y, -999px), rgb(var(--mb-glow-rgb) / var(--mb-spot-alpha)), transparent 75%);
     opacity: var(--mb-spot-opacity, 0);
   }

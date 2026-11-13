@@ -85,7 +85,7 @@ export default function Layout() {
           <Link to="/settings" aria-label="Settings" className="header-settings"><NavIcon name="settings" /></Link>
         </div>
       </header>
-      <main id="main-content" tabIndex={-1} key={location.pathname} className="app-content page-enter">
+      <main id="main-content" tabIndex={-1} key={location.pathname} className={`app-content${location.pathname === '/' ? '' : ' page-enter'}`}>
         {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
         <Outlet />
       </main>

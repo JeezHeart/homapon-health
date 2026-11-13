@@ -11,12 +11,13 @@ interface MagicBentoProps {
   enableBorderGlow?: boolean;
   enableSpotlight?: boolean;
   spotlightRadius?: number;
+  summaryOnly?: boolean;
 }
 
 const CARD_SELECTOR = '.summary-stat, .health-card';
 const VARIABLES = ['--mb-x', '--mb-y', '--mb-edge-opacity', '--mb-spot-opacity'];
 
-export default function MagicBento({ children, className = '', enableBorderGlow = true, enableSpotlight = true, spotlightRadius = 300 }: MagicBentoProps) {
+export default function MagicBento({ children, className = '', enableBorderGlow = true, enableSpotlight = true, spotlightRadius = 300, summaryOnly = false }: MagicBentoProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const root = rootRef.current;
@@ -25,6 +26,7 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const print = window.matchMedia('print');
     const radius = Math.max(40, spotlightRadius);
+    const selector = summaryOnly ? '.summary-stat' : CARD_SELECTOR;
     const touched = new Set<HTMLElement>();
     let enabled = false;
     let frame = 0;
@@ -47,9 +49,9 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
       frame = 0;
       if (!enabled || !pointer) return;
       const { x, y, target } = pointer;
-      const hovered = target instanceof Element ? target.closest(CARD_SELECTOR) : null;
+      const hovered = target instanceof Element ? target.closest(selector) : null;
       // Read all bounds before writing styles; newly mounted growth cards are included.
-      const cards = [...root!.querySelectorAll<HTMLElement>(CARD_SELECTOR)].map((card) => ({ card, rect: card.getBoundingClientRect() }));
+      const cards = [...root!.querySelectorAll<HTMLElement>(selector)].map((card) => ({ card, rect: card.getBoundingClientRect() }));
       for (const { card, rect } of cards) {
         const dx = Math.max(rect.left - x, 0, x - rect.right);
         const dy = Math.max(rect.top - y, 0, y - rect.bottom);
@@ -97,7 +99,7 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
       document.removeEventListener('visibilitychange', clear);
       for (const media of [finePointer, reducedMotion, print]) media.removeEventListener('change', sync);
     };
-  }, [enableBorderGlow, enableSpotlight, spotlightRadius]);
+  }, [enableBorderGlow, enableSpotlight, spotlightRadius, summaryOnly]);
 
-  return <div ref={rootRef} className={`magic-bento-preview ${className}`}>{children}</div>;
+  return <div ref={rootRef} data-mb-summary-only={summaryOnly ? '' : undefined} className={`magic-bento-preview ${className}`}>{children}</div>;
 }

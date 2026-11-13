@@ -2,6 +2,8 @@ import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import MagicBento from '../components/MagicBento';
+import CountUp from '../components/CountUp';
+import FadeContent from '../components/FadeContent';
 import ChildForm from '../components/ChildForm';
 import AppointmentDialog from '../components/AppointmentDialog';
 import Dialog from '../components/Dialog';
@@ -26,6 +28,7 @@ function TopStat({
   description,
   to,
   highlighted = false,
+  ready,
 }: {
   label: string;
   value: number;
@@ -33,6 +36,7 @@ function TopStat({
   description: string;
   to: string;
   highlighted?: boolean;
+  ready: boolean;
 }) {
   return (
     <article className={`summary-stat ${highlighted ? 'summary-stat-highlight' : ''}`}>
@@ -40,7 +44,7 @@ function TopStat({
         <span aria-hidden="true" className="summary-stat-icon">{icon}</span>
         <span className="text-base font-medium">{label}</span>
       </span><Link to={to} aria-label={`View ${label.toLowerCase()}`} className="stat-action">···</Link></div>
-      <Link to={to} className="summary-stat-value" aria-label={`${label}: ${value}`}>{value.toLocaleString('en-PH')}</Link>
+      <Link to={to} className="summary-stat-value" aria-label={`${label}: ${value}`}><CountUp to={value} startWhen={ready} /></Link>
       <p className="mt-auto max-w-60 text-xs leading-relaxed text-[var(--color-navy-soft)]">{description}</p>
     </article>
   );
@@ -77,7 +81,7 @@ function AlertIcon() {
 }
 
 export default function DashboardPage() {
-  const { children, records, appointments, addChild, addAppointment } = useStore();
+  const { children, records, appointments, addChild, addAppointment, dataReady } = useStore();
   const overdue = overdueAppointments(appointments, children, records);
   const fullyImmunized = children.filter((child) => isFullyImmunized(records, child.id)).length;
   const [action, setAction] = useState<'child' | 'appointment' | null>(null);
@@ -85,7 +89,7 @@ export default function DashboardPage() {
   const smsLabel = { checking: 'Checking...', enabled: 'Enabled', disabled: 'Disabled', unavailable: 'Unavailable', practice: 'Practice only' }[sms.status];
 
   return (
-    <><MagicBento className="flex flex-col gap-5" enableBorderGlow={false} enableSpotlight={false}>
+    <><MagicBento className="flex flex-col gap-5" summaryOnly enableBorderGlow={false} enableSpotlight spotlightRadius={300}>
       <div className="dashboard-toolbar">
         <p role="status" aria-live="polite" className="text-sm text-[var(--color-navy-soft)]"><Link to="/sms">SMS: <strong className="font-medium">{smsLabel}</strong></Link></p>
         <div className="flex flex-wrap gap-2">
@@ -100,25 +104,25 @@ export default function DashboardPage() {
           </h1>
         </div>
       </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <TopStat label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
-          <TopStat label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
-          <TopStat label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" />
-          <TopStat label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description={new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records" />
-        </div>
+        <FadeContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <TopStat ready={dataReady !== false} label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
+          <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
+          <TopStat ready={dataReady !== false} label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" />
+          <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description={new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records" />
+        </FadeContent>
 
-      <div className="dashboard-overview">
+      <FadeContent className="dashboard-overview">
         <Card title="Vaccination overview" action={<div className="overview-legend"><span><i className="legend-teal" aria-hidden="true" />Doses</span><span><i className="legend-lavender" aria-hidden="true" />Appointments</span></div>}>
           <MonthlyTrendChart records={records} appointments={appointments} />
         </Card>
         <DashboardCalendar />
-      </div>
+      </FadeContent>
 
       <DashboardAppointments />
 
 
 
-      <Suspense fallback={<p role="status">Loading growth summary...</p>}><GrowthSummary /></Suspense>
+      <Suspense fallback={<p role="status">Loading growth summary...</p>}><FadeContent><GrowthSummary /></FadeContent></Suspense>
     </MagicBento>
 
       {action === 'child' && <Dialog title="Register child" onClose={() => setAction(null)}><ChildForm onSubmit={async (data) => { await addChild(data); setAction(null); }} onCancel={() => setAction(null)} /></Dialog>}
