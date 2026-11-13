@@ -213,9 +213,8 @@ body {
   .theme-switch[aria-checked='true'] { background: var(--color-accent); }
   .theme-switch[aria-checked='true'] > span { transform: translateX(14px); }
   .header-identity { border-left: 1px solid var(--color-border); padding-left: 1.5rem; }
-  .header-icon, .header-settings { position: relative; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border-radius: 50%; }
-  .header-settings { display: inline-flex; border: 1px solid var(--color-border); }
-  .header-icon:hover, .header-settings:hover { background: var(--color-accent-soft); }
+  .header-icon { position: relative; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border-radius: 50%; }
+  .header-icon:hover { background: var(--color-accent-soft); }
   .notification-count { position: absolute; right: 0; top: -0.125rem; min-width: 1rem; padding: 0.125rem; border-radius: 0.375rem; background: var(--color-lavender-soft); text-align: center; font-size: 0.625rem; }
   .dashboard-overview { display: grid; min-width: 0; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); }
   .dashboard-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
@@ -296,7 +295,6 @@ body {
     .app-header { min-height: 4.5rem; padding: 0.75rem 1rem; }
     .header-actions, .header-identity { gap: 0.5rem; }
     .header-identity { padding-left: 0; border-left: 0; }
-    .header-settings { width: 2rem; height: 2rem; }
     .header-search { padding: 0 0.5rem; }
     .header-search input { font-size: 1rem; }
     .segmented-control button { padding: 0.375rem 0.75rem; }
@@ -341,7 +339,6 @@ body {
   .app-header .header-search { grid-column: 1 / -1; grid-row: 2; max-width: none; }
   .app-header .header-actions { grid-column: 3; grid-row: 1; }
   .app-header .header-identity, .app-header .header-icon, .app-header .theme-toggle > span { display: none; }
-  .app-header .header-settings { width: 2.75rem; height: 2.75rem; }
   .app-ui .calendar-arrow { width: 2.75rem; height: 2.75rem; }
   .app-content button:is([aria-label='Previous month'], [aria-label='Next month']) { min-width: 2.75rem; }
   .app-ui .theme-switch { min-width: 2.75rem; min-height: 2.75rem; background: transparent; }

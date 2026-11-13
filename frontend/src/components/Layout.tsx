@@ -82,7 +82,6 @@ export default function Layout() {
           <div className="header-identity"><div className="hidden min-w-0 text-right lg:block"><p className="max-w-28 truncate text-sm xl:max-w-48">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
           <span aria-hidden="true" className="staff-avatar">{(demoUser?.name.trim().charAt(0) || 'H').toUpperCase()}</span>
           </div>
-          <Link to="/settings" aria-label="Settings" className="header-settings"><NavIcon name="settings" /></Link>
         </div>
       </header>
       <main id="main-content" tabIndex={-1} key={location.pathname} className={`app-content${['/', '/children', '/schedule'].includes(location.pathname) ? '' : ' page-enter'}`}>
