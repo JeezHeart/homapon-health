@@ -85,7 +85,7 @@ export default function DashboardPage() {
   const smsLabel = { checking: 'Checking...', enabled: 'Enabled', disabled: 'Disabled', unavailable: 'Unavailable', practice: 'Practice only' }[sms.status];
 
   return (
-    <><MagicBento className="flex flex-col gap-5" enableBorderGlow enableSpotlight spotlightRadius={300}>
+    <><MagicBento className="flex flex-col gap-5" enableBorderGlow={false} enableSpotlight={false}>
       <div className="dashboard-toolbar">
         <p role="status" aria-live="polite" className="text-sm text-[var(--color-navy-soft)]"><Link to="/sms">SMS: <strong className="font-medium">{smsLabel}</strong></Link></p>
         <div className="flex flex-wrap gap-2">

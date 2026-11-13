@@ -72,12 +72,18 @@ test('existing Thursday booking retains its date and exposes its saved exception
 
 test('dashboard session links to its booked date and empty state avoids confirming a session', () => {
   const html = renderDashboard([{ id: 'booking', childId: child.id, vaccineId: 'bcg', doseNumber: 1, scheduledDate: '2099-01-08' }]);
-  assert.match(html, /href="\/schedule\?date=2099-01-08"/);
-  assert.match(html, /View session/);
+  assert.match(html, /href="\/schedule\?date=2099-01-08&amp;filter=upcoming"/);
+  assert.match(html, /Jan 8, 2099/);
   const empty = renderDashboard([]);
-  assert.match(empty, /No upcoming appointments booked/);
-  assert.match(empty, /Confirm any holiday changes/);
-  assert.doesNotMatch(empty, /View session/);
+  assert.match(empty, /No appointments booked/);
+  assert.match(empty, /Confirm holiday changes with staff/);
+  assert.doesNotMatch(empty, /href="\/schedule\?date=2099-01-08/);
+});
+
+test('calendar markers describe appointment status in words as well as color', async () => {
+  const { todayISO } = await server.ssrLoadModule('/src/utils/dates.ts');
+  const html = renderDashboard([{ id: 'today', childId: child.id, vaccineId: 'bcg', doseNumber: 1, scheduledDate: todayISO() }]);
+  assert.match(html, /aria-current="date" aria-label="[^"]*1 appointment, Due today" title="Due today"/);
 });
 
 test('session date links select the correct calendar month and day; invalid dates are ignored', () => {
@@ -90,7 +96,9 @@ test('session date links select the correct calendar month and day; invalid date
   const html = renderSchedule('2099-01-08');
   assert.match(html, /January 2099/);
   assert.match(html, /Jan 8, 2099/);
-  assert.doesNotMatch(html, /No day selected/);
-  assert.match(renderSchedule('2099-02-31'), /No day selected/);
-  assert.match(renderSchedule('not-a-date'), /No day selected/);
+  assert.match(html, /aria-pressed="true"/);
+  for (const invalid of ['2099-02-31', 'not-a-date']) {
+    assert.doesNotMatch(renderSchedule(invalid), /aria-pressed="true"/);
+    assert.doesNotMatch(renderSchedule(invalid), /January 2099/);
+  }
 });

@@ -94,7 +94,8 @@ test('single and batch dialogs render guardian, transaction date, preview, and b
   assert.match(blocked, /<button[^>]*disabled=""[^>]*>Confirm &amp; send/);
   const batch = render(Batch, { appointments: [appointment, long] });
   assert.match(batch, /Deselect the affected reminders/);
-  assert.match(batch, /<button[^>]*disabled=""[^>]*>Send to 2 Guardians/);
+  assert.match(batch, /<button[^>]*disabled=""[^>]*>Send 2 reminders/);
   const validBatch = render(Batch, { appointments: [appointment] });
-  assert.doesNotMatch(validBatch, /<button[^>]*disabled=""[^>]*>Send to 1 Guardian/);
+  assert.match(validBatch, /<button[^>]*>Send 1 reminder/);
+  assert.doesNotMatch(validBatch, /<button[^>]*disabled=""[^>]*>Send 1 reminder/);
 });

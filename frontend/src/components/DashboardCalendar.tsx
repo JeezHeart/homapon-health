@@ -6,6 +6,8 @@ import { enrichedAppointments, upcomingAppointments } from '../data/mockData';
 import { isRegularClinicDay, nextClinicSession, nextRegularClinicDate } from '../utils/clinicScheduling';
 import { formatDate, monthCells, shiftMonthCursor, todayISO } from '../utils/dates';
 
+const STATUS_LABELS: Record<string, string> = { upcoming: 'Upcoming', 'due-today': 'Due today', overdue: 'Overdue' };
+
 export default function DashboardCalendar() {
   const { appointments, children, records } = useStore();
   const today = todayISO();
@@ -34,8 +36,10 @@ export default function DashboardCalendar() {
       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => <span key={i} className="calendar-weekday" aria-hidden="true">{day}</span>)}
       {cells.map((cell, i) => {
         const date = cell ?? new Date(Date.UTC(cursor.year, cursor.month, 1 - firstWeekday + i)).toISOString().slice(0, 10);
+        const count = counts.get(date) ?? 0;
+        const statusText = Array.from(statuses.get(date) ?? []).map((status) => STATUS_LABELS[status] ?? status).join(', ');
         return <Link key={date} to={`/schedule?date=${date}&filter=${date < today ? 'overdue' : 'upcoming'}`} aria-current={date === today ? 'date' : undefined}
-        aria-label={`${formatDate(date)}, ${counts.get(date) ?? 0} appointments`}
+        aria-label={`${formatDate(date)}, ${count} appointment${count === 1 ? '' : 's'}${statusText ? `, ${statusText}` : ''}`} title={statusText || undefined}
         className={`calendar-day ${date === today ? 'calendar-today' : ''} ${cell ? '' : 'calendar-outside'}`}>
         <span>{Number(date.slice(-2))}</span><span className="calendar-day-dots" aria-hidden="true">{Array.from(statuses.get(date) ?? []).map((status) => <span key={status} className={`calendar-status-dot calendar-status-${status}`} />)}</span>
       </Link>;
