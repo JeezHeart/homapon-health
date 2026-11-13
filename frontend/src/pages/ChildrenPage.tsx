@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import ChildForm from '../components/ChildForm';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
+import FadeContent from '../components/FadeContent';
 import StatusBadge from '../components/StatusBadge';
 import { childName, extractPurok, PUROKS } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
@@ -47,7 +48,7 @@ export default function ChildrenPage() {
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="page-title">Child Records</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">{filtered.length} of {children.length} children</p></div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" title="Export all filtered children, across all pages" onClick={() => exportChildrenList(filtered.map((row) => row.child), appointments, records)} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium">Export CSV</button>
+        <button type="button" title="Export all filtered children, across all pages" onClick={() => exportChildrenList(filtered.map((row) => row.child), appointments, records)} className="rounded-xl border border-slate-300 bg-[var(--color-card)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--color-elevated)]">Export CSV</button>
         <button type="button" onClick={() => setRegistering(true)} className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-dark)]">Register child</button>
       </div>
     </div>
@@ -58,17 +59,18 @@ export default function ChildrenPage() {
           <select aria-label="Filter by purok" className={selectClass} value={purok} onChange={(event) => update({ purok: event.target.value })}><option value="all">All puroks</option>{PUROKS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           <select aria-label="Filter by vaccination status" className={selectClass} value={status} onChange={(event) => update({ status: event.target.value })}><option value="all">All vaccination records</option><option>Fully immunized</option><option>Partially immunized</option></select>
           <select aria-label="Filter by appointment status" className={selectClass} value={schedule} onChange={(event) => update({ schedule: event.target.value })}><option value="all">All appointments</option><option value="upcoming">Upcoming / due today</option><option value="overdue">Overdue appointments</option></select>
-          {activeFilters && <button type="button" onClick={() => update({ q: '', status: 'all', schedule: 'all', purok: 'all' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
+          {activeFilters && <button type="button" onClick={() => update({ q: '', status: 'all', schedule: 'all', purok: 'all' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-[var(--color-elevated)]">Clear filters</button>}
         </div>
       </div>
       <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Vaccination status uses recorded doses; overdue refers to appointment dates.</p>
     </Card>
+    <FadeContent className="flex flex-col gap-4">
     {filtered.length === 0 ? <EmptyState title={children.length ? 'No matching records' : 'No children registered'} message={children.length ? 'Change your search or clear the filters.' : 'Register a child to start the registry.'} /> : <>
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="ui-table min-w-[820px] text-left">
           <caption className="sr-only">Child directory</caption>
           <thead><tr>{['Child', 'Guardian', 'Purok', 'Vaccination status', 'Next vaccination', 'Action'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
-          <tbody>{pagination.visible.map(({ child, vaccination, next }) => <tr key={child.id}>
+          <tbody>{pagination.visible.map(({ child, vaccination, next }) => <tr key={child.id} className="hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
             <td><Link to={`/children/${child.id}`} state={{ directory: returnTo }} className="flex items-center gap-3"><span className="child-avatar" aria-hidden="true">{child.firstName.charAt(0)}{child.lastName.charAt(0)}</span><span><span className="block font-medium">{childName(child)}</span><span className="block text-xs text-[var(--color-navy-soft)]">{calcAge(child.birthDate)}</span></span></Link></td>
             <td><span className="block">{child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{child.guardianMobile}</span></td>
             <td className="whitespace-nowrap">{extractPurok(child.purok)}</td>
@@ -83,6 +85,7 @@ export default function ChildrenPage() {
         <div className="flex flex-wrap items-center gap-2"><label htmlFor="directory-size" className="text-xs">Rows per page</label><select id="directory-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Next</button></div>
       </nav>
     </>}
+    </FadeContent>
     {registering && <Dialog title="Register child" onClose={() => setRegistering(false)}><ChildForm onSubmit={async (data) => { await addChild(data); setRegistering(false); }} onCancel={() => setRegistering(false)} /></Dialog>}
   </div>;
 }
