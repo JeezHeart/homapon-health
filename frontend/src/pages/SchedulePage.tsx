@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import AppointmentDialog from '../components/AppointmentDialog';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
+import FadeContent from '../components/FadeContent';
 import FollowUpDialog from '../components/FollowUpDialog';
 import SmsDialog from '../components/SmsDialog';
 import StatusBadge from '../components/StatusBadge';
@@ -134,7 +135,7 @@ export default function SchedulePage() {
         </div>
       </Card>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <FadeContent className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="min-w-0">
           <Card title={monthLabel}>
             <div className="flex items-center justify-between pb-3">
@@ -142,7 +143,7 @@ export default function SchedulePage() {
                 Select a date
               </span>
               <div className="flex gap-1">
-                <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })} className="rounded-lg border border-slate-300 px-2 py-1 text-xs">Today</button>
+                <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })} className="rounded-lg border border-slate-300 px-2 py-1 text-xs hover:bg-[var(--color-elevated)]">Today</button>
                 <button
                   type="button"
                   onClick={() => shiftMonth(-1)}
@@ -185,10 +186,10 @@ export default function SchedulePage() {
                     onClick={() => update({ date: iso, filter: 'all' })}
                     aria-pressed={isSelected}
                     aria-current={isToday ? 'date' : undefined}
-                    aria-label={`${formatDate(iso)}: ${count} appointment${count === 1 ? '' : 's'}`}
-                    className={`flex flex-col items-center rounded-xl p-2 transition-colors ${
+                    aria-label={`${formatDate(iso)}: ${count} appointment${count === 1 ? '' : 's'}${isToday ? ', Today' : ''}${isSelected ? ', Selected date' : ''}`}
+                    className={`flex flex-col items-center rounded-xl p-2 transition-colors motion-reduce:transition-none ${isToday ? 'font-bold underline decoration-2 underline-offset-4' : ''} ${
                       isSelected
-                        ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]'
+                        ? 'bg-[var(--color-accent-soft)] text-[var(--color-navy)] ring-2 ring-inset ring-[var(--color-accent)]'
                         : isToday
                           ? 'bg-amber-100 font-bold text-amber-900'
                           : 'hover:bg-slate-100'
@@ -200,6 +201,7 @@ export default function SchedulePage() {
                 );
               })}
             </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--color-navy-soft)]"><span className="font-bold underline decoration-2 underline-offset-4">Today</span><span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span></div>
             <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Counts include all statuses matching search and purok. Select a date to view its appointments.</p>
             {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="mt-3 text-xs font-medium underline">Clear selected date</button>}
           </Card>
@@ -232,7 +234,7 @@ export default function SchedulePage() {
                   const v = vaccineById(a.vaccineId);
                   const followUp = a.followUpStatus ?? 'Pending';
                   return (
-                    <tr key={a.id} className="border-t border-slate-100">
+                    <tr key={a.id} className="border-t border-slate-100 hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
                       <td className="py-2.5 pr-4"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></td>
                       <td className="py-2.5 pr-4">
                         <div className="flex flex-col gap-1">
@@ -264,7 +266,7 @@ export default function SchedulePage() {
                         <div className="flex flex-col items-start gap-2 text-xs font-medium">
                           <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50">View record</Link>
                           {a.status !== 'completed' && <details className="min-w-[100px]">
-                            <summary className="cursor-pointer rounded-lg border border-slate-300 px-2.5 py-1.5">More</summary>
+                            <summary className="cursor-pointer rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2">More</summary>
                             <div className="mt-2 flex flex-col items-start gap-2">
                               {a.status === 'overdue' && <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setFollowUpFor(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-red-700 hover:bg-red-50">Follow-up</button>}
                               <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setRescheduling(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-50">Reschedule</button>
@@ -286,7 +288,7 @@ export default function SchedulePage() {
         <div className="flex flex-wrap items-center gap-2"><label htmlFor="schedule-size" className="text-xs">Rows per page</label><select id="schedule-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>
       </nav>}
         </div>
-      </div>
+      </FadeContent>
 
       {smsFor && <SmsDialog appointment={smsFor} onClose={() => setSmsFor(null)} />}
 

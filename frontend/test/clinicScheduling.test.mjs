@@ -86,7 +86,7 @@ test('calendar markers describe appointment status in words as well as color', a
   assert.match(html, /aria-current="date" aria-label="[^"]*1 appointment, Due today" title="Due today"/);
 });
 
-test('session date links select the correct calendar month and day; invalid dates are ignored', () => {
+test('session date links select the correct calendar month and day; invalid dates are ignored', async () => {
   function renderSchedule(date) {
     return renderToStaticMarkup(createElement(MemoryRouter, { initialEntries: [`/schedule?date=${date}`] },
       createElement(StoreContext.Provider, {
@@ -97,6 +97,9 @@ test('session date links select the correct calendar month and day; invalid date
   assert.match(html, /January 2099/);
   assert.match(html, /Jan 8, 2099/);
   assert.match(html, /aria-pressed="true"/);
+  assert.match(html, /aria-label="[^"]*, Selected date"/);
+  const { todayISO } = await server.ssrLoadModule('/src/utils/dates.ts');
+  assert.match(renderSchedule(todayISO()), /aria-pressed="true" aria-current="date" aria-label="[^"]*, Today, Selected date"/);
   for (const invalid of ['2099-02-31', 'not-a-date']) {
     assert.doesNotMatch(renderSchedule(invalid), /aria-pressed="true"/);
     assert.doesNotMatch(renderSchedule(invalid), /January 2099/);
