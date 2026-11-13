@@ -128,7 +128,7 @@ export default function AppointmentDialog({
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ap-vaccine" className="mb-1 block text-xs font-semibold">
             Vaccine *
@@ -169,7 +169,7 @@ export default function AppointmentDialog({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ap-date" className="mb-1 block text-xs font-semibold">
             Appointment date *
@@ -229,7 +229,7 @@ export default function AppointmentDialog({
           {error}
         </p>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           disabled={saving}

@@ -140,7 +140,7 @@ export default function DoseEntryForm({
           Record saved for {childName(selectedChild)}. Booking the next
           visit keeps the schedule — and future SMS reminders — alive.
         </p>
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           {onScheduleNext && (
             <button
               type="button"
@@ -187,7 +187,7 @@ export default function DoseEntryForm({
           <dt className="text-[var(--color-navy-soft)]">Remarks</dt>
           <dd className="font-medium">{remarks || '—'}</dd>
         </dl>
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={() => setStep('form')}
@@ -224,7 +224,7 @@ export default function DoseEntryForm({
         </select>
         {fieldError('child')}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="de-vaccine" className="mb-1 block text-xs font-semibold">
             Vaccine *
@@ -287,7 +287,7 @@ export default function DoseEntryForm({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="de-date" className="mb-1 block text-xs font-semibold">
             Date administered *
@@ -340,7 +340,7 @@ export default function DoseEntryForm({
           {saveError}
         </p>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           onClick={onDone}

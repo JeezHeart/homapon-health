@@ -181,7 +181,7 @@ export default function ChildProfilePage() {
       {tab === 'overview' && (
         <div className="grid gap-4 md:grid-cols-2">
           <Card title="Child & guardian">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <dl className="profile-details grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <dt className="text-[var(--color-navy-soft)]">Guardian</dt>
               <dd className="font-medium">{child.guardian}</dd>
               <dt className="text-[var(--color-navy-soft)]">Mobile</dt>
@@ -240,30 +240,30 @@ export default function ChildProfilePage() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="ui-table w-full min-w-[640px] text-left text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                    <th className="pb-2 pr-4 font-semibold">Vaccine / dose</th>
-                    <th className="pb-2 pr-4 font-semibold">Date given</th>
-                    <th className="pb-2 pr-4 font-semibold">Batch / lot</th>
-                    <th className="pb-2 pr-4 font-semibold">Health worker</th>
-                    <th className="pb-2 pr-4 font-semibold">Remarks</th>
-                    <th className="pb-2 font-semibold">Action</th>
+              <table role="table" className="mobile-record-table ui-table w-full min-w-[640px] text-left text-sm">
+                <thead role="rowgroup">
+                  <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
+                    <th role="columnheader" className="pb-2 pr-4 font-semibold">Vaccine / dose</th>
+                    <th role="columnheader" className="pb-2 pr-4 font-semibold">Date given</th>
+                    <th role="columnheader" className="pb-2 pr-4 font-semibold">Batch / lot</th>
+                    <th role="columnheader" className="pb-2 pr-4 font-semibold">Health worker</th>
+                    <th role="columnheader" className="pb-2 pr-4 font-semibold">Remarks</th>
+                    <th role="columnheader" className="pb-2 font-semibold">Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {history.map((r) => {
                     const v = vaccineById(r.vaccineId);
                     return (
-                      <tr key={r.id} className="border-t border-slate-100">
-                        <td className="py-2.5 pr-4 font-medium">
+                      <tr role="row" key={r.id} className="border-t border-slate-100">
+                        <td role="cell" className="py-2.5 pr-4 font-medium"><span className="mobile-cell-label" aria-hidden="true">Vaccine / dose</span><div className="mobile-cell-value">
                           {v?.shortName ?? r.vaccineId} · Dose {r.doseNumber}
-                        </td>
-                        <td className="py-2.5 pr-4">{formatDate(r.dateAdministered)}</td>
-                        <td className="py-2.5 pr-4">{r.batchLot ?? '—'}</td>
-                        <td className="py-2.5 pr-4">{r.healthWorker}</td>
-                        <td className="py-2.5 pr-4">{r.remarks ?? '—'}</td>
-                        <td className="py-2.5">
+                        </div></td>
+                        <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Date given</span><div className="mobile-cell-value">{formatDate(r.dateAdministered)}</div></td>
+                        <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Batch / lot</span><div className="mobile-cell-value">{r.batchLot ?? '—'}</div></td>
+                        <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Health worker</span><div className="mobile-cell-value">{r.healthWorker}</div></td>
+                        <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Remarks</span><div className="mobile-cell-value">{r.remarks ?? '—'}</div></td>
+                        <td role="cell" className="py-2.5"><span className="mobile-cell-label" aria-hidden="true">Action</span><div className="mobile-cell-value">
                           <button
                             type="button"
                             onClick={() => setCorrecting(r)}
@@ -271,7 +271,7 @@ export default function ChildProfilePage() {
                           >
                             Edit
                           </button>
-                        </td>
+                        </div></td>
                       </tr>
                     );
                   })}

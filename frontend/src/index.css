@@ -200,6 +200,9 @@ body {
   .stat-action:hover { background: var(--color-elevated); }
   .header-search { display: flex; width: 100%; max-width: 20.5rem; min-width: 0; align-items: center; gap: 0.625rem; border: 1px solid var(--color-control-border); border-radius: 0.75rem; background: var(--color-card); padding: 0 0.875rem; }
   .header-search svg { flex: none; }
+  .header-page-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mobile-cell-label { display: none; }
+  .mobile-cell-value { display: contents; }
   .header-search input { width: 100%; min-height: 2.5rem; border: 0; padding: 0.5rem 0; background: transparent; font-size: 0.875rem; }
   .header-actions, .header-identity { display: flex; flex: none; align-items: center; gap: 0.875rem; }
   .theme-toggle { display: inline-flex; flex: none; align-items: center; gap: 0.5rem; color: var(--color-navy-soft); }
@@ -309,6 +312,65 @@ body {
     .app-header .header-identity { display: none; }
     .app-header .header-actions { gap: 0.625rem; }
   }
+}
+
+/* Keep the same records and actions, with labelled rows on smaller screens. */
+@media screen and (max-width: 1023px) {
+  .mobile-record-table { display: block; min-width: 0; width: 100%; border-spacing: 0; }
+  .mobile-record-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .mobile-record-table tbody { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 0.75rem; }
+  .mobile-record-table tbody tr { display: block; min-width: 0; border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 0.75rem; background: var(--color-card); }
+  .mobile-record-table.ui-table tbody td { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: 0.75rem; padding: 0.5rem 0; border: 0; border-radius: 0; white-space: normal; }
+  .mobile-record-table .mobile-cell-label { display: block; color: var(--color-navy-soft); font-size: 0.75rem; font-weight: 500; }
+  .mobile-record-table .mobile-cell-value { display: block; min-width: 0; overflow-wrap: anywhere; }
+  .mobile-record-table .mobile-cell-value .whitespace-nowrap { white-space: normal; }
+  .mobile-record-table .child-avatar { display: none; }
+  .mobile-record-table .table-action { width: 2.75rem; height: 2.75rem; }
+  .overview-table-toolbar { flex-wrap: wrap; }
+  .overview-table-toolbar .selection-action { min-height: 2.75rem; }
+  .dashboard-records input[type='checkbox'] { width: 1.125rem; height: 1.125rem; }
+}
+@media screen and (min-width: 640px) and (max-width: 1023px) {
+  .mobile-record-table tbody { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media screen and (max-width: 767px) {
+  .app-header { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) auto; gap: 0.75rem; }
+  .app-header .header-primary { display: contents; }
+  .header-primary > button { grid-column: 1; grid-row: 1; }
+  .header-page-title { position: static; width: auto; height: auto; clip-path: none; grid-column: 2; grid-row: 1; text-overflow: ellipsis; font-size: 0.875rem; font-weight: 600; }
+  .app-header .header-search { grid-column: 1 / -1; grid-row: 2; max-width: none; }
+  .app-header .header-actions { grid-column: 3; grid-row: 1; }
+  .app-header .header-identity, .app-header .header-icon, .app-header .theme-toggle > span { display: none; }
+  .app-header .header-settings { width: 2.75rem; height: 2.75rem; }
+  .app-ui .calendar-arrow { width: 2.75rem; height: 2.75rem; }
+  .app-content button:is([aria-label='Previous month'], [aria-label='Next month']) { min-width: 2.75rem; }
+  .app-ui .theme-switch { min-width: 2.75rem; min-height: 2.75rem; background: transparent; }
+  .theme-switch::before { content: ''; position: absolute; inset: 0.6875rem 0.25rem; border-radius: 999px; background: var(--color-control-border); }
+  .theme-switch[aria-checked='true']::before { background: var(--color-accent); }
+  .theme-switch > span { top: 0.875rem; left: 0.4375rem; }
+  .app-ui :where(button, a, summary, select, input:not([type='checkbox']):not([type='radio'])) { touch-action: manipulation; }
+  .app-ui :where(button, summary, select, input:not([type='checkbox']):not([type='radio'])) { min-height: 2.75rem; }
+  .app-content :where(a[class*='rounded']), .dialog-panel :where(a[class*='rounded']) { min-height: 2.75rem; align-content: center; }
+  .app-ui :where(input, select, textarea) { max-width: 100%; min-width: 0; }
+  .app-ui input:is([type='checkbox'], [type='radio']) { width: 1.5rem; height: 1.5rem; flex: none; }
+  .app-ui :where(dd, .dialog-panel p) { min-width: 0; overflow-wrap: anywhere; }
+  .app-ui .dialog-backdrop { padding: 0.5rem; }
+  .app-ui .dialog-panel { max-height: calc(100dvh - 1rem); padding: 1rem; overscroll-behavior: contain; scroll-padding-block: 1rem; }
+  .app-ui .drawer-backdrop { padding: 0; }
+  .app-ui .drawer-panel { max-height: 100dvh; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .dialog-panel form > .flex:last-child { flex-wrap: wrap; }
+  .directory-filters { width: 100%; }
+  .directory-filters > select { width: 100%; }
+  .profile-details { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+  .record-group-header { flex-wrap: wrap; padding: 0 0.75rem 0.75rem; }
+  .record-group-header > button { flex-basis: 100%; padding-inline: 0.25rem; }
+  .record-group-header > a { margin-left: 0.25rem; }
+  .record-group-header .ml-auto { margin-left: 0; flex-basis: 100%; }
+  .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .dashboard-stats .summary-stat { min-height: 10rem; padding: 1rem; gap: 0.75rem; }
+  .dashboard-stats .summary-stat-icon, .dashboard-stats .stat-action { display: none; }
+  .dashboard-stats .summary-stat .text-base { font-size: 0.875rem; }
+  .dashboard-stats .summary-stat-value { font-size: 1.75rem; }
 }
 
 /* Tabular figures so dates, doses, and counts align in table columns */

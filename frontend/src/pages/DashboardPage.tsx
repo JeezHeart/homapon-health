@@ -104,7 +104,7 @@ export default function DashboardPage() {
           </h1>
         </div>
       </div>
-        <FadeContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FadeContent className="dashboard-stats grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <TopStat ready={dataReady !== false} label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
           <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
           <TopStat ready={dataReady !== false} label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" />

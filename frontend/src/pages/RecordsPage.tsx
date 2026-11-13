@@ -134,7 +134,7 @@ export default function RecordsPage() {
                 aria-label={`Records for ${childName(child)}`}
                 className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm"
               >
-                <div className="flex items-center gap-2 pr-4">
+                <div className="record-group-header flex items-center gap-2 pr-4">
                 <button
                   type="button"
                   onClick={() => toggle(child.id)}
@@ -173,9 +173,9 @@ export default function RecordsPage() {
                 >
                   <div className="accordion-glide-inner">
                     <div className="overflow-x-auto">
-                    <table className="ui-table w-full min-w-[620px] text-left text-sm">
-                      <thead>
-                        <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
+                    <table role="table" className="mobile-record-table ui-table w-full min-w-[620px] text-left text-sm">
+                      <thead role="rowgroup">
+                        <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
                           {[
                             'Vaccine / dose',
                             'Date given',
@@ -183,27 +183,27 @@ export default function RecordsPage() {
                             'Batch / lot',
                             'Action',
                           ].map((h) => (
-                            <th key={h} scope="col" className="px-4 py-2 font-semibold">
+                            <th role="columnheader" key={h} scope="col" className="px-4 py-2 font-semibold">
                               {h}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody role="rowgroup">
                         {doses.map((r) => {
                           const v = vaccineById(r.vaccineId);
                           return (
-                            <tr key={r.id} className="border-t border-slate-100">
-                              <td className="px-4 py-2 font-medium">
+                            <tr role="row" key={r.id} className="border-t border-slate-100">
+                              <td role="cell" className="px-4 py-2 font-medium"><span className="mobile-cell-label" aria-hidden="true">Vaccine / dose</span><div className="mobile-cell-value">
                                 {v?.shortName ?? r.vaccineId} · Dose{' '}
                                 {r.doseNumber}
-                              </td>
-                              <td className="px-4 py-2">
+                              </div></td>
+                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Date given</span><div className="mobile-cell-value">
                                 {formatDate(r.dateAdministered)}
-                              </td>
-                              <td className="px-4 py-2">{r.healthWorker}</td>
-                              <td className="px-4 py-2">{r.batchLot ?? '—'}</td>
-                              <td className="px-4 py-2">
+                              </div></td>
+                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Health worker</span><div className="mobile-cell-value">{r.healthWorker}</div></td>
+                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Batch / lot</span><div className="mobile-cell-value">{r.batchLot ?? '—'}</div></td>
+                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Action</span><div className="mobile-cell-value">
                                 <button
                                   type="button"
                                   onClick={() => setCorrecting(r)}
@@ -211,7 +211,7 @@ export default function RecordsPage() {
                                 >
                                   Correct entry
                                 </button>
-                              </td>
+                              </div></td>
                             </tr>
                           );
                         })}

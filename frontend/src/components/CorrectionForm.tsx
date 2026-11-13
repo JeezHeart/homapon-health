@@ -60,7 +60,7 @@ export default function CorrectionForm({
         Correction mode — changes to this entry are for fixing mistakes.
         The child, vaccine, and dose cannot be changed here.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ce-date" className="mb-1 block text-xs font-semibold">
             Date administered *
@@ -110,7 +110,7 @@ export default function CorrectionForm({
           {error}
         </p>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           onClick={onClose}

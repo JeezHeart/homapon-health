@@ -55,7 +55,7 @@ export default function ChildrenPage() {
     <Card>
       <div className="flex flex-col items-start gap-3 xl:flex-row">
         <input type="search" aria-label="Search by child or guardian name" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="directory-filters flex shrink-0 flex-wrap gap-2">
           <select aria-label="Filter by purok" className={selectClass} value={purok} onChange={(event) => update({ purok: event.target.value })}><option value="all">All puroks</option>{PUROKS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           <select aria-label="Filter by vaccination status" className={selectClass} value={status} onChange={(event) => update({ status: event.target.value })}><option value="all">All vaccination records</option><option>Fully immunized</option><option>Partially immunized</option></select>
           <select aria-label="Filter by appointment status" className={selectClass} value={schedule} onChange={(event) => update({ schedule: event.target.value })}><option value="all">All appointments</option><option value="upcoming">Upcoming / due today</option><option value="overdue">Overdue appointments</option></select>
@@ -67,16 +67,16 @@ export default function ChildrenPage() {
     <FadeContent className="flex flex-col gap-4">
     {filtered.length === 0 ? <EmptyState title={children.length ? 'No matching records' : 'No children registered'} message={children.length ? 'Change your search or clear the filters.' : 'Register a child to start the registry.'} /> : <>
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-        <table className="ui-table min-w-[820px] text-left">
+        <table role="table" className="mobile-record-table ui-table min-w-[820px] text-left">
           <caption className="sr-only">Child directory</caption>
-          <thead><tr>{['Child', 'Guardian', 'Purok', 'Vaccination status', 'Next vaccination', 'Action'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
-          <tbody>{pagination.visible.map(({ child, vaccination, next }) => <tr key={child.id} className="hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
-            <td><Link to={`/children/${child.id}`} state={{ directory: returnTo }} className="flex items-center gap-3"><span className="child-avatar" aria-hidden="true">{child.firstName.charAt(0)}{child.lastName.charAt(0)}</span><span><span className="block font-medium">{childName(child)}</span><span className="block text-xs text-[var(--color-navy-soft)]">{calcAge(child.birthDate)}</span></span></Link></td>
-            <td><span className="block">{child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{child.guardianMobile}</span></td>
-            <td className="whitespace-nowrap">{extractPurok(child.purok)}</td>
-            <td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${vaccination === 'Fully immunized' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>{vaccination}</span></td>
-            <td>{next ? <div className="space-y-1"><span className="block text-xs">{vaccineById(next.vaccineId)?.shortName ?? next.vaccineId} · Dose {next.doseNumber} · {formatDate(next.scheduledDate)}{next.scheduledTime ? ` · ${formatTime(next.scheduledTime)}` : ''}</span><StatusBadge status={next.status} /></div> : <span className="text-xs text-[var(--color-navy-soft)]">No appointment booked</span>}</td>
-            <td><Link to={`/children/${child.id}`} state={{ directory: returnTo }} aria-label={`View record for ${childName(child)}`} className="inline-flex whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50">View record</Link></td>
+          <thead role="rowgroup"><tr role="row">{['Child', 'Guardian', 'Purok', 'Vaccination status', 'Next vaccination', 'Action'].map((label) => <th role="columnheader" key={label} scope="col">{label}</th>)}</tr></thead>
+          <tbody role="rowgroup">{pagination.visible.map(({ child, vaccination, next }) => <tr role="row" key={child.id} className="hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
+            <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Child</span><div className="mobile-cell-value"><Link to={`/children/${child.id}`} state={{ directory: returnTo }} className="flex items-center gap-3"><span className="child-avatar" aria-hidden="true">{child.firstName.charAt(0)}{child.lastName.charAt(0)}</span><span><span className="block font-medium">{childName(child)}</span><span className="block text-xs text-[var(--color-navy-soft)]">{calcAge(child.birthDate)}</span></span></Link></div></td>
+            <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Guardian</span><div className="mobile-cell-value"><span className="block">{child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{child.guardianMobile}</span></div></td>
+            <td role="cell" className="whitespace-nowrap"><span className="mobile-cell-label" aria-hidden="true">Purok</span><div className="mobile-cell-value">{extractPurok(child.purok)}</div></td>
+            <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Vaccination status</span><div className="mobile-cell-value"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${vaccination === 'Fully immunized' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>{vaccination}</span></div></td>
+            <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Next vaccination</span><div className="mobile-cell-value">{next ? <div className="space-y-1"><span className="block text-xs">{vaccineById(next.vaccineId)?.shortName ?? next.vaccineId} · Dose {next.doseNumber} · {formatDate(next.scheduledDate)}{next.scheduledTime ? ` · ${formatTime(next.scheduledTime)}` : ''}</span><StatusBadge status={next.status} /></div> : <span className="text-xs text-[var(--color-navy-soft)]">No appointment booked</span>}</div></td>
+            <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Action</span><div className="mobile-cell-value"><Link to={`/children/${child.id}`} state={{ directory: returnTo }} aria-label={`View record for ${childName(child)}`} className="inline-flex whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50">View record</Link></div></td>
           </tr>)}</tbody>
         </table>
       </div>

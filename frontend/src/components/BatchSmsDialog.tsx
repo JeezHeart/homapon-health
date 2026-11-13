@@ -197,7 +197,7 @@ export default function BatchSmsDialog({
           {invalidSelection && <p role="alert" className="text-red-700">Some selected reminders cannot fit one SMS or have missing details. Deselect the affected reminders to continue.</p>}
           {availability.message && <p role="status" className="text-sm text-amber-800">{availability.message}</p>}
           {/* Selection toolbar */}
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
             <label className="flex items-center gap-2 font-medium text-xs cursor-pointer">
               <input
                 type="checkbox"
@@ -238,7 +238,7 @@ export default function BatchSmsDialog({
                     disabled={batch !== null}
                     className="mt-1 rounded text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
                   />
-                  <div className="flex-1 text-xs">
+                  <div className="min-w-0 flex-1 break-words text-xs">
                     <p className="font-semibold text-[var(--color-navy)]">
                       {childName(a.child)} · {vac?.shortName} Dose {a.doseNumber}
                     </p>
@@ -282,7 +282,7 @@ export default function BatchSmsDialog({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-100">
             <button
               type="button"
               disabled={sending}

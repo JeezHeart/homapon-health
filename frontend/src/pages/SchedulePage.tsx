@@ -218,25 +218,25 @@ export default function SchedulePage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="ui-table w-full min-w-[700px] text-left text-sm">
+            <table role="table" className="mobile-record-table ui-table w-full min-w-[700px] text-left text-sm">
               <caption className="sr-only">Vaccination appointments</caption>
-              <thead>
-                <tr className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                  <th scope="col" className="pb-2 pr-4 font-semibold">Child</th>
-                  <th scope="col" className="pb-2 pr-4 font-semibold">Vaccination</th>
-                  <th scope="col" className="pb-2 pr-4 font-semibold">Guardian</th>
-                  <th scope="col" className="pb-2 pr-4 font-semibold">Status</th>
-                  <th scope="col" className="pb-2 font-semibold">Actions</th>
+              <thead role="rowgroup">
+                <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
+                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Child</th>
+                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Vaccination</th>
+                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Guardian</th>
+                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Status</th>
+                  <th role="columnheader" scope="col" className="pb-2 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {pagination.visible.map((a) => {
                   const v = vaccineById(a.vaccineId);
                   const followUp = a.followUpStatus ?? 'Pending';
                   return (
-                    <tr key={a.id} className="border-t border-slate-100 hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
-                      <td className="py-2.5 pr-4"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></td>
-                      <td className="py-2.5 pr-4">
+                    <tr role="row" key={a.id} className="border-t border-slate-100 hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
+                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Child</span><div className="mobile-cell-value"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></div></td>
+                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Vaccination</span><div className="mobile-cell-value">
                         <div className="flex flex-col gap-1">
                           <span className="font-medium">{v?.shortName} · Dose {a.doseNumber}</span>
                           <span className="whitespace-nowrap text-xs">{formatDate(a.scheduledDate)}</span>
@@ -256,13 +256,13 @@ export default function SchedulePage() {
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="py-2.5 pr-4"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></td>
-                      <td className="py-2.5 pr-4">
+                      </div></td>
+                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Guardian</span><div className="mobile-cell-value"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></div></td>
+                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Status</span><div className="mobile-cell-value">
                         <StatusBadge status={a.status} />
                         {a.status === 'overdue' && <div className="mt-2"><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${FOLLOW_UP_BADGE[followUp]}`}>{followUp}</span>{a.followUpNotes && <p className="mt-1 max-w-[150px] break-words text-xs text-[var(--color-navy-soft)]">{a.followUpNotes}</p>}</div>}
-                      </td>
-                      <td className="py-2.5">
+                      </div></td>
+                      <td role="cell" className="py-2.5"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">
                         <div className="flex flex-col items-start gap-2 text-xs font-medium">
                           <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50">View record</Link>
                           {a.status !== 'completed' && <details className="min-w-[100px]">
@@ -274,7 +274,7 @@ export default function SchedulePage() {
                             </div>
                           </details>}
                         </div>
-                      </td>
+                      </div></td>
                     </tr>
                   );
                 })}

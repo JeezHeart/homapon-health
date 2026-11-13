@@ -8,6 +8,7 @@ import { smsTodayISO } from '../utils/sms';
 import { adjustedHeight, ageDays, growthIndicator, growthReference, referenceValue } from '../utils/growth';
 import type { GrowthMeasurement, GrowthMetric, NewGrowthMeasurement } from '../utils/growth';
 import Card from './Card';
+import { useChartWidth } from '../utils/useChartWidth';
 
 const metrics: { id: GrowthMetric; label: string }[] = [
   { id: 'weight', label: 'Weight for age' },
@@ -16,12 +17,13 @@ const metrics: { id: GrowthMetric; label: string }[] = [
 ];
 
 function Chart({ rows, child, metric }: { rows: GrowthMeasurement[]; child: Child; metric: 'weight' | 'height' }) {
+  const { ref: chartRef, width } = useChartWidth(600);
   const points = rows.flatMap((r) => {
     const days = ageDays(child.birthDate, r.measuredOn);
     const value = metric === 'weight' ? r.weightKg : adjustedHeight(r, days);
     return value === undefined ? [] : [{ days, value, date: r.measuredOn }];
   });
-  if (!points.length) return <p>No dated {metric} measurements yet.</p>;
+  if (!points.length) return <div ref={chartRef}><p>No dated {metric} measurements yet.</p></div>;
   const maxAge = Math.max(183, ...points.map((p) => p.days));
   const refs = Array.from({ length: Math.ceil(Math.min(maxAge, 1825) / 30) + 1 }, (_, i) => {
     const days = Math.min(i * 30, 1825);
@@ -30,25 +32,25 @@ function Chart({ rows, child, metric }: { rows: GrowthMeasurement[]; child: Chil
   }).filter((r) => r !== null);
   const min = Math.max(0, Math.min(...points.map((p) => p.value), ...refs.map((r) => r.low)) * 0.9);
   const max = Math.max(...points.map((p) => p.value), ...refs.map((r) => r.high)) * 1.1;
-  const x = (days: number) => 55 + days / maxAge * 500;
+  const x = (days: number) => 55 + days / maxAge * (width - 100);
   const y = (value: number) => 220 - (value - min) / (max - min) * 190;
   const line = (p: { days: number; value: number }[]) => p.map((v) => `${x(v.days)},${y(v.value)}`).join(' ');
-  return <>
-    <svg viewBox="0 0 600 265" role="img" aria-label={`${metric} chart. Points are recorded measurements; dashed lines are WHO minus and plus two standard deviations, solid gray is the median. Values are in the measurement history below.`} className="w-full">
-      <path d="M55 25V220H565" fill="none" stroke="var(--color-navy-soft)" />
+  return <div ref={chartRef}>
+    <svg viewBox={`0 0 ${width} 265`} role="img" aria-label={`${metric} chart. Points are recorded measurements; dashed lines are WHO minus and plus two standard deviations, solid gray is the median. Values are in the measurement history below.`} className="w-full">
+      <path d={`M55 25V220H${width - 35}`} fill="none" stroke="var(--color-navy-soft)" />
       {[0, 1, 2, 3, 4].map((n) => {
         const value = min + n / 4 * (max - min);
-        return <g key={n}><text x="48" y={y(value) + 4} textAnchor="end" fontSize="11">{value.toFixed(1)}</text><path d={`M55 ${y(value)}H565`} stroke="var(--color-chart-grid)" /></g>;
+        return <g key={n}><text x="48" y={y(value) + 4} textAnchor="end" fontSize="11">{value.toFixed(1)}</text><path d={`M55 ${y(value)}H${width - 35}`} stroke="var(--color-chart-grid)" /></g>;
       })}
       {(['low', 'mid', 'high'] as const).map((band) => <polyline key={band} points={line(refs.map((r) => ({ days: r.days, value: r[band] })))} fill="none" stroke="var(--color-chart-reference)" strokeDasharray={band === 'mid' ? undefined : '5 4'} />)}
       <polyline points={line(points)} fill="none" stroke="var(--color-chart-measurement)" strokeWidth="2" />
       {points.map((p) => <circle key={p.date} cx={x(p.days)} cy={y(p.value)} r="4" fill="var(--color-chart-measurement)"><title>{p.date}: {p.value.toFixed(1)} {metric === 'weight' ? 'kg' : 'cm'}</title></circle>)}
       {[0, 1, 2, 3, 4].map((n) => <text key={n} x={x(maxAge * n / 4)} y="238" textAnchor="middle" fontSize="11">{(maxAge * n / 4 / 30.4375).toFixed(0)}</text>)}
-      <text x="300" y="258" textAnchor="middle" fontSize="12">Age in months</text>
-      <text x="58" y="15" fontSize="12">{metric === 'weight' ? 'Weight (kg)' : 'Position-adjusted length/height (cm)'}</text>
+      <text x={width / 2} y="258" textAnchor="middle" fontSize="12">Age in months</text>
+      <text x="58" y="15" fontSize="12">{metric === 'weight' ? 'Weight (kg)' : 'Length / height (cm)'}</text>
     </svg>
     <p className="text-xs text-slate-600">Dots: recorded measurements. Gray lines: WHO median and -2/+2 reference boundaries. Indicators apply only below 60 months. One point does not show a growth trend.</p>
-  </>;
+  </div>;
 }
 
 export default function GrowthPanel({ child }: { child: Child }) {
@@ -126,7 +128,7 @@ export default function GrowthPanel({ child }: { child: Child }) {
     })}</div></Card>}
     <div className="grid gap-4 lg:grid-cols-2"><Card title="Weight over time"><Chart rows={rows} child={child} metric="weight" /></Card><Card title="Length / height over time"><Chart rows={rows} child={child} metric="height" /></Card></div>
     <Card title="Measurement history">
-      {!rows.length ? <p>No dated measurements recorded. Add a measurement to start the chart.</p> : <div className="overflow-x-auto"><table className="ui-table w-full text-left text-sm"><caption className="sr-only">Actual recorded measurements before position adjustment</caption><thead><tr>{['Date', 'Weight (kg)', 'Length / height (cm)', 'Position', 'Swelling', 'Notes', 'Actions'].map((h) => <th className="p-2" key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r) => <tr key={r.id} className="border-t"><td className="p-2">{formatDate(r.measuredOn)}</td><td className="p-2">{r.weightKg ?? '-'}</td><td className="p-2">{r.heightCm ?? '-'}</td><td className="p-2">{r.position ?? '-'}</td><td className="p-2">{r.oedema === 'unknown' ? 'Not assessed' : r.oedema === 'yes' ? 'Present' : 'Absent'}</td><td className="p-2">{r.notes}</td><td className="p-2">{demoUser?.role === 'midwife' && <button type="button" disabled={saving} onClick={() => setRemoveId(r.id)} className="text-red-700 underline">Remove</button>}</td></tr>)}</tbody></table></div>}
+      {!rows.length ? <p>No dated measurements recorded. Add a measurement to start the chart.</p> : <div className="overflow-x-auto"><table role="table" className="mobile-record-table ui-table w-full text-left text-sm"><caption className="sr-only">Actual recorded measurements before position adjustment</caption><thead role="rowgroup"><tr role="row">{['Date', 'Weight (kg)', 'Length / height (cm)', 'Position', 'Swelling', 'Notes', 'Actions'].map((h) => <th role="columnheader" className="p-2" key={h}>{h}</th>)}</tr></thead><tbody role="rowgroup">{rows.map((r) => <tr role="row" key={r.id} className="border-t"><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Date</span><div className="mobile-cell-value">{formatDate(r.measuredOn)}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Weight (kg)</span><div className="mobile-cell-value">{r.weightKg ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Length / height (cm)</span><div className="mobile-cell-value">{r.heightCm ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Position</span><div className="mobile-cell-value">{r.position ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Swelling</span><div className="mobile-cell-value">{r.oedema === 'unknown' ? 'Not assessed' : r.oedema === 'yes' ? 'Present' : 'Absent'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Notes</span><div className="mobile-cell-value">{r.notes}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">{demoUser?.role === 'midwife' && <button type="button" disabled={saving} onClick={() => setRemoveId(r.id)} className="text-red-700 underline">Remove</button>}</div></td></tr>)}</tbody></table></div>}
       {removeId && <div role="alert" className="mt-3 rounded border p-3"><p>Remove this measurement? Record the corrected measurement afterward if needed.</p><button disabled={saving} onClick={() => void remove(removeId)} className="mr-4 text-red-700 underline">Confirm removal</button><button disabled={saving} onClick={() => setRemoveId(null)} className="underline">Cancel</button></div>}
     </Card>
     <p className="text-xs text-slate-600">Source: <a className="underline" href="https://www.who.int/tools/child-growth-standards" target="_blank" rel="noreferrer">WHO Child Growth Standards</a>. Reference dataset: WHO anthro, retrieved November 11, 2026. Staff must verify unusual measurements.</p>

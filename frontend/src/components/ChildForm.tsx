@@ -103,7 +103,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-first" className="mb-1 block text-xs font-semibold">
             First name *
@@ -129,7 +129,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           {fieldError('lastName')}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-dob" className="mb-1 block text-xs font-semibold">
             Date of birth *
@@ -173,7 +173,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
         />
         {fieldError('guardian')}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-mobile" className="mb-1 block text-xs font-semibold">
             Guardian mobile number *
@@ -207,7 +207,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           </datalist>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-weight" className="mb-1 block text-xs font-semibold">
             {initial ? 'Weight (kg, optional)' : 'Weight (kg) *'}
@@ -248,7 +248,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           {saveError}
         </p>
       )}
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="flex flex-wrap justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={onCancel}

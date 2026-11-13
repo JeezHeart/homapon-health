@@ -1,10 +1,11 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import type { Appointment, Child, DoseRecord } from '../data/mockData';
 import { appointmentStatus, childName } from '../data/mockData';
 import { VACCINES, vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import { formatDate, todayISO } from '../utils/dates';
 import RemarksField from './RemarksField';
+import Dialog from './Dialog';
 
 interface ImmunizationDocumentProps {
   child: Child;
@@ -202,7 +203,7 @@ function DoseRowEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div>
           <label htmlFor={`doc-status-${vaccineId}-${doseNumber}`} className={editorLabelClass}>
             Status *
@@ -280,7 +281,7 @@ function DoseRowEditor({
           </div>
         )}
         {status === 'completed' && (
-          <div className="col-span-2 sm:col-span-1">
+          <div className="sm:col-span-1">
             <RemarksField
               id={`doc-remarks-${vaccineId}-${doseNumber}`}
               value={remarks}
@@ -306,7 +307,7 @@ function DoseRowEditor({
           {error}
         </p>
       )}
-      <div className="flex justify-end gap-1.5">
+      <div className="flex flex-wrap justify-end gap-1.5">
         <button
           type="button"
           onClick={onDone}
@@ -359,9 +360,11 @@ export default function ImmunizationDocument({
         a.doseNumber === doseNumber,
     );
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const editingDose = VACCINES.flatMap((vaccine) => vaccine.doses.map((dose) => ({ vaccine, dose })))
+    .find(({ vaccine, dose }) => `${vaccine.id}-${dose.doseNumber}` === editingKey);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 text-[var(--color-navy)]">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 text-[var(--color-navy)]">
       <div className="border-b-2 border-[var(--color-navy)] pb-3">
         <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-navy-soft)]">
           Barangay Homapon Health Center · Legazpi City
@@ -373,7 +376,8 @@ export default function ImmunizationDocument({
         </p>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
+      <p className="no-print mt-3 text-xs text-[var(--color-navy-soft)] lg:hidden">Swipe sideways to view all columns of the document. Use Edit to open a form.</p>
+      <div className="mt-4 overflow-x-auto" role="region" aria-label="Child immunization document" tabIndex={0}>
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead>
             <tr className="bg-slate-100 text-[var(--color-navy)]">
@@ -402,8 +406,7 @@ export default function ImmunizationDocument({
                 const rec = recordFor(v.id, d.doseNumber);
                 const key = `${v.id}-${d.doseNumber}`;
                 return (
-                  <Fragment key={key}>
-                  <tr>
+                  <tr key={key}>
                     {i === 0 && (
                       <td
                         rowSpan={v.doses.length}
@@ -446,21 +449,7 @@ export default function ImmunizationDocument({
                       </button>
                     </td>
                   </tr>
-                  {editingKey === key && (
-                    <tr className="no-print">
-                      <td colSpan={8} className="border border-slate-300 bg-slate-50 px-3 py-3">
-                        <DoseRowEditor
-                          childId={child.id}
-                          vaccineId={v.id}
-                          doseNumber={d.doseNumber}
-                          record={rec}
-                          appointment={appointmentFor(v.id, d.doseNumber)}
-                          onDone={() => setEditingKey(null)}
-                        />
-                      </td>
-                    </tr>
-                  )}
-                  </Fragment>
+
                 );
               }),
             )}
@@ -475,6 +464,18 @@ export default function ImmunizationDocument({
           </tbody>
         </table>
       </div>
+
+      {editingDose && <Dialog title={`Edit ${editingDose.vaccine.shortName} - Dose ${editingDose.dose.doseNumber}`} onClose={() => setEditingKey(null)}>
+        <DoseRowEditor
+          key={editingKey}
+          childId={child.id}
+          vaccineId={editingDose.vaccine.id}
+          doseNumber={editingDose.dose.doseNumber}
+          record={recordFor(editingDose.vaccine.id, editingDose.dose.doseNumber)}
+          appointment={appointmentFor(editingDose.vaccine.id, editingDose.dose.doseNumber)}
+          onDone={() => setEditingKey(null)}
+        />
+      </Dialog>}
 
       <p className="mt-3 text-xs leading-relaxed text-[var(--color-navy-soft)]">
         Prototype record transcribed from the supplied paper reference. Dose

@@ -135,7 +135,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
               {sendError}
             </p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={onClose}

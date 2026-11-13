@@ -62,7 +62,7 @@ export default function Layout() {
     </aside>
     <div className="min-w-0 flex-1">
       <header className="app-header no-print">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="header-primary flex min-w-0 flex-1 items-center gap-3">
           <button ref={menuButton} type="button" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)} className="icon-button lg:hidden"><NavIcon name="menu" /></button>
           <form role="search" className="header-search" key={location.key} onSubmit={(event) => {
@@ -73,7 +73,7 @@ export default function Layout() {
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
             <input type="search" name="q" aria-label="Search child or guardian" placeholder="Search children" defaultValue={location.pathname === '/children' ? new URLSearchParams(location.search).get('q') ?? '' : ''} />
           </form>
-          <span className="sr-only">{pageTitle}</span>
+          <span className="header-page-title">{pageTitle}</span>
         </div>
         <div className="header-actions">
           <ThemeToggle />
