@@ -5,8 +5,6 @@ import ChildrenPage from './pages/ChildrenPage';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import RecordsPage from './pages/RecordsPage';
-import { lazy, Suspense } from 'react';
-const RecordReviewPage = lazy(() => import('./pages/RecordReviewPage'));
 import ReportsPage from './pages/ReportsPage';
 import SchedulePage from './pages/SchedulePage';
 import SettingsPage from './pages/SettingsPage';
@@ -35,7 +33,6 @@ function Shell() {
           <Route path="children/:id" element={<ChildProfilePage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="records" element={<RecordsPage />} />
-          <Route path="record-review" element={<Suspense fallback={<p role="status">Loading experimental review…</p>}><RecordReviewPage /></Suspense>} />
           <Route path="sms" element={<SmsPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />
