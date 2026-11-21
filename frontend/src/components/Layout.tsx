@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 /** Shared na "Homapon Health" logo/brand mark na gamit sa sidebar, mobile drawer, at login page. */
 export function Brand() {
   return <div className="flex items-center gap-3">
-    <span aria-hidden="true" className="brand-mark">H<span className="brand-dot" /></span>
+    <img src="/homapon-logo.svg" alt="" aria-hidden="true" width={36} height={36} className="h-9 w-9 shrink-0 rounded-lg" />
     <p className="text-lg font-semibold tracking-tight">Homapon Health</p>
   </div>;
 }
