@@ -134,36 +134,14 @@ export default function LoginPage() {
         <div className="login-card-wrap login-fade-delay">
           <div aria-hidden="true" className="login-card-glow" />
           <div className="login-form-panel">
-            <div className="flex flex-col items-center text-center">
-              <div className="rounded-[16px] bg-[var(--color-accent-soft)] p-1 ring-1 ring-[var(--color-accent)]/20">
-                <img
-                  src="/favicon.svg"
-                  alt="Homapon Health app icon"
-                  className="h-11 w-11 rounded-[10px] shadow-sm transition-transform duration-200 hover:scale-[1.03]"
-                />
-              </div>
-              <p className="mt-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-                Homapon Health
-                <span className="mt-0.5 block text-[10px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
-                  Barangay Immunization
-                </span>
-              </p>
-              <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-[var(--color-navy)]">
-                Staff sign-in
-              </h1>
-              <p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">
-                {apiEnabled
-                  ? 'Use your assigned Barangay Homapon staff credentials.'
-                  : 'Local practice preview — separate from the live site.'}
-              </p>
-            </div>
+            <h1 className="sr-only">Staff sign-in</h1>
 
             {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
             {apiEnabled ? (
               <form
                 onSubmit={(e) => void handleReal(e)}
                 noValidate
-                className="mt-4 flex flex-col gap-3"
+                className="flex flex-col gap-4"
               >
                 <div>
                   <label htmlFor="login-email" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
@@ -284,7 +262,7 @@ export default function LoginPage() {
                 </p>
               </form>
             ) : (
-              <form onSubmit={handleDemo} noValidate className="mt-4 flex flex-col gap-3">
+              <form onSubmit={handleDemo} noValidate className="flex flex-col gap-4">
                 <div>
                   <label htmlFor="login-name" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Your name *
