@@ -85,7 +85,7 @@ export default function SmsPage() {
     <div><h1 className="page-title">SMS Notifications</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">Prepare vaccination reminders and review SMS attempts.</p></div>
     {/* Status banner para malinaw sa staff kung live iProg SMS, disabled, o practice-only ang mode */}
     <div role="status" className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
-      <p className="font-medium">{availability.status === 'disabled' ? 'SMS sending disabled' : availability.status === 'checking' ? 'Checking SMS availability' : availability.status === 'unavailable' ? 'SMS availability could not be verified' : availability.status === 'practice' ? 'Practice only - no real SMS is sent' : 'SMS sending enabled'}</p>
+      <p className="font-medium">{availability.status === 'disabled' ? 'SMS sending disabled' : availability.status === 'checking' ? 'Checking SMS availability' : availability.status === 'unavailable' ? 'SMS availability could not be verified' : availability.status === 'practice' ? 'Offline preview — no real SMS is sent' : availability.dryRun === true ? 'SMS sending enabled (Dry-run — no real SMS sent)' : availability.dryRun === false ? 'SMS sending enabled (Live — iProg SMS)' : 'SMS sending enabled'}</p>
       <p className="mt-1 text-xs text-[var(--color-navy-soft)]">{availability.message || (availability.status === 'practice' ? 'Practice entries are labeled separately from real SMS attempts.' : 'Provider acceptance does not confirm delivery to the phone.')}</p>
     </div>
     {/* Toggle buttons sa pagitan ng "Prepare reminders" at "SMS history" */}

@@ -11,7 +11,7 @@
  */
 
 /** Standard Barangay Homapon vaccination reminder template na pinapakita sa Settings at previews. */
-export const SMS_TEMPLATE = 'Good day [Guardian]! Brgy Homapon HC: [Child] has a vaccination on [Appt Date]. Bring the Brgy. Booklet. Thank you. (Ref: [Transaction Date])';
+export const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], vaccination for [Child] is on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
 
 /**
  * Nililinis yung raw text papuntang plain ASCII na safe sa GSM-7 SMS network.
@@ -109,7 +109,7 @@ export function renderSmsMessage(guardian: string, child: string, appointmentISO
     const [h, m] = time.trim().split(':').map(Number);
     appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
-  return normalizeSmsText(`Good day ${guardian}! Brgy Homapon HC: ${child} has a vaccination on ${appointment}. Bring the Brgy. Booklet. Thank you. (Ref: ${transaction})`);
+  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, vaccination for ${child} is on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
 }
 
 /**

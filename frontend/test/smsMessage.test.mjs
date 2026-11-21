@@ -14,8 +14,8 @@ test('frontend and backend compose identical populated reminders', () => {
     const args = ['Maria Pe\u00f1a', 'Ana Ni\u00f1o', '2026-11-18', time, '2026-11-11'];
     const message = frontend.renderSmsMessage(...args);
     assert.equal(message, backend.composeMessage(...args));
-    assert.match(message, /^Good day Maria Pena! Brgy Homapon HC: Ana Nino has a vaccination on Nov 18, 2026/);
-    assert.ok(message.endsWith('Bring the Brgy. Booklet. Thank you. (Ref: Nov 11, 2026)'));
+    assert.match(message, /^Brgy Homapon HC: Hi Maria Pena, vaccination for Ana Nino is on Nov 18, 2026/);
+    assert.ok(message.endsWith('Bring the Brgy. Booklet. (Nov 11, 2026)'));
     assert.equal(frontend.smsMessageError(message), backend.smsMessageError(message));
   }
 });
@@ -86,7 +86,7 @@ test('single and batch dialogs render guardian, transaction date, preview, and b
   const valid = render(Single, { appointment });
   assert.match(valid, /Parent\/Guardian/);
   assert.match(valid, /Transaction Date/);
-  assert.match(valid, /Good day Maria!/);
+  assert.match(valid, /Brgy Homapon HC: Hi Maria,/);
   assert.doesNotMatch(valid, /<button[^>]*disabled=""[^>]*>Confirm &amp; send/);
   const long = { ...appointment, id: 'long', child: { ...child, guardian: 'Maria '.repeat(40) } };
   const blocked = render(Single, { appointment: long });

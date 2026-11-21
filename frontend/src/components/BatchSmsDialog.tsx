@@ -186,8 +186,12 @@ export default function BatchSmsDialog({
             }`}
           >
             {live
-              ? 'Backend SMS — the server may use dry-run. Provider acceptance does not confirm handset delivery.'
-              : 'SIMULATED — Confirming will log demo reminder entries. No actual SMS will leave the browser.'}
+              ? availability.dryRun === true
+                ? 'DRY-RUN — no real SMS will be sent; reminders will be logged for testing only.'
+                : availability.dryRun === false
+                  ? 'LIVE — sends real SMS reminders through iProg SMS. Provider acceptance does not confirm handset delivery.'
+                  : 'Checking server SMS mode. Provider acceptance does not confirm handset delivery.'
+              : 'Offline preview — no real SMS is sent.'}
           </p>
 
           {/* Batch progress count, rate-limit timer, at uncertain-delivery stop alert */}

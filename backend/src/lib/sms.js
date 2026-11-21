@@ -18,7 +18,7 @@
 // Naka-DRY-RUN by default (log lang, walang totoong send) hangga't hindi pa approved yung live test.
 
 // Reference template lang 'to para sa docs at tests (dapat kasya lagi sa 1 GSM-7 SMS).
-const SMS_TEMPLATE = 'Good day [Guardian]! Brgy Homapon HC: [Child] has a vaccination on [Appt Date]. Bring the Brgy. Booklet. Thank you. (Ref: [Transaction Date])';
+const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], vaccination for [Child] is on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
 
 // Nililinis yung mga may accent (tulad ng ñ -> n), smart quotes, mahahabang dash, at kakaibang characters para maging plain ASCII.
 // Input: value (string).
@@ -82,7 +82,7 @@ function composeMessage(guardian, child, appointmentISO, time, transactionISO) {
     const [h, m] = time.trim().split(':').map(Number);
     appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
-  return normalizeSmsText(`Good day ${guardian}! Brgy Homapon HC: ${child} has a vaccination on ${appointment}. Bring the Brgy. Booklet. Thank you. (Ref: ${transaction})`);
+  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, vaccination for ${child} is on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
 }
 
 // Nililinis yung Philippine mobile number para maging standard 11-digit 09XXXXXXXXX format.
@@ -110,7 +110,7 @@ function smsConfig() {
     configured: !!key && !key.includes('paste-'),
     smsProvider: Number.isInteger(smsProvider) ? smsProvider : undefined,
     dryRun:
-      String(process.env.SMS_DRY_RUN || 'true').toLowerCase() !== 'false',
+      String(process.env.SMS_DRY_RUN || 'true').trim().replace(/^['"]|['"]$/g, '').toLowerCase() !== 'false',
   };
 }
 

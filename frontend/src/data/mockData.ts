@@ -98,7 +98,7 @@ export interface SmsEntry {
 
 // Ginagawang honest na explanation yung status ng SMS log para hindi magmukhang "delivered sa phone" yung demo o unconfirmed sends.
 export function smsDeliveryLabel(entry: SmsEntry): string {
-  if (entry.status.startsWith('Demo')) return 'Demo entry — no real SMS sent';
+  if (entry.status.startsWith('Demo') || entry.deliveryStatus === 'demo') return 'Dry-run only — no real SMS sent';
   if (entry.status === 'Accepted') return 'Provider accepted — handset delivery unconfirmed';
   if (entry.status === 'Unknown') return 'Delivery uncertain — manual reconciliation required';
   if (entry.status === 'Not sent') return 'Not submitted to the provider';

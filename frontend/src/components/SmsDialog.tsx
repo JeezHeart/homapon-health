@@ -113,11 +113,11 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           >
             {live
               ? availability.dryRun === true
-                ? 'DRY-RUN — the server will only log a demo entry. No real text is sent.'
+                ? 'DRY-RUN — no real SMS will be sent; logged for testing only.'
                 : availability.dryRun === false
-                  ? 'LIVE — a real SMS will be sent through iProg SMS. Provider acceptance does not confirm handset delivery.'
-                  : 'Backend SMS — checking server mode. Provider acceptance does not confirm handset delivery.'
-              : 'SIMULATED — confirming will log a demo entry only. No real message is sent in this phase.'}
+                  ? 'LIVE — sends a real SMS through iProg SMS. Provider acceptance does not confirm handset delivery.'
+                  : 'Checking server SMS mode. Provider acceptance does not confirm handset delivery.'
+              : 'Offline preview — no real SMS is sent.'}
           </p>
           {/* Summary ng recipient (child, guardian, mobile number, at appointment schedule) */}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-slate-50 p-4 text-sm">
@@ -184,11 +184,11 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           >
             {liveResult
               ? liveResult.dryRun
-                ? 'Demo reminder logged — provider not called.'
+                ? 'Dry-run logged — no real SMS was sent to the provider.'
                 : liveResult.status === 'Accepted'
                   ? `Accepted by ${liveResult.provider} — handset delivery is unconfirmed. Logged to SMS history.`
                   : 'Delivery is not confirmed. Check SMS history before sending again.'
-              : 'Demo sent — logged to SMS history. No real message was sent.'}
+              : 'Logged locally — no real SMS was sent.'}
           </p>
           <div className="flex justify-end">
             <button
