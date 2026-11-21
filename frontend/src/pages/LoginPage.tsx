@@ -2,7 +2,7 @@
  * LoginPage.tsx
  * Guide pang-defense: Ito yung staff sign-in screen na nire-render ng `App.tsx` pag wala pang naka-login.
  * Sakop nito: email/password login via Supabase Auth pag live API mode, o simpleng name + RBAC role picker
- * pag local practice mode (`apiEnabled === false`), plus theme toggle sa login page.
+ * pag local practice mode (`apiEnabled === false`), sa iisang centered single-page login screen.
  * Dito ka mag-debug pag may issue sa login validation, auth error messages, o demo-vs-live login mode.
  */
 import { useState } from 'react';
@@ -10,26 +10,9 @@ import type { FormEvent, KeyboardEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
-import ThemeToggle from '../components/ThemeToggle';
 
 const inputClass =
-  'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
-
-// Tatlong compact feature pills sa ilalim ng login card para makita agad ang core capabilities ng system.
-const FEATURE_CHIPS = [
-  {
-    label: 'Wednesday Clinic',
-    icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
-  },
-  {
-    label: 'WHO Growth & AI Review',
-    icon: 'M22 12h-4l-3 9L9 3l-3 9H2',
-  },
-  {
-    label: 'iProg SMS Reminders',
-    icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
-  },
-] as const;
+  'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
 
 /**
  * Staff sign-in component na may dalawang malinaw na mode:
@@ -86,38 +69,29 @@ export default function LoginPage() {
 
   return (
     <div className="app-ui login-shell">
-      {/* Itaas na utility bar para sa Wednesday clinic badge at light/dark theme toggle */}
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
-        <span className="login-pill">
-          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-safe:animate-pulse" />
-          Clinic every Wednesday
-        </span>
-        <ThemeToggle />
-      </header>
-
-      {/* Nakasentrong staff sign-in card na may ambient teal glow, Homapon icon, at feature chips */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6">
+      {/* Nakasentrong staff sign-in card na kasya sa iisang screen nang walang vertical scroll */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:px-6">
         <div className="login-card-wrap login-fade-in">
           <div aria-hidden="true" className="login-card-glow" />
           <div className="login-form-panel">
             <div className="flex flex-col items-center text-center">
-              <div className="rounded-[18px] bg-[var(--color-accent-soft)] p-1.5 ring-1 ring-[var(--color-accent)]/20">
+              <div className="rounded-[16px] bg-[var(--color-accent-soft)] p-1 ring-1 ring-[var(--color-accent)]/20">
                 <img
                   src="/favicon.svg"
                   alt="Homapon Health app icon"
-                  className="h-12 w-12 rounded-[11px] shadow-sm transition-transform duration-200 hover:scale-[1.03]"
+                  className="h-11 w-11 rounded-[10px] shadow-sm transition-transform duration-200 hover:scale-[1.03]"
                 />
               </div>
-              <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              <p className="mt-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
                 Homapon Health
-                <span className="mt-0.5 block text-[11px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
+                <span className="mt-0.5 block text-[10px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
                   Barangay Immunization
                 </span>
               </p>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
+              <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-[var(--color-navy)]">
                 Staff sign-in
               </h1>
-              <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
+              <p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">
                 {apiEnabled
                   ? 'Use your assigned Barangay Homapon staff credentials.'
                   : 'Local practice preview — separate from the live site.'}
@@ -129,10 +103,10 @@ export default function LoginPage() {
               <form
                 onSubmit={(e) => void handleReal(e)}
                 noValidate
-                className="mt-6 flex flex-col gap-4"
+                className="mt-4 flex flex-col gap-3"
               >
                 <div>
-                  <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                  <label htmlFor="login-email" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Email *
                   </label>
                   <div className="group relative">
@@ -157,7 +131,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="login-password" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                  <label htmlFor="login-password" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Password *
                   </label>
                   <div className="group relative">
@@ -206,7 +180,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                   {capsLockOn && (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-warning)]">
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--color-warning)]">
                       <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
                       Caps Lock is on
                     </p>
@@ -220,7 +194,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="group mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                  className="group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
                 >
                   {busy && (
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true">
@@ -245,14 +219,14 @@ export default function LoginPage() {
                     </svg>
                   )}
                 </button>
-                <p className="border-t border-[var(--color-border)] pt-4 text-center text-xs text-[var(--color-navy-soft)]">
+                <p className="border-t border-[var(--color-border)] pt-3 text-center text-xs text-[var(--color-navy-soft)]">
                   Need access or a password reset? Contact the Barangay Midwife.
                 </p>
               </form>
             ) : (
-              <form onSubmit={handleDemo} noValidate className="mt-6 flex flex-col gap-4">
+              <form onSubmit={handleDemo} noValidate className="mt-4 flex flex-col gap-3">
                 <div>
-                  <label htmlFor="login-name" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                  <label htmlFor="login-name" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Your name *
                   </label>
                   <input
@@ -265,7 +239,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="login-role" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                  <label htmlFor="login-role" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Role *
                   </label>
                   <select
@@ -285,7 +259,7 @@ export default function LoginPage() {
                 )}
                 <button
                   type="submit"
-                  className="group mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                  className="group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
                 >
                   <span>Enter system</span>
                   <svg
@@ -306,21 +280,9 @@ export default function LoginPage() {
             )}
           </div>
         </div>
-
-        {/* Mga compact capability chips sa ilalim ng login card */}
-        <ul className="mt-5 flex max-w-md flex-wrap items-center justify-center gap-2" aria-label="System highlights">
-          {FEATURE_CHIPS.map((chip) => (
-            <li key={chip.label} className="login-chip">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true">
-                <path d={chip.icon} />
-              </svg>
-              {chip.label}
-            </li>
-          ))}
-        </ul>
       </main>
 
-      <footer className="relative z-10 px-5 py-4 text-center text-xs text-[var(--color-navy-soft)]">
+      <footer className="relative z-10 px-5 py-2.5 text-center text-xs text-[var(--color-navy-soft)]">
         Barangay Homapon Health Center · Legazpi City
       </footer>
     </div>
