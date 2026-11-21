@@ -133,7 +133,9 @@ export default function LoginPage() {
       <main className="login-form-side">
         <div className="login-card-wrap login-fade-delay">
           <div className="login-form-panel">
-            <h1 className="sr-only">Staff sign-in</h1>
+            <h1 className="mb-5 text-xl font-semibold tracking-tight text-[var(--color-navy)]">
+              Sign in
+            </h1>
 
             {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
             {apiEnabled ? (
