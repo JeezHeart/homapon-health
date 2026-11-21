@@ -80,8 +80,11 @@ export default function LoginPage() {
               alt="Homapon Health app icon"
               className="h-14 w-14 rounded-[13px] shadow-sm"
             />
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-              Homapon Health · Barangay Immunization
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              Homapon Health
+              <span className="mt-0.5 block text-[11px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
+                Barangay Immunization
+              </span>
             </p>
             <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
               Staff sign-in
