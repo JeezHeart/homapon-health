@@ -49,6 +49,8 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
     appointment.scheduledDate,
     appointment.scheduledTime,
     transactionDate,
+    appointment.vaccineId,
+    appointment.doseNumber,
   );
   const messageError = smsMessageError(message);
   // Live backend path when API is configured; otherwise the

@@ -1970,7 +1970,7 @@ test('SMS template uses server records and current clinic date', async () => {
   const { todayLocalISO } = require('../src/lib/validate');
   assert.equal(inserted.message, sms.composeMessage(CHILD_ROW.guardian,
     `${CHILD_ROW.first_name} ${CHILD_ROW.last_name}`, APPT_ROW.scheduled_date,
-    APPT_ROW.scheduled_time, todayLocalISO()));
+    APPT_ROW.scheduled_time, todayLocalISO(), APPT_ROW.vaccine_id, APPT_ROW.dose_number));
   assert.equal(inserted.sent_at, todayLocalISO());
 });
 

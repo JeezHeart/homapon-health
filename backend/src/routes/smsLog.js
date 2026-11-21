@@ -143,6 +143,8 @@ router.post(
       appt.scheduled_date,
       appt.scheduled_time,
       transactionDate,
+      appt.vaccine_id,
+      appt.dose_number,
     );
     const messageError = smsMessageError(message);
     if (messageError) return res.status(422).json({ ok: false, code: 'SMS_MESSAGE_INVALID', error: messageError });

@@ -11,7 +11,18 @@
  */
 
 /** Standard Barangay Homapon vaccination reminder template na pinapakita sa Settings at previews. */
-export const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], vaccination for [Child] is on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+export const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], [Child] is due for [Vaccine] (Dose [N]) on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+
+/** Maikling pangalan ng bakuna na tugma sa backend/src/lib/sms.js para eksaktong pareho yung preview at actual SMS. */
+const VACCINE_SHORT_NAMES: Record<string, string> = {
+  bcg: 'BCG',
+  hepb: 'Hep B',
+  penta: 'Pentavalent',
+  opv: 'OPV',
+  ipv: 'IPV',
+  pcv: 'PCV',
+  mmr: 'MMR',
+};
 
 /**
  * Nililinis yung raw text papuntang plain ASCII na safe sa GSM-7 SMS network.
@@ -99,7 +110,15 @@ function smsDate(iso: string): string {
  * - Mahigpit na chine-check yung optional `time` (`00:00`–`23:59`, may optional `:00`) bago gawing 12-hour `AM/PM`.
  * - Pinapadaan sa `normalizeSmsText` para siguradong GSM-7 safe yung buong text.
  */
-export function renderSmsMessage(guardian: string, child: string, appointmentISO: string, time: string | undefined, transactionISO: string): string {
+export function renderSmsMessage(
+  guardian: string,
+  child: string,
+  appointmentISO: string,
+  time: string | undefined,
+  transactionISO: string,
+  vaccineId?: string,
+  doseNumber?: number,
+): string {
   let appointment = smsDate(appointmentISO);
   const transaction = smsDate(transactionISO);
   if (!guardian?.trim() || !child?.trim() || !appointment || !transaction) return '';
@@ -109,7 +128,13 @@ export function renderSmsMessage(guardian: string, child: string, appointmentISO
     const [h, m] = time.trim().split(':').map(Number);
     appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
-  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, vaccination for ${child} is on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
+  const cleanVaccine = typeof vaccineId === 'string' && vaccineId.trim()
+    ? (VACCINE_SHORT_NAMES[vaccineId.trim().toLowerCase()] || vaccineId.trim())
+    : '';
+  const doseText = cleanVaccine && Number.isInteger(doseNumber) && (doseNumber as number) >= 1
+    ? `${cleanVaccine} (Dose ${doseNumber})`
+    : cleanVaccine || 'vaccination';
+  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
 }
 
 /**

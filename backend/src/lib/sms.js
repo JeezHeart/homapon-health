@@ -18,7 +18,18 @@
 // Naka-DRY-RUN by default (log lang, walang totoong send) hangga't hindi pa approved yung live test.
 
 // Reference template lang 'to para sa docs at tests (dapat kasya lagi sa 1 GSM-7 SMS).
-const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], vaccination for [Child] is on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], [Child] is due for [Vaccine] (Dose [N]) on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+
+// Maikling pangalan ng bakuna na tugma sa frontend/src/data/vaccines.ts para pareho yung text sa UI at server.
+const VACCINE_SHORT_NAMES = {
+  bcg: 'BCG',
+  hepb: 'Hep B',
+  penta: 'Pentavalent',
+  opv: 'OPV',
+  ipv: 'IPV',
+  pcv: 'PCV',
+  mmr: 'MMR',
+};
 
 // Nililinis yung mga may accent (tulad ng ñ -> n), smart quotes, mahahabang dash, at kakaibang characters para maging plain ASCII.
 // Input: value (string).
@@ -72,7 +83,7 @@ function smsDate(iso) {
 // Inputs: guardian, child, appointmentISO (YYYY-MM-DD), time (optional na HH:MM o HH:MM:00), transactionISO (YYYY-MM-DD).
 // Output: Normalized reminder string, o '' kapag kulang o sablay yung required fields/date/time.
 // Pang-debug tip: Sa server lang 'to tinatawag para hindi makapag-inject ng kung anu-anong custom SMS text galing sa client.
-function composeMessage(guardian, child, appointmentISO, time, transactionISO) {
+function composeMessage(guardian, child, appointmentISO, time, transactionISO, vaccineId, doseNumber) {
   let appointment = smsDate(appointmentISO);
   const transaction = smsDate(transactionISO);
   if (!guardian?.trim() || !child?.trim() || !appointment || !transaction) return '';
@@ -82,7 +93,13 @@ function composeMessage(guardian, child, appointmentISO, time, transactionISO) {
     const [h, m] = time.trim().split(':').map(Number);
     appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
-  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, vaccination for ${child} is on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
+  const cleanVaccine = typeof vaccineId === 'string' && vaccineId.trim()
+    ? (VACCINE_SHORT_NAMES[vaccineId.trim().toLowerCase()] || vaccineId.trim())
+    : '';
+  const doseText = cleanVaccine && Number.isInteger(doseNumber) && doseNumber >= 1
+    ? `${cleanVaccine} (Dose ${doseNumber})`
+    : cleanVaccine || 'vaccination';
+  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
 }
 
 // Nililinis yung Philippine mobile number para maging standard 11-digit 09XXXXXXXXX format.

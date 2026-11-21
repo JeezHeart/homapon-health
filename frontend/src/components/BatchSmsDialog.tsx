@@ -55,7 +55,7 @@ export default function BatchSmsDialog({
   }, []);
   // Binubuo nito yung exact SMS reminder preview text para sa isang appointment.
   const preview = (a: EnrichedAppointment) => renderSmsMessage(
-    a.child.guardian, childName(a.child), a.scheduledDate, a.scheduledTime, transactionDate,
+    a.child.guardian, childName(a.child), a.scheduledDate, a.scheduledTime, transactionDate, a.vaccineId, a.doseNumber,
   );
   const live = apiEnabled;
   const selectedAppointments = appointments.filter((a) => selectedIds.has(a.id));
