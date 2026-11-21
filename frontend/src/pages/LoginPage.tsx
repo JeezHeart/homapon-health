@@ -6,7 +6,7 @@
  * Dito ka mag-debug pag may issue sa login validation, auth error messages, o demo-vs-live login mode.
  */
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, KeyboardEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
@@ -14,6 +14,22 @@ import ThemeToggle from '../components/ThemeToggle';
 
 const inputClass =
   'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
+
+// Tatlong compact feature pills sa ilalim ng login card para makita agad ang core capabilities ng system.
+const FEATURE_CHIPS = [
+  {
+    label: 'Wednesday Clinic',
+    icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+  },
+  {
+    label: 'WHO Growth & AI Review',
+    icon: 'M22 12h-4l-3 9L9 3l-3 9H2',
+  },
+  {
+    label: 'iProg SMS Reminders',
+    icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  },
+] as const;
 
 /**
  * Staff sign-in component na may dalawang malinaw na mode:
@@ -29,8 +45,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  // Nagche-check kung naka-ON ang Caps Lock habang nagta-type ng password para iwas maling login sa defense.
+  function handlePasswordKeyState(e: KeyboardEvent<HTMLInputElement>) {
+    if (typeof e.getModifierState === 'function') {
+      setCapsLockOn(e.getModifierState('CapsLock'));
+    }
+  }
 
   // Pang-validate at start ng local practice session (lumalabas lang pag walang naka-set na VITE_API_URL).
   function handleDemo(e: FormEvent) {
@@ -63,7 +87,7 @@ export default function LoginPage() {
   return (
     <div className="app-ui login-shell">
       {/* Itaas na utility bar para sa Wednesday clinic badge at light/dark theme toggle */}
-      <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
         <span className="login-pill">
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-safe:animate-pulse" />
           Clinic every Wednesday
@@ -71,158 +95,232 @@ export default function LoginPage() {
         <ThemeToggle />
       </header>
 
-      {/* Nakasentrong staff sign-in card na may Homapon Health app icon */}
-      <main className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
-        <div className="login-form-panel login-fade-in">
-          <div className="flex flex-col items-center text-center">
-            <img
-              src="/favicon.svg"
-              alt="Homapon Health app icon"
-              className="h-14 w-14 rounded-[13px] shadow-sm"
-            />
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-              Homapon Health
-              <span className="mt-0.5 block text-[11px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
-                Barangay Immunization
-              </span>
-            </p>
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
-              Staff sign-in
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-              {apiEnabled
-                ? 'Use your assigned Barangay Homapon staff credentials.'
-                : 'Local practice preview — separate from the live site.'}
-            </p>
-          </div>
-
-          {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
-          {apiEnabled ? (
-            <form
-              onSubmit={(e) => void handleReal(e)}
-              noValidate
-              className="mt-6 flex flex-col gap-4"
-            >
-              <div>
-                <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
-                  Email *
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your staff email"
-                  autoComplete="email"
-                  className={inputClass}
+      {/* Nakasentrong staff sign-in card na may ambient teal glow, Homapon icon, at feature chips */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6">
+        <div className="login-card-wrap login-fade-in">
+          <div aria-hidden="true" className="login-card-glow" />
+          <div className="login-form-panel">
+            <div className="flex flex-col items-center text-center">
+              <div className="rounded-[18px] bg-[var(--color-accent-soft)] p-1.5 ring-1 ring-[var(--color-accent)]/20">
+                <img
+                  src="/favicon.svg"
+                  alt="Homapon Health app icon"
+                  className="h-12 w-12 rounded-[11px] shadow-sm transition-transform duration-200 hover:scale-[1.03]"
                 />
               </div>
-              <div>
-                <label htmlFor="login-password" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
-                  Password *
-                </label>
-                <div className="relative">
-                  <input
-                    id="login-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className={`${inputClass} pr-11`}
-                  />
-                  {/* Pang-toggle ng password visibility para madaling i-check habang nagta-type sa defense */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-1.5 my-auto flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-navy-soft)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                  >
-                    {showPassword ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
-                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-5.94" />
-                        <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.17 4.33" />
-                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-                        <path d="M1 1l22 22" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-              {error && (
-                <p role="alert" className="rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-700">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={busy}
-                className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
-              >
-                {busy && (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
-                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
-                )}
-                {busy ? 'Signing in…' : 'Sign in'}
-              </button>
-              <p className="border-t border-[var(--color-border)] pt-4 text-center text-xs text-[var(--color-navy-soft)]">
-                Need access or a password reset? Contact the Barangay Midwife.
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                Homapon Health
+                <span className="mt-0.5 block text-[11px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
+                  Barangay Immunization
+                </span>
               </p>
-            </form>
-          ) : (
-            <form onSubmit={handleDemo} noValidate className="mt-6 flex flex-col gap-4">
-              <div>
-                <label htmlFor="login-name" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
-                  Your name *
-                </label>
-                <input
-                  id="login-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Maria Santos"
-                  autoComplete="name"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="login-role" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
-                  Role *
-                </label>
-                <select
-                  id="login-role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as DemoRole)}
-                  className={inputClass}
-                >
-                  <option value="bhw">BHW · Encoder — records, schedules, reminders</option>
-                  <option value="midwife">Midwife · Admin — everything + reports</option>
-                </select>
-              </div>
-              {error && (
-                <p role="alert" className="rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-700">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="mt-1 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
+                Staff sign-in
+              </h1>
+              <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
+                {apiEnabled
+                  ? 'Use your assigned Barangay Homapon staff credentials.'
+                  : 'Local practice preview — separate from the live site.'}
+              </p>
+            </div>
+
+            {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
+            {apiEnabled ? (
+              <form
+                onSubmit={(e) => void handleReal(e)}
+                noValidate
+                className="mt-6 flex flex-col gap-4"
               >
-                Enter system
-              </button>
-            </form>
-          )}
+                <div>
+                  <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                    Email *
+                  </label>
+                  <div className="group relative">
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--color-navy-soft)] transition-colors group-focus-within:text-[var(--color-accent)]"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                    </span>
+                    <input
+                      id="login-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your staff email"
+                      autoComplete="email"
+                      className={`${inputClass} pl-10`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="login-password" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                    Password *
+                  </label>
+                  <div className="group relative">
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--color-navy-soft)] transition-colors group-focus-within:text-[var(--color-accent)]"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={handlePasswordKeyState}
+                      onKeyUp={handlePasswordKeyState}
+                      onBlur={() => setCapsLockOn(false)}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className={`${inputClass} pl-10 pr-11`}
+                    />
+                    {/* Pang-toggle ng password visibility para madaling i-check habang nagta-type sa defense */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-1.5 my-auto flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-navy-soft)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    >
+                      {showPassword ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-5.94" />
+                          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.17 4.33" />
+                          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                          <path d="M1 1l22 22" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {capsLockOn && (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-warning)]">
+                      <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
+                      Caps Lock is on
+                    </p>
+                  )}
+                </div>
+                {error && (
+                  <p role="alert" className="login-error">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="group mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                >
+                  {busy && (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
+                      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  <span>{busy ? 'Signing in…' : 'Sign in'}</span>
+                  {!busy && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.1"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+                <p className="border-t border-[var(--color-border)] pt-4 text-center text-xs text-[var(--color-navy-soft)]">
+                  Need access or a password reset? Contact the Barangay Midwife.
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handleDemo} noValidate className="mt-6 flex flex-col gap-4">
+                <div>
+                  <label htmlFor="login-name" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                    Your name *
+                  </label>
+                  <input
+                    id="login-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Maria Santos"
+                    autoComplete="name"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="login-role" className="mb-1.5 block text-xs font-semibold text-[var(--color-navy)]">
+                    Role *
+                  </label>
+                  <select
+                    id="login-role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as DemoRole)}
+                    className={inputClass}
+                  >
+                    <option value="bhw">BHW · Encoder — records, schedules, reminders</option>
+                    <option value="midwife">Midwife · Admin — everything + reports</option>
+                  </select>
+                </div>
+                {error && (
+                  <p role="alert" className="login-error">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="group mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                >
+                  <span>Enter system</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </form>
+            )}
+          </div>
         </div>
+
+        {/* Mga compact capability chips sa ilalim ng login card */}
+        <ul className="mt-5 flex max-w-md flex-wrap items-center justify-center gap-2" aria-label="System highlights">
+          {FEATURE_CHIPS.map((chip) => (
+            <li key={chip.label} className="login-chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true">
+                <path d={chip.icon} />
+              </svg>
+              {chip.label}
+            </li>
+          ))}
+        </ul>
       </main>
 
-      <footer className="px-5 py-4 text-center text-xs text-[var(--color-navy-soft)]">
+      <footer className="relative z-10 px-5 py-4 text-center text-xs text-[var(--color-navy-soft)]">
         Barangay Homapon Health Center · Legazpi City
       </footer>
     </div>

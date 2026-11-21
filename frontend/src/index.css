@@ -288,11 +288,11 @@ body {
   .ui-table tbody tr:hover { background: var(--color-elevated); }
   .ui-table tbody tr:last-child td { border-bottom: 0; }
   .login-shell {
-    display: flex; min-height: 100dvh; flex-direction: column;
+    position: relative; overflow: hidden; display: flex; min-height: 100dvh; flex-direction: column;
     background:
-      radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 44%),
-      radial-gradient(circle at 84% 88%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 46%),
-      radial-gradient(color-mix(in srgb, var(--color-accent) 12%, transparent) 1px, transparent 1px),
+      radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 44%),
+      radial-gradient(circle at 84% 88%, color-mix(in srgb, var(--color-secondary) 14%, transparent), transparent 46%),
+      radial-gradient(color-mix(in srgb, var(--color-accent) 13%, transparent) 1px, transparent 1px),
       var(--color-page);
     background-size: auto, auto, 24px 24px, auto;
   }
@@ -301,20 +301,50 @@ body {
     border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
     background: color-mix(in srgb, var(--color-surface) 84%, transparent);
     padding: 0.375rem 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--color-navy);
+    backdrop-filter: blur(8px);
+  }
+  .login-card-wrap { position: relative; width: 100%; max-width: 26.5rem; }
+  .login-card-glow {
+    position: absolute; inset: -1.5rem; z-index: 0; border-radius: 2rem; pointer-events: none;
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-secondary) 12%, transparent) 52%, transparent 74%);
+    filter: blur(28px); opacity: 0.8;
+  }
+  :root[data-theme="dark"] .login-card-glow { opacity: 0.55; }
+  .login-form-panel {
+    position: relative; z-index: 1; overflow: hidden; width: 100%; border-radius: 1.125rem;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+    background: color-mix(in srgb, var(--color-card) 94%, var(--color-surface));
+    padding: 2rem; backdrop-filter: blur(10px);
+    box-shadow: 0 20px 48px -24px rgba(15, 23, 42, 0.26);
+  }
+  .login-form-panel::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-secondary), var(--color-accent));
+  }
+  :root[data-theme="dark"] .login-form-panel { box-shadow: 0 24px 52px -20px rgba(0, 0, 0, 0.65); }
+  .login-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border));
+    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    padding: 0.35rem 0.7rem; font-size: 0.72rem; font-weight: 500; color: var(--color-navy-soft);
     backdrop-filter: blur(6px);
   }
-  .login-form-panel {
-    width: 100%; max-width: 26rem; border-radius: 1.125rem; border: 1px solid var(--color-border);
-    background: var(--color-card); padding: 2rem;
-    box-shadow: 0 18px 42px -22px rgba(15, 23, 42, 0.24);
+  .login-error {
+    border-radius: 0.75rem; border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    padding: 0.625rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--color-danger);
   }
-  :root[data-theme="dark"] .login-form-panel { box-shadow: 0 22px 48px -20px rgba(0, 0, 0, 0.6); }
   @keyframes loginFadeUp {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes loginGlowBreath {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .login-fade-in { animation: loginFadeUp 360ms ease-out both; }
+    .login-card-glow { animation: loginGlowBreath 7s ease-in-out infinite; }
   }
   .system-state { display: flex; min-height: 100dvh; align-items: center; justify-content: center; padding: 1.5rem; }
   .system-state-panel { width: 100%; max-width: 30rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-card); padding: 2rem; }
