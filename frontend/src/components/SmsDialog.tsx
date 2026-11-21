@@ -115,10 +115,8 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           >
             {live
               ? availability.dryRun === true
-                ? 'DRY-RUN — no real SMS will be sent; logged for testing only.'
-                : availability.dryRun === false
-                  ? 'LIVE — sends a real SMS through iProg SMS. Provider acceptance does not confirm handset delivery.'
-                  : 'Checking server SMS mode. Provider acceptance does not confirm handset delivery.'
+                ? 'Dry-run mode — no real SMS will be sent.'
+                : 'SMS reminder will be sent via iProg SMS. Provider acceptance does not confirm handset delivery.'
               : 'Offline preview — no real SMS is sent.'}
           </p>
           {/* Summary ng recipient (child, guardian, mobile number, at appointment schedule) */}

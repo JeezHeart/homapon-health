@@ -126,8 +126,9 @@ function smsConfig() {
     key,
     configured: !!key && !key.includes('paste-'),
     smsProvider: Number.isInteger(smsProvider) ? smsProvider : undefined,
+    // Live iProg SMS na by default kapag may IPROG_API_TOKEN; magda-dry-run lang kapag explicitly naka-set yung SMS_DRY_RUN=true.
     dryRun:
-      String(process.env.SMS_DRY_RUN || 'true').trim().replace(/^['"]|['"]$/g, '').toLowerCase() !== 'false',
+      String(process.env.SMS_DRY_RUN || 'false').trim().replace(/^['"]|['"]$/g, '').toLowerCase() === 'true',
   };
 }
 
