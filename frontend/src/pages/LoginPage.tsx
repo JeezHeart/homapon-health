@@ -143,18 +143,24 @@ export default function LoginPage() {
       {/* Kanang login card na may theme toggle at switchable na live-API o practice-mode form */}
       <div className="login-form-side">
         <div className="login-form-panel login-fade-delay">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
-                Staff sign-in
-              </h1>
-              <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-                {apiEnabled
-                  ? 'Use your assigned Barangay Homapon staff credentials.'
-                  : 'Local practice preview — separate from the live site.'}
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-3">
+            <img
+              src="/favicon.svg"
+              alt="Homapon Health app icon"
+              className="h-11 w-11 rounded-[10px] shadow-sm"
+            />
             <ThemeToggle />
+          </div>
+
+          <div className="mt-5">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
+              Staff sign-in
+            </h1>
+            <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
+              {apiEnabled
+                ? 'Use your assigned Barangay Homapon staff credentials.'
+                : 'Local practice preview — separate from the live site.'}
+            </p>
           </div>
 
           {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
