@@ -125,7 +125,7 @@ export const api = {
       method: 'POST', body: JSON.stringify(body), signal,
     }),
   // SMS status check: tinatanong ang backend kung naka-enable ba yung live iProg SMS sending o naka-disable.
-  smsAvailability: () => req<{ ok: true; enabled: boolean }>('/sms-log/availability'),
+  smsAvailability: () => req<{ ok: true; enabled: boolean; dryRun?: boolean }>('/sms-log/availability'),
   // Auth/RBAC check: kinukuha sa server yung pangalan at role (`midwife` o `bhw`) ng naka-login na staff.
   me: () =>
     req<{ ok: true; user: { name: string; role: 'midwife' | 'bhw' } }>(

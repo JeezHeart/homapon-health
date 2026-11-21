@@ -2096,7 +2096,9 @@ test('SMS availability requires sign-in and reports disabled without provider ac
     const response = await api('GET', '/api/sms-log/availability');
     assert.equal(response.status, 200);
     assert.equal(response.json.enabled, false);
+    assert.equal(typeof response.json.dryRun, 'boolean');
     assert.equal(sendCalls, 0);
+
   } finally {
     if (previous === undefined) delete process.env.SMS_ENABLED;
     else process.env.SMS_ENABLED = previous;

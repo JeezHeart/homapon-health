@@ -39,7 +39,8 @@ const consumeLiveSend = createSmsRateLimit();
 // GET /api/sms-log/availability — Sinasabi sa frontend kung naka-enable ba ang SMS sending sa server config.
 // Output: HTTP 200 { ok: true, enabled: boolean } (enabled maliban na lang kung SMS_ENABLED === 'false').
 router.get('/availability', (_req, res) => {
-  res.json({ ok: true, enabled: process.env.SMS_ENABLED !== 'false' });
+  // Kasama na rin yung dryRun flag (boolean lang, walang secrets) para makita ng staff kung LIVE o DRY-RUN ang server bago mag-send.
+  res.json({ ok: true, enabled: process.env.SMS_ENABLED !== 'false', dryRun: prepareSmsSend().dryRun });
 });
 
 // Taga-convert ng snake_case `sms_log` DB row papuntang camelCase API object.

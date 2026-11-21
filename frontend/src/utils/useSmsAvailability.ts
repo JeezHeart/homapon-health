@@ -31,11 +31,14 @@ export function useSmsAvailability() {
   const [enabled, setEnabled] = useState(!apiEnabled);
   const [message, setMessage] = useState(apiEnabled ? 'Checking SMS availability...' : '');
   const [status, setStatus] = useState<'checking' | 'enabled' | 'disabled' | 'unavailable' | 'practice'>(apiEnabled ? 'checking' : 'practice');
+  // true = server naka-dry-run (walang totoong text), false = LIVE iProg send, undefined = hindi pa alam.
+  const [dryRun, setDryRun] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     if (!apiEnabled) return;
     let cancelled = false;
     api.smsAvailability().then((result) => {
       if (cancelled) return;
+      setDryRun(result.dryRun);
       setEnabled(result.enabled);
       setStatus(result.enabled ? 'enabled' : 'disabled');
       setMessage(result.enabled ? '' : 'SMS sending is disabled while sender-name approval is pending.');
@@ -48,5 +51,5 @@ export function useSmsAvailability() {
     });
     return () => { cancelled = true; };
   }, []);
-  return { enabled, message, status };
+  return { enabled, message, status, dryRun };
 }

@@ -112,7 +112,11 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
             className={`rounded-xl px-3 py-2 text-xs font-semibold ${live ? 'bg-teal-50 text-[var(--color-accent-dark)]' : 'bg-amber-50 text-amber-800'}`}
           >
             {live
-              ? 'Backend SMS — the server may use dry-run. Provider acceptance does not confirm handset delivery.'
+              ? availability.dryRun === true
+                ? 'DRY-RUN — the server will only log a demo entry. No real text is sent.'
+                : availability.dryRun === false
+                  ? 'LIVE — a real SMS will be sent through iProg SMS. Provider acceptance does not confirm handset delivery.'
+                  : 'Backend SMS — checking server mode. Provider acceptance does not confirm handset delivery.'
               : 'SIMULATED — confirming will log a demo entry only. No real message is sent in this phase.'}
           </p>
           {/* Summary ng recipient (child, guardian, mobile number, at appointment schedule) */}
