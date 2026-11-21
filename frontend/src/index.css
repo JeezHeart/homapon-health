@@ -292,7 +292,9 @@ body {
     background:
       radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 44%),
       radial-gradient(circle at 84% 88%, color-mix(in srgb, var(--color-secondary) 14%, transparent), transparent 46%),
+      radial-gradient(color-mix(in srgb, var(--color-accent) 13%, transparent) 1px, transparent 1px),
       var(--color-page);
+    background-size: auto, auto, 24px 24px, auto;
   }
   .login-card-wrap { position: relative; width: 100%; max-width: 25.5rem; }
   .login-card-glow {
@@ -302,40 +304,17 @@ body {
   }
   :root[data-theme="dark"] .login-card-glow { opacity: 0.55; }
   .login-form-panel {
-    --spot-x: 50%; --spot-y: 0%; --spot-opacity: 0;
     position: relative; z-index: 1; overflow: hidden; width: 100%; border-radius: 1.125rem;
     border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
-    background: color-mix(in srgb, var(--color-card) 92%, var(--color-surface));
-    padding: 1.5rem 1.75rem; backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--color-card) 94%, var(--color-surface));
+    padding: 1.5rem 1.75rem; backdrop-filter: blur(10px);
     box-shadow: 0 20px 48px -24px rgba(15, 23, 42, 0.26);
-    transition: border-color 220ms ease, box-shadow 220ms ease;
-  }
-  .login-form-panel:hover {
-    border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
   }
   .login-form-panel::before {
-    content: ""; position: absolute; inset: 0 0 auto 0; z-index: 2; height: 3px;
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
     background: linear-gradient(90deg, var(--color-accent), var(--color-secondary), var(--color-accent));
   }
-  .login-spotlight {
-    position: absolute; inset: 0; z-index: 0; pointer-events: none;
-    opacity: var(--spot-opacity); transition: opacity 260ms ease;
-    background: radial-gradient(280px circle at var(--spot-x) var(--spot-y), color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 72%);
-  }
-  :root[data-theme="dark"] .login-spotlight {
-    background: radial-gradient(280px circle at var(--spot-x) var(--spot-y), color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 72%);
-  }
   :root[data-theme="dark"] .login-form-panel { box-shadow: 0 24px 52px -20px rgba(0, 0, 0, 0.65); }
-  .login-shiny-text {
-    display: inline-block; color: var(--color-accent);
-  }
-  .login-glare-btn { position: relative; overflow: hidden; }
-  .login-glare-btn::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, 0.34) 50%, transparent 75%);
-    transform: translateX(-130%); transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .login-glare-btn:hover:not(:disabled)::after { transform: translateX(130%); }
   .login-error {
     border-radius: 0.75rem; border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
     background: color-mix(in srgb, var(--color-danger) 10%, transparent);
@@ -345,30 +324,13 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes loginBlurIn {
-    from { opacity: 0; filter: blur(8px); transform: translateY(6px); }
-    to { opacity: 1; filter: blur(0); transform: translateY(0); }
-  }
-  @keyframes loginShinySweep {
-    0% { background-position: 160% 0; }
-    100% { background-position: -60% 0; }
-  }
   @keyframes loginGlowBreath {
     0%, 100% { transform: scale(1); opacity: 0.75; }
     50% { transform: scale(1.04); opacity: 1; }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .login-fade-in { animation: loginFadeUp 380ms ease-out both; }
-    .login-blur-in { animation: loginBlurIn 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both; }
+    .login-fade-in { animation: loginFadeUp 360ms ease-out both; }
     .login-card-glow { animation: loginGlowBreath 7s ease-in-out infinite; }
-    .login-shiny-text {
-      background-image: linear-gradient(110deg, var(--color-accent) 36%, #99f6e4 50%, var(--color-accent) 64%);
-      background-size: 240% 100%;
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      animation: loginShinySweep 4.6s linear infinite;
-    }
   }
   .system-state { display: flex; min-height: 100dvh; align-items: center; justify-content: center; padding: 1.5rem; }
   .system-state-panel { width: 100%; max-width: 30rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-card); padding: 2rem; }

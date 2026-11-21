@@ -5,12 +5,11 @@
  * pag local practice mode (`apiEnabled === false`), sa iisang centered single-page login screen.
  * Dito ka mag-debug pag may issue sa login validation, auth error messages, o demo-vs-live login mode.
  */
-import { useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
+import { useState } from 'react';
+import type { FormEvent, KeyboardEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
-import InteractiveDotGrid from '../components/InteractiveDotGrid';
 
 const inputClass =
   'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
@@ -32,21 +31,6 @@ export default function LoginPage() {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const cardRef = useRef<HTMLDivElement | null>(null);
-
-  // Sinusundan ng soft teal spotlight ang cursor sa loob ng login card (via CSS vars, zero re-render).
-  function handleCardPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    card.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
-    card.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
-    card.style.setProperty('--spot-opacity', '1');
-  }
-
-  function handleCardPointerLeave() {
-    cardRef.current?.style.setProperty('--spot-opacity', '0');
-  }
 
   // Nagche-check kung naka-ON ang Caps Lock habang nagta-type ng password para iwas maling login sa defense.
   function handlePasswordKeyState(e: KeyboardEvent<HTMLInputElement>) {
@@ -85,21 +69,12 @@ export default function LoginPage() {
 
   return (
     <div className="app-ui login-shell">
-      {/* Interactive teal dot grid canvas sa likod ng buong login screen */}
-      <InteractiveDotGrid />
-
       {/* Nakasentrong staff sign-in card na kasya sa iisang screen nang walang vertical scroll */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:px-6">
         <div className="login-card-wrap login-fade-in">
           <div aria-hidden="true" className="login-card-glow" />
-          <div
-            ref={cardRef}
-            onPointerMove={handleCardPointerMove}
-            onPointerLeave={handleCardPointerLeave}
-            className="login-form-panel"
-          >
-            <div aria-hidden="true" className="login-spotlight" />
-            <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="login-form-panel">
+            <div className="flex flex-col items-center text-center">
               <div className="rounded-[16px] bg-[var(--color-accent-soft)] p-1 ring-1 ring-[var(--color-accent)]/20">
                 <img
                   src="/favicon.svg"
@@ -107,13 +82,13 @@ export default function LoginPage() {
                   className="h-11 w-11 rounded-[10px] shadow-sm transition-transform duration-200 hover:scale-[1.03]"
                 />
               </div>
-              <p className="mt-2.5 text-[11px] font-bold uppercase tracking-[0.14em]">
-                <span className="login-shiny-text">Homapon Health</span>
+              <p className="mt-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                Homapon Health
                 <span className="mt-0.5 block text-[10px] font-semibold tracking-[0.12em] text-[var(--color-navy-soft)]">
                   Barangay Immunization
                 </span>
               </p>
-              <h1 className="login-blur-in mt-1.5 text-xl font-semibold tracking-tight text-[var(--color-navy)]">
+              <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-[var(--color-navy)]">
                 Staff sign-in
               </h1>
               <p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">
@@ -128,7 +103,7 @@ export default function LoginPage() {
               <form
                 onSubmit={(e) => void handleReal(e)}
                 noValidate
-                className="relative z-10 mt-4 flex flex-col gap-3"
+                className="mt-4 flex flex-col gap-3"
               >
                 <div>
                   <label htmlFor="login-email" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
@@ -219,7 +194,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="login-glare-btn group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                  className="group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
                 >
                   {busy && (
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true">
@@ -249,7 +224,7 @@ export default function LoginPage() {
                 </p>
               </form>
             ) : (
-              <form onSubmit={handleDemo} noValidate className="relative z-10 mt-4 flex flex-col gap-3">
+              <form onSubmit={handleDemo} noValidate className="mt-4 flex flex-col gap-3">
                 <div>
                   <label htmlFor="login-name" className="mb-1 block text-xs font-semibold text-[var(--color-navy)]">
                     Your name *
@@ -284,7 +259,7 @@ export default function LoginPage() {
                 )}
                 <button
                   type="submit"
-                  className="login-glare-btn group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                  className="group mt-0.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--color-accent)] transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
                 >
                   <span>Enter system</span>
                   <svg
