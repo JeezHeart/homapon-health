@@ -1,3 +1,8 @@
+/**
+ * BatchSmsDialog.tsx
+ * Guide: Ito yung popup modal kapag mag-se-send ng maramihang SMS reminders kay parent/guardian
+ * nang sabay-sabay. Ginagamit sa Dashboard at Schedule pages.
+ */
 import { useSmsAvailability } from '../utils/useSmsAvailability';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Dialog from './Dialog';
@@ -17,6 +22,10 @@ interface BatchSmsDialogProps {
   title?: string;
 }
 
+/**
+ * Pinapayagan nito ang staff na pumili ng appointments, mag-preview ng 160-character SMS,
+ * at mag-send isa-isa habang safely hina-handle yung rate limits at uncertain delivery errors.
+ */
 export default function BatchSmsDialog({
   appointments,
   onClose,
@@ -38,11 +47,13 @@ export default function BatchSmsDialog({
   const [now, setNow] = useState(Date.now);
   const inFlight = useRef(false);
 
+  // Ina-update every second yung Manila transaction date para ma-detect kapag lumampas ng midnight.
   const [transactionDate, setTransactionDate] = useState(todayISO);
   useEffect(() => {
     const timer = window.setInterval(() => setTransactionDate(todayISO()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+  // Binubuo nito yung exact SMS reminder preview text para sa isang appointment.
   const preview = (a: EnrichedAppointment) => renderSmsMessage(
     a.child.guardian, childName(a.child), a.scheduledDate, a.scheduledTime, transactionDate,
   );
@@ -53,16 +64,19 @@ export default function BatchSmsDialog({
   const uncertain = result?.status === 'uncertain';
   const invalidSelection = (batch ? batch.slice(succeeded) : selectedAppointments).some((a) => Boolean(smsMessageError(preview(a))));
 
+  // Nagka-countdown every second kapag na-hit yung rate limit para alam ng staff kailan pwedeng mag-resume.
   useEffect(() => {
     if (retryAt === null) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [retryAt]);
 
+  // Pinipigilan nitong maisara yung dialog habang may ongoing send request para hindi mawala ang progress.
   const closeDialog = useCallback(() => {
     if (!inFlight.current) onClose();
   }, [onClose]);
 
+  // Sine-select lahat ng appointments o kini-clear lahat kapag naka-check na lahat.
   function toggleAll() {
     if (selectedIds.size === appointments.length) {
       setSelectedIds(new Set());
@@ -71,6 +85,7 @@ export default function BatchSmsDialog({
     }
   }
 
+  // Nagto-toggle ng check/uncheck para sa isang appointment sa batch list.
   function toggleOne(id: string) {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
@@ -78,6 +93,7 @@ export default function BatchSmsDialog({
     setSelectedIds(next);
   }
 
+  // Nag-se-send (o nag-si-simulate sa demo mode) ng bawat queued SMS isa-isa, at nagpo-pause sa rate limit o error.
   async function handleSend() {
     if (!availability.enabled || inFlight.current || invalidSelection || uncertain || (retryAt !== null && Date.now() < retryAt)) return;
     if (transactionDate !== todayISO()) {
@@ -123,6 +139,7 @@ export default function BatchSmsDialog({
   return (
     <Dialog title={title} onClose={closeDialog}>
       {completedCount !== null ? (
+        /* Done screen kapag na-process na lahat ng reminders sa batch */
         <div className="flex flex-col gap-4 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <svg
@@ -159,6 +176,7 @@ export default function BatchSmsDialog({
         </div>
       ) : (
         <div className="flex flex-col gap-4 text-sm">
+          {/* Notice banner kung live backend SMS o browser demo simulation lang */}
           <p
             role="note"
             className={`rounded-xl px-3 py-2 text-xs font-semibold ${
@@ -172,6 +190,7 @@ export default function BatchSmsDialog({
               : 'SIMULATED — Confirming will log demo reminder entries. No actual SMS will leave the browser.'}
           </p>
 
+          {/* Batch progress count, rate-limit timer, at uncertain-delivery stop alert */}
           {batch && (
             <p role="status" className="rounded-xl bg-slate-50 px-3 py-2 font-semibold">
               {succeeded} succeeded · {batch.length - succeeded} remaining unconfirmed.
@@ -250,6 +269,7 @@ export default function BatchSmsDialog({
                     <p className="mt-2 break-words">{message}</p>
                     <p>{message.length}/160 characters | {smsUnits(message)}/160 SMS units</p>
                     {error && <p className="text-red-700">{error}</p>}
+                    {/* Status ng bawat recipient kapag nagsimula na ang batch sending */}
                     {batch && (
                       <p className="font-semibold">
                         {index < succeeded ? 'Successfully processed' : uncertain && index === succeeded ? 'Delivery uncertain — check before retrying' : 'Not sent yet'}

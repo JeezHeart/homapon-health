@@ -1,3 +1,8 @@
+/**
+ * DashboardCalendar.tsx
+ * Guide: Interactive monthly calendar widget sa Dashboard na may color-coded dots para sa
+ * upcoming, due-today, at overdue appointments, plus shortcut sa next clinic session.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from './Card';
@@ -6,8 +11,10 @@ import { enrichedAppointments, upcomingAppointments } from '../data/mockData';
 import { isRegularClinicDay, nextClinicSession, nextRegularClinicDate } from '../utils/clinicScheduling';
 import { formatDate, monthCells, shiftMonthCursor, todayISO } from '../utils/dates';
 
+// Readable status labels para sa screen readers at hover tooltips ng bawat petsa.
 const STATUS_LABELS: Record<string, string> = { upcoming: 'Upcoming', 'due-today': 'Due today', overdue: 'Overdue' };
 
+/** Nagre-render ng monthly clinic calendar kung saan bawat araw ay clickable papuntang Schedule page. */
 export default function DashboardCalendar() {
   const { appointments, children, records } = useStore();
   const today = todayISO();
@@ -16,6 +23,7 @@ export default function DashboardCalendar() {
   const [cursor, setCursor] = useState({ year, month: month - 1 });
   const cells = monthCells(cursor.year, cursor.month);
   const firstWeekday = new Date(Date.UTC(cursor.year, cursor.month, 1)).getUTCDay();
+  // Gini-group ang non-completed appointments per date para makapag-display ng count at status dots.
   const counts = new Map<string, number>();
   const statuses = new Map<string, Set<string>>();
   for (const appointment of enrichedAppointments(appointments, children, records)) {
@@ -27,11 +35,13 @@ export default function DashboardCalendar() {
   }
   const label = new Date(Date.UTC(cursor.year, cursor.month, 1)).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   return <Card title="Calendar">
+    {/* Month switcher (previous / next month arrows) */}
     <div className="calendar-month-nav">
       <button type="button" className="calendar-arrow" aria-label="Previous month" onClick={() => setCursor(shiftMonthCursor(cursor, -1))}>‹</button>
       <p aria-live="polite" className="text-sm">{label}</p>
       <button type="button" className="calendar-arrow" aria-label="Next month" onClick={() => setCursor(shiftMonthCursor(cursor, 1))}>›</button>
     </div>
+    {/* 7-column calendar grid na may clickable date links papuntang Schedule page */}
     <div className="dashboard-calendar">
       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => <span key={i} className="calendar-weekday" aria-hidden="true">{day}</span>)}
       {cells.map((cell, i) => {
@@ -45,7 +55,9 @@ export default function DashboardCalendar() {
       </Link>;
       })}
     </div>
+    {/* Legend para sa kulay ng status dots sa calendar */}
     <div className="calendar-status-legend"><span><i className="calendar-status-dot calendar-status-upcoming" aria-hidden="true" />Upcoming</span><span><i className="calendar-status-dot calendar-status-due-today" aria-hidden="true" />Due today</span><span><i className="calendar-status-dot calendar-status-overdue" aria-hidden="true" />Overdue</span></div>
+    {/* Footer summary ng susunod na clinic session o susunod na regular Wednesday */}
     <div className="mt-4 border-t border-[var(--color-border)] pt-3">
       <h3 className="text-xs font-medium">Next clinic session</h3>
       {session ? <Link className="mt-1 block text-sm hover:underline" to={`/schedule?date=${session.date}&filter=upcoming`}>{formatDate(session.date)}<span className="block text-xs text-[var(--color-navy-soft)]">{session.childCount} {session.childCount === 1 ? 'child' : 'children'} · {session.appointmentCount} appointments{!isRegularClinicDay(session.date) && ' · Different clinic day'}</span></Link>

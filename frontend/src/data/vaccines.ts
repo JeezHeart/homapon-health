@@ -1,4 +1,12 @@
 /**
+ * Master reference list ng mga bakuna at dose schedule sa frontend.
+ *
+ * Dito naka-define yung `VACCINES` array, total `REQUIRED_DOSES` (14 doses), at yung `vaccineById` lookup helper
+ * na ginagamit sa records, schedule, child profile, reports, at printable immunization card.
+ * Check mo dito kapag may maling pangalan ng vaccine, dose count, o "Fully immunized" computation.
+ */
+
+/**
  * Vaccine reference transcribed from the paper immunization table
  * (prd.md section 8). Dose counts/timing are prototype data only —
  * the health center must confirm the official schedule before
@@ -17,6 +25,7 @@ export interface Vaccine {
   doses: VaccineDose[];
 }
 
+// Kumpletong listahan ng bakuna at timing notes na lumalabas sa mga dropdown, table, at progress tracker.
 export const VACCINES: Vaccine[] = [
   {
     id: 'bcg',
@@ -77,12 +86,14 @@ export const VACCINES: Vaccine[] = [
   },
 ];
 
+// Ginagamit ng `isFullyImmunized` at progress bar sa ChildProfilePage para malaman kung kumpleto na yung 14 doses.
 /** Total required doses across the reference schedule (1+1+3+3+1+3+2). */
 export const REQUIRED_DOSES = VACCINES.reduce(
   (sum, v) => sum + v.doses.length,
   0,
 );
 
+// Helper para hanapin yung vaccine details gamit yung id niya (hal. "penta" o "bcg") para makuha yung display name at doses.
 export function vaccineById(id: string): Vaccine | undefined {
   return VACCINES.find((v) => v.id === id);
 }

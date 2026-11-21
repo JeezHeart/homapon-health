@@ -1,11 +1,18 @@
+/**
+ * FadeContent.tsx
+ * Guide: Subtle one-time fade-in wrapper para sa mga Dashboard sections kapag nag-scroll into view.
+ * Auto-skip ito kapag naka-on ang reduced-motion, print mode, o kapag nag-click/focus ang user.
+ */
 import { useEffect, useRef, type ReactNode } from 'react';
 import './DashboardMotion.css';
 
 // Plain React Bits Fade Content adaptation (David Haz), without GSAP.
 // https://reactbits.dev/animations/fade-content — see MagicBento.LICENSE.md.
+/** Bino-wrap ang dashboard sections para mag-smooth fade-in nang isang beses pagpasok sa viewport. */
 export default function FadeContent({ children, className = '' }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const played = useRef(false);
+  // Gumagamit ng IntersectionObserver para mag-fade-in nang minsanan, at kina-cancel kapag nag-print, nag-focus, o reduced motion.
   useEffect(() => {
     const node = ref.current;
     if (!node || played.current || typeof IntersectionObserver === 'undefined' || !node.animate) return;
@@ -13,6 +20,7 @@ export default function FadeContent({ children, className = '' }: { children: Re
     const print = window.matchMedia('print');
     let animation: Animation | null = null;
     let observer: IntersectionObserver | null = null;
+    // Tinatapos agad yung fade animation at dini-disconnect ang observer.
     const finish = () => { played.current = true; observer?.disconnect(); animation?.cancel(); animation = null; };
     if (reduced.matches || print.matches || document.hidden) { finish(); return; }
     observer = new IntersectionObserver((entries) => {
@@ -21,7 +29,9 @@ export default function FadeContent({ children, className = '' }: { children: Re
       animation = node.animate([{ opacity: 0.65 }, { opacity: 1 }], { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
     }, { threshold: 0.08 });
     observer.observe(node);
+    // Tinitigil ang animation kung biglang nag-on ang reduced motion o print mode.
     const preferenceChanged = () => { if (reduced.matches || print.matches) finish(); };
+    // Tinitigil ang animation kapag napunta sa background yung browser tab.
     const visibilityChanged = () => { if (document.hidden) finish(); };
     reduced.addEventListener('change', preferenceChanged);
     print.addEventListener('change', preferenceChanged);

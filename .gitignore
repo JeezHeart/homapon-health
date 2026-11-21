@@ -32,10 +32,6 @@ dist-ssr
 .agents/
 skills-lock.json
 
-# Private research, manuscript, source records, and temporary reviews
-analysis/
-docs/research/
-.tmp*/
-*.xlsx
-*.docx
-
+# Raw research datasheets (keep local, never commit raw health-center spreadsheets)
+docs/thesis/datasheets/
+docs/research/updated datasheets/

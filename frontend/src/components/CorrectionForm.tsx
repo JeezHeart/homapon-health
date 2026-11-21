@@ -1,3 +1,9 @@
+/**
+ * CorrectionForm.tsx
+ * Guide: Form para mag-correct ng typo o maling detalye (date, health worker, batch/lot, remarks)
+ * sa naka-save nang vaccine dose record. Naka-lock yung bata, vaccine, at dose number.
+ * Ginagamit sa Child Profile page.
+ */
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { DoseRecord } from '../data/mockData';
@@ -27,6 +33,7 @@ export default function CorrectionForm({
   const [remarks, setRemarks] = useState(record.remarks ?? '');
   const [error, setError] = useState('');
 
+  // Chine-check kung valid ang date (hindi future) at may nakalagay na health worker bago i-save ang correction.
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!dateAdministered) {
@@ -56,10 +63,12 @@ export default function CorrectionForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      {/* Reminder banner na naka-lock yung child, vaccine, at dose number sa correction mode */}
       <p className="-mt-1 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
         Correction mode — changes to this entry are for fixing mistakes.
         The child, vaccine, and dose cannot be changed here.
       </p>
+      {/* Editable date administered at health worker fields */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ce-date" className="mb-1 block text-xs font-semibold">
@@ -86,6 +95,7 @@ export default function CorrectionForm({
           />
         </div>
       </div>
+      {/* Optional batch/lot number at preset/custom RemarksField */}
       <div>
         <label htmlFor="ce-batch" className="mb-1 block text-xs font-semibold">
           Batch / lot number
@@ -105,6 +115,7 @@ export default function CorrectionForm({
         inputClassName={inputClass}
         labelClassName="mb-1 block text-xs font-semibold"
       />
+      {/* Error alert at Cancel / Save changes buttons */}
       {error && (
         <p role="alert" className="text-sm font-medium text-red-700">
           {error}

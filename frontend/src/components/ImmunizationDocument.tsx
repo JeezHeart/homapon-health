@@ -1,3 +1,9 @@
+/**
+ * ImmunizationDocument.tsx
+ * Guide pang-defense: Ito yung printable digital Child Immunization Record (ITR / BAKUNA table)
+ * na may row-level modal editor (`DoseRowEditor`) para i-mark ang bakuna as completed, scheduled, o removed.
+ * Dito ito nire-render sa loob ng Child Profile page.
+ */
 import { useState } from 'react';
 import type { Appointment, Child, DoseRecord } from '../data/mockData';
 import { appointmentStatus, childName } from '../data/mockData';
@@ -15,6 +21,7 @@ interface ImmunizationDocumentProps {
 
 type DoseState = 'Completed' | 'Scheduled' | 'Overdue' | 'Not yet given';
 
+// Kinocompute yung display status ng isang dose row (Completed, Overdue, Scheduled, o Not yet given) base sa saved records at appointments.
 function doseState(
   childId: string,
   vaccineId: string,
@@ -61,9 +68,9 @@ const editorLabelClass =
   'mb-1 block text-xs font-semibold text-[var(--color-navy-soft)]';
 
 /**
- * Inline editor for one dose row. The status dropdown decides which
- * fields matter; saving writes dose records / appointments through
- * the store, and the row status re-derives from the saved data.
+ * Editor form para sa isang dose row sa ITR modal. Yung status dropdown ang magdedecide kung
+ * aling fields ang lalabas; pag nag-save, diretso sa store/API yung dose records o appointments,
+ * tapos kusang nire-recompute yung status ng row base sa bagong saved data.
  */
 function DoseRowEditor({
   childId,
@@ -97,6 +104,7 @@ function DoseRowEditor({
   const hasExisting = record !== undefined || appointment !== undefined;
   const today = todayISO();
 
+  // Kino-compute yung live "Will save as:" preview text base sa kasalukuyang input sa form.
   function preview(): string {
     if (status === 'completed') return dateGiven ? 'Completed' : 'Completed (needs date given)';
     if (status === 'scheduled') {
@@ -108,6 +116,7 @@ function DoseRowEditor({
     return hasExisting ? 'Will remove the existing entry' : 'Not yet given';
   }
 
+  // Nagva-validate muna ng fields depende sa napiling status (completed, scheduled, o two-step delete) bago i-save sa store/API.
   function handleSave() {
     setError('');
     if (status === 'completed') {
@@ -203,6 +212,7 @@ function DoseRowEditor({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* Status dropdown plus conditional inputs para sa date, health worker, batch/lot, at remarks */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div>
           <label htmlFor={`doc-status-${vaccineId}-${doseNumber}`} className={editorLabelClass}>
@@ -293,6 +303,7 @@ function DoseRowEditor({
           </div>
         )}
       </div>
+      {/* Live preview kung ano mase-save, two-step delete warning, validation error, at Cancel/Save buttons */}
       <p className="text-xs text-[var(--color-navy-soft)]" aria-live="polite">
         Will save as: <span className="font-semibold">{preview()}</span>
       </p>
@@ -330,17 +341,15 @@ function DoseRowEditor({
 }
 
 /**
- * Digital immunization record modeled on the paper BAKUNA table
- * (columns: vaccine / dose / date / status / batch / worker / remarks).
- * Prints cleanly via the browser print flow; app chrome has .no-print.
+ * Digital Child Immunization Record (ITR) na naka-pattern sa paper BAKUNA table ng health center
+ * (columns: Bakuna / Dose / Petsa / Status / Batch / Health worker / Remarks).
+ * Malinis i-print sa browser kasi naka-.no-print yung navigation chrome at Edit controls.
  *
- * Every dose row is editable inline by the BHW: a status dropdown
- * (Completed / Scheduled / Not yet given) plus type-in fields for the
- * dates, batch/lot, health worker, and remarks. Status itself is never
- * stored — it is derived from the entered data (a filled "date given"
- * means Completed; a scheduled date in the past means Overdue), so the
- * schedule math in the rest of the app cannot drift out of sync.
- * The editing UI is hidden in print.
+ * Bawat dose row ay pwedeng i-edit ng BHW o midwife via modal: status dropdown
+ * (Completed / Scheduled / Not yet given) plus inputs para sa dates, batch/lot, health worker, at remarks.
+ * Hindi sina-save nang manual yung mismong status — kusang dine-derive ito sa data (may "date given"
+ * = Completed; nakalipas na scheduled date = Overdue), kaya hindi kailanman magdi-drift yung schedule math sa app.
+ * Automatic ding naka-hide yung Action column pag nag-print.
  */
 export default function ImmunizationDocument({
   child,
@@ -348,10 +357,12 @@ export default function ImmunizationDocument({
   appointments,
 }: ImmunizationDocumentProps) {
   const childRecords = records.filter((r) => r.childId === child.id);
+  // Hinahanap yung completed dose record (kung meron) para sa specific na vaccine at dose number.
   const recordFor = (vaccineId: string, doseNumber: number) =>
     childRecords.find(
       (r) => r.vaccineId === vaccineId && r.doseNumber === doseNumber,
     );
+  // Hinahanap yung scheduled appointment (kung meron) para sa specific na vaccine at dose number.
   const appointmentFor = (vaccineId: string, doseNumber: number) =>
     appointments.find(
       (a) =>
@@ -365,6 +376,7 @@ export default function ImmunizationDocument({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 text-[var(--color-navy)]">
+      {/* Printable ITR letterhead na may pangalan ng health center at basic info ng bata */}
       <div className="border-b-2 border-[var(--color-navy)] pb-3">
         <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-navy-soft)]">
           Barangay Homapon Health Center · Legazpi City
@@ -376,6 +388,7 @@ export default function ImmunizationDocument({
         </p>
       </div>
 
+      {/* Scrollable na BAKUNA vaccine/dose schedule table (naka-hide yung Action column pag print) */}
       <p className="no-print mt-3 text-xs text-[var(--color-navy-soft)] lg:hidden">Swipe sideways to view all columns of the document. Use Edit to open a form.</p>
       <div className="mt-4 overflow-x-auto" role="region" aria-label="Child immunization document" tabIndex={0}>
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
@@ -465,6 +478,7 @@ export default function ImmunizationDocument({
         </table>
       </div>
 
+      {/* Modal dialog na bumubukas pag nag-click ng Edit ang staff sa kahit anong dose row */}
       {editingDose && <Dialog title={`Edit ${editingDose.vaccine.shortName} - Dose ${editingDose.dose.doseNumber}`} onClose={() => setEditingKey(null)}>
         <DoseRowEditor
           key={editingKey}

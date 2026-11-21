@@ -1,3 +1,9 @@
+/**
+ * GrowthSummary.tsx
+ * Guide pang-defense: Dashboard widget ito na nagsu-summarize ng pinaka-latest na WHO growth status
+ * ng lahat ng naka-register na bata. Naka-group sila sa clickable review buckets na may direct link
+ * papunta agad sa Growth tab ng bawat bata para madaling i-check ng staff.
+ */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from './Card';
@@ -9,6 +15,7 @@ import { summarizeGrowth } from '../utils/growthSummary';
 import type { GrowthGroup } from '../utils/growthSummary';
 import { formatDate } from '../utils/dates';
 
+// Apat na summary buckets na nagso-sort sa bawat bata base sa latest WHO growth indicator nila.
 const groups: { id: GrowthGroup; label: string }[] = [
   { id: 'review', label: 'Needs staff review' },
   { id: 'within', label: 'Comparisons within range' },
@@ -16,6 +23,7 @@ const groups: { id: GrowthGroup; label: string }[] = [
   { id: 'missing', label: 'No dated measurements' },
 ];
 
+/** Nagfe-fetch ng pinaka-latest na growth records at nagdi-display ng clickable counts + expandable list ng mga bata. */
 export default function GrowthSummary() {
   const { children, demoGrowth, dataReady, connected } = useStore();
   const [remote, setRemote] = useState<GrowthMeasurement[]>([]);
@@ -23,6 +31,7 @@ export default function GrowthSummary() {
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<GrowthGroup | 'all' | null>(null);
+  // React effect pang-fetch ng latest growth measurement per child sa backend API (nagre-rerun pag nag-click ng Retry).
   useEffect(() => {
     if (!apiEnabled) return;
     let cancelled = false;
@@ -38,6 +47,7 @@ export default function GrowthSummary() {
     {loading || !dataReady ? <p role="status">Loading growth measurements...</p>
       : error || (apiEnabled && !connected) ? <div role="alert"><p>Growth summary unavailable. {error || 'Child records are unavailable. Restore the connection and reload the page.'}</p><button className="mt-2 underline" type="button" onClick={() => { setLoading(true); setError(''); setAttempt((n) => n + 1); }}>Retry growth summary</button></div>
       : <>
+        {/* Headline ng bilang ng may records plus clickable counter buttons per growth bucket */}
         <p className="mb-4 text-sm"><strong>{recorded}</strong> of {children.length} registered children have dated measurements. {!apiEnabled && 'Demo records only.'}</p>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {groups.map((group) => {
@@ -47,8 +57,10 @@ export default function GrowthSummary() {
             </button>;
           })}
         </div>
+        {/* Paalala na review indicator lang ito (hindi diagnosis) plus dropdown guide kung paano ang bilang */}
         <p className="mt-3 text-xs text-slate-600">Growth comparisons are review indicators, not diagnoses.</p>
         <details className="mt-2 text-xs text-slate-600"><summary className="w-fit cursor-pointer">How counts work</summary><p className="mt-2 max-w-prose">Each child is counted once using their latest dated record. Review includes out-of-range indicators or measurements needing verification. Incomplete comparisons include missing inputs, unassessed swelling, or age outside the supported WHO range.</p></details>
+        {/* Expandable list ng mga bata sa napiling bucket na may direct link sa Growth tab nila */}
         {selected !== null && <div className="mt-4">
           <h3 className="mb-2 font-semibold">{selected === 'all' ? 'All growth records' : groups.find((g) => g.id === selected)?.label}</h3>
           {!listed.length ? <p className="text-sm">No children in this group.</p> : <ul className="max-h-72 overflow-y-auto divide-y divide-slate-100">{listed.map(({ child, measurement, group }) => <li key={child.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span><span className="font-medium">{childName(child)}</span><span className="block text-xs text-slate-600">{groups.find((g) => g.id === group)?.label}{measurement ? ` - ${formatDate(measurement.measuredOn)}` : ''}</span></span><Link className="shrink-0 font-semibold text-[var(--color-accent-dark)] underline" to={`/children/${child.id}?tab=growth`}>View growth<span className="sr-only"> for {childName(child)}</span></Link></li>)}</ul>}

@@ -1,3 +1,8 @@
+/**
+ * RemarksField.tsx
+ * Guide: Reusable dropdown para sa common BHW vaccine remarks na may "Other" text input
+ * kapag custom ang note. Ginagamit sa DoseEntryForm, CorrectionForm, at ImmunizationDocument.
+ */
 import { useState } from 'react';
 import { REMARK_OPTIONS, REMARK_OTHER } from '../data/remarkOptions';
 
@@ -12,9 +17,9 @@ interface RemarksFieldProps {
 }
 
 /**
- * Remarks picker: dropdown of common BHW remarks plus free typing
- * via "Other". A stored value that matches a preset shows as that
- * preset; any other stored text shows as "Other" with the text kept.
+ * Remarks picker: dropdown ng mga preset BHW remarks plus free-text input kapag pinili ang "Other".
+ * Kapag yung naka-save na value ay nasa preset list, naka-select yun; kung hindi, naka-"Other"
+ * siya at nire-retain ang custom text.
  */
 export default function RemarksField({
   id,
@@ -27,13 +32,13 @@ export default function RemarksField({
 }: RemarksFieldProps) {
   const isPreset = REMARK_OPTIONS.includes(value);
   const [custom, setCustom] = useState(isPreset || value === '' ? '' : value);
-  // Track "Other" as its own choice so an empty typed remark doesn't
-  // collapse back to "No remarks" and hide the text box.
+  // Naka-track nang hiwalay yung "Other" mode para hindi mawala yung text box kahit blangko pa yung tinatype.
   const [otherMode, setOtherMode] = useState(!isPreset && value !== '');
   const selectValue = otherMode ? REMARK_OTHER : value === '' ? '' : value;
 
   return (
     <div>
+      {/* Preset remarks dropdown selector */}
       <label htmlFor={id} className={labelClassName}>
         {label}
       </label>
@@ -60,6 +65,7 @@ export default function RemarksField({
         ))}
         <option value={REMARK_OTHER}>{REMARK_OTHER}</option>
       </select>
+      {/* Free-text input na lumalabas lang kapag "Other" ang napili sa dropdown */}
       {selectValue === REMARK_OTHER && (
         <input
           aria-label={`${label} (other)`}

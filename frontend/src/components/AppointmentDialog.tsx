@@ -1,3 +1,8 @@
+/**
+ * AppointmentDialog.tsx
+ * Guide: Ito yung form para mag-book ng bagong vaccination appointment o mag-reschedule
+ * ng existing schedule. Nire-render ito sa loob ng Dialog modal sa Dashboard, Schedule, at Child Profile pages.
+ */
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Appointment, Child, DoseRecord } from '../data/mockData';
@@ -22,7 +27,10 @@ interface AppointmentDialogProps {
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
 
-/** Book a new appointment or reschedule an existing one. */
+/**
+ * Form component para mag-create ng bagong appointment o mag-reschedule ng existing date.
+ * Auto-suggest nito yung next incomplete dose at chine-check yung regular Wednesday clinic rule ng Barangay Homapon.
+ */
 export default function AppointmentDialog({
   childList,
   records,
@@ -60,6 +68,7 @@ export default function AppointmentDialog({
 
   const vaccine = vaccineById(vaccineId);
 
+  // Chine-check nito kung valid yung piniling child, date (hindi past), at non-Wednesday reason bago i-save.
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (saving) return;
@@ -110,6 +119,7 @@ export default function AppointmentDialog({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      {/* Child dropdown selector (naka-lock kapag galing sa specific child profile o reschedule button) */}
       <div>
         <label htmlFor="ap-child" className="mb-1 block text-xs font-semibold">
           Child *
@@ -128,6 +138,7 @@ export default function AppointmentDialog({
           ))}
         </select>
       </div>
+      {/* Vaccine at dose number dropdowns na may suggested next-dose hint */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ap-vaccine" className="mb-1 block text-xs font-semibold">
@@ -169,6 +180,7 @@ export default function AppointmentDialog({
           )}
         </div>
       </div>
+      {/* Appointment date at optional time picker */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="ap-date" className="mb-1 block text-xs font-semibold">
@@ -204,6 +216,7 @@ export default function AppointmentDialog({
       <p id="ap-date-help" className="text-xs text-[var(--color-navy-soft)]">
         Regular clinic day: Wednesday. Staff may choose another day for a holiday or rescheduling.
       </p>
+      {/* Required reason box kapag pumili ang staff ng clinic date na hindi Wednesday */}
       {isException && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
           <label htmlFor="ap-exception-reason" className="mb-1 block text-sm font-semibold text-amber-950">
@@ -224,6 +237,7 @@ export default function AppointmentDialog({
           </p>
         </div>
       )}
+      {/* Validation error alert at Cancel / Submit buttons */}
       {error && (
         <p role="alert" className="text-sm font-medium text-red-700">
           {error}

@@ -1,3 +1,9 @@
+/**
+ * DashboardAppointments.tsx
+ * Guide: Dashboard table widget na may Today/Weekly/Monthly/Yearly filter tabs, multi-select
+ * checkbox para sa Batch SMS reminders, at inline Reschedule / Remove popup modals.
+ * Ginagamit sa main Dashboard page.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { childName, enrichedAppointments } from '../data/mockData';
@@ -12,6 +18,7 @@ import Dialog from './Dialog';
 import NavIcon from './NavIcon';
 import StatusBadge from './StatusBadge';
 
+// Filter tabs sa header ng Appointment overview card.
 const PERIODS = [
   { id: 'today', label: 'Today' },
   { id: 'week', label: 'Weekly' },
@@ -19,6 +26,7 @@ const PERIODS = [
   { id: 'year', label: 'Yearly' },
 ] as const;
 
+/** Nagpapakita ng hanggang 8 appointments para sa napiling period na may Batch SMS, reschedule, at delete actions. */
 export default function DashboardAppointments() {
   const { children, records, appointments, updateAppointment, deleteAppointment } = useStore();
   const [period, setPeriod] = useState<typeof PERIODS[number]['id']>('today');
@@ -42,12 +50,15 @@ export default function DashboardAppointments() {
   const selectedRows = eligible.filter((appointment) => selected.has(appointment.id));
   const allSelected = eligible.length > 0 && selectedRows.length === eligible.length;
   const partiallySelected = selectedRows.length > 0 && !allSelected;
+  // Sini-sync yung "indeterminate" dash state ng Select All checkbox kapag ilan lang ang naka-check.
   useEffect(() => { if (selectAll.current) selectAll.current.indeterminate = partiallySelected; }, [partiallySelected]);
 
+  // Fino-format yung vaccine short name at dose number (hal. "Penta · Dose 2").
   function vaccineLabel(appointment: EnrichedAppointment) {
     return `${vaccineById(appointment.vaccineId)?.shortName ?? appointment.vaccineId} · Dose ${appointment.doseNumber}`;
   }
 
+  // Dine-delete yung napiling appointment sa store/API at tinatanggal sa selected checkboxes.
   async function remove() {
     if (!removing || busy) return;
     setBusy(true); setError('');
@@ -61,10 +72,13 @@ export default function DashboardAppointments() {
   }
 
   return <>
+    {/* Main Appointment overview card na may Today/Weekly/Monthly/Yearly tabs */}
     <section className="dashboard-records" aria-label="Appointment overview"><Card title="Appointment overview" action={<div className="segmented-control" role="group" aria-label="Appointment period">
       {PERIODS.map((item) => <button key={item.id} type="button" aria-pressed={period === item.id} onClick={() => { setPeriod(item.id); setSelected(new Set()); }}>{item.label}</button>)}
     </div>}>
+      {/* Select-all toolbar at Prepare Batch SMS button */}
       <div className="overview-table-toolbar"><label className="flex min-h-11 items-center gap-2 text-xs text-[var(--color-navy-soft)]"><input ref={selectAll} type="checkbox" aria-label="Select visible appointments" checked={allSelected} disabled={!eligible.length} onChange={() => setSelected(allSelected ? new Set() : new Set(eligible.map((appointment) => appointment.id)))} />Select visible appointments</label>{selectedRows.length > 0 && <button type="button" className="selection-action" onClick={() => setBatchOpen(true)}>Prepare SMS ({selectedRows.length})</button>}</div>
+      {/* Responsive table ng mga appointments sa napiling period */}
       <div className="overflow-x-auto"><table role="table" className="mobile-record-table ui-table dashboard-table min-w-[900px] text-left">
         <caption className="sr-only">Appointments in the selected period</caption>
         <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Select</th>{['No', 'Child', 'Age', 'Date of birth', 'Status', 'Guardian', 'Phone', 'Action'].map((label) => <th role="columnheader" key={label} scope="col">{label}</th>)}</tr></thead>
@@ -80,9 +94,11 @@ export default function DashboardAppointments() {
           <td role="cell"><span className="mobile-cell-label" aria-hidden="true">Action</span><div className="mobile-cell-value"><div className="flex items-center gap-2"><button type="button" className="table-action" disabled={appointment.status === 'completed'} aria-label={`Reschedule ${childName(appointment.child)}, ${vaccineLabel(appointment)}`} onClick={() => setEditing(appointment)}><NavIcon name="edit" /></button><button type="button" className="table-action table-action-danger" disabled={appointment.status === 'completed'} aria-label={`Remove appointment for ${childName(appointment.child)}, ${vaccineLabel(appointment)}`} onClick={() => { setError(''); setRemoving(appointment); }}><NavIcon name="trash" /></button></div></div></td>
         </tr>)}</tbody>
       </table></div>
+      {/* Empty state text at link papuntang full Schedule page */}
       {rows.length === 0 && <p role="status" className="py-10 text-center text-sm text-[var(--color-navy-soft)]">No appointments in this period.</p>}
       <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--color-navy-soft)]"><span>{visible.length} of {rows.length} appointments</span><Link className="hover:underline" to={`/schedule?filter=${period === 'today' ? 'today' : period === 'week' ? 'week' : 'upcoming'}`}>View schedule</Link></div>
     </Card></section>
+    {/* Popup modals para sa Reschedule, Remove confirmation, at Batch SMS */}
     {editing && <Dialog title="Reschedule appointment" onClose={() => setEditing(null)}><AppointmentDialog childList={children} records={records} lockChild initial={editing} onSave={async (data, id) => { if (id) await updateAppointment(id, data); }} onClose={() => setEditing(null)} /></Dialog>}
     {removing && <Dialog title="Remove appointment" onClose={() => { if (!busy) setRemoving(null); }}><p className="text-sm">Remove {vaccineLabel(removing)} for {childName(removing.child)} on {formatDate(removing.scheduledDate)}?</p>{error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={busy} onClick={() => setRemoving(null)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm">Keep appointment</button><button type="button" disabled={busy} onClick={() => void remove()} className="rounded-xl bg-red-700 px-4 py-2 text-sm text-white">{busy ? 'Removing…' : 'Remove appointment'}</button></div></Dialog>}
     {batchOpen && <BatchSmsDialog appointments={selectedRows} onClose={() => setBatchOpen(false)} />}

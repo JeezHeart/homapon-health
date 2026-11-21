@@ -1,3 +1,11 @@
+/**
+ * Central state provider (`StoreProvider`) ng buong frontend app.
+ *
+ * Dito naka-hold yung global React state ng buong app — children, vaccination doses, appointments,
+ * SMS logs, practice-mode growth measurements, at staff login session. Kapag naka-on yung `apiEnabled`,
+ * lahat ng save/edit/delete dito dumadaan papunta sa protected Express API; kapag practice mode, sa local state lang.
+ * Check mo dito kapag ayaw mag-refresh ng records after mag-save, may duplicate dose issue, o naglo-loop yung login/logout.
+ */
 import type { GrowthMeasurement } from '../utils/growth';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -15,10 +23,12 @@ import { StoreContext } from './store-context';
 
 const DEMO_USER_KEY = 'homapon-demo-user';
 
+// Gumagawa ng simple unique ID para sa local practice-mode records (sa live mode, database UUID gamit).
 function nextId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}`;
 }
 
+// Binabasa mula sa localStorage yung huling practice-mode staff session (hindi ginagamit sa live API mode).
 function loadDemoUser(): DemoUser | null {
   try {
     const raw = localStorage.getItem(DEMO_USER_KEY);
@@ -38,10 +48,12 @@ function loadDemoUser(): DemoUser | null {
 
 type Fail = { ok: false; error: string };
 
+// Helper para ibalik yung standard `{ ok: false, error }` format kapag may nag-fail na API call sa form.
 function fail(e: unknown): Fail {
   return { ok: false, error: apiError(e) };
 }
 
+// Root provider na naka-wrap sa buong `App.tsx`; nagbibigay ng `StoreContext` sa lahat ng screens.
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [demoGrowth, setDemoGrowth] = useState<GrowthMeasurement[]>([]);
   const [childList, setChildList] = useState<Child[]>(() =>
@@ -117,6 +129,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Memoized store object na naglalaman ng lahat ng live lists at CRUD/auth handlers na ginagamit via `useStore()`.
   const value = useMemo<StoreValue>(
     () => ({
       demoGrowth, setDemoGrowth,
@@ -126,6 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       smsLog,
       dataReady,
       connected,
+      // Kapag nag-register ng bagong bata, dito dumadaan bago ipadala sa backend API (kasama yung unang growth measurement).
       addChild: async (data) => {
         if (apiEnabled) {
           try {
@@ -143,6 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setChildList((prev) => [...prev, child]);
         return child;
       },
+      // Sine-save yung na-edit na child details sa backend API at ina-update agad sa local React state.
       updateChild: async (id, patch) => {
         if (apiEnabled) {
           try {
@@ -157,6 +172,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         );
       },
+      // Midwife-only delete: binubura yung child record sa backend at nililinis din yung doses, appointments, growth, at SMS niya sa state.
       deleteChild: async (id) => {
         if (apiEnabled) {
           try {
@@ -172,6 +188,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setSmsLog((prev) => prev.filter((s) => s.childId !== id));
         return { ok: true };
       },
+      // Ina-update yung isang existing dose entry habang pinipigilan yung duplicate na child + vaccine + dose number.
       updateDoseRecord: async (id, patch) => {
         if (apiEnabled) {
           try {
@@ -205,6 +222,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecordList((prev) => prev.map((r) => (r.id === id ? next : r)));
         return { ok: true };
       },
+      // Binubura yung isang vaccination dose record sa backend API o sa local state.
       deleteDoseRecord: async (id) => {
         if (apiEnabled) {
           try {
@@ -218,6 +236,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecordList((prev) => prev.filter((r) => r.id !== id));
         return { ok: true };
       },
+      // Binubura yung isang scheduled appointment sa backend API o sa local state.
       deleteAppointment: async (id) => {
         if (apiEnabled) {
           try {
@@ -231,6 +250,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setAppointmentList((prev) => prev.filter((a) => a.id !== id));
         return { ok: true };
       },
+      // Nagre-record ng bagong bakuna na naibigay at humaharang kapag duplicate na yung child + vaccine + dose number.
       addDoseRecord: async (data) => {
         if (apiEnabled) {
           try {
@@ -261,6 +281,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
         return { ok: true, record };
       },
+      // Nagbu-book ng bagong vaccination appointment sa backend API o sa local state.
       addAppointment: async (data) => {
         if (apiEnabled) {
           try {
@@ -275,6 +296,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setAppointmentList((prev) => [...prev, appt]);
         return appt;
       },
+      // Ina-update yung schedule date/time, exception reason, o overdue follow-up status/notes ng isang appointment.
       updateAppointment: async (id, patch) => {
         if (apiEnabled) {
           try {
@@ -291,6 +313,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
         );
       },
+      // Nagdadagdag ng bagong demo/manual SMS log entry sa pinakataas ng SMS history list.
       logSms: async (childId, message, status, sentAt) => {
         if (apiEnabled) {
           try {
@@ -311,6 +334,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setSmsLog((prev) => [entry, ...prev]);
         return entry;
       },
+      // Nire-reload yung SMS log mula sa backend pagkatapos magpadala via iProg SMS endpoint.
       refreshSms: async () => {
         if (!apiEnabled) return;
         try {
@@ -320,6 +344,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       },
       demoUser,
+      // Practice-mode sign-in: sine-save yung piniling pangalan at role sa localStorage (walang epekto sa live API mode).
       signIn: (user) => {
         if (apiEnabled) return;
         setDemoUser(user);
@@ -329,6 +354,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           // Demo session simply won't persist; the app still works.
         }
       },
+      // Live sign-in: nagla-login sa Supabase Auth, tsine-check yung staff role sa `/api/me`, tapos nilo-load lahat ng clinic records.
       signInReal: async (email, password) => {
         if (!supabase) throw new Error('Server login is not configured.');
         const { error } = await supabase.auth.signInWithPassword({
@@ -365,6 +391,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setDemoUser({ name: me.name, role: me.role });
         setDataReady(true);
       },
+      // Naglo-logout sa Supabase Auth, nililinis yung cached records sa memory, at tinatanggal yung local practice session.
       signOut: () => {
         setDemoGrowth([]);
         if (supabase) void supabase.auth.signOut();
@@ -382,6 +409,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           // Nothing to clean up.
         }
       },
+      // Nire-reset yung local practice data pabalik sa empty (o nire-refetch mula sa server kapag live mode).
       resetDemo: async () => {
         if (apiEnabled) {
           try {

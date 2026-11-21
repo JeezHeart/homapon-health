@@ -1,3 +1,8 @@
+/**
+ * DoseEntryForm.tsx
+ * Guide: Multi-step form (Input details -> Review -> Saved) para mag-record ng bagong
+ * nabigay na vaccine dose. Ginagamit sa Dashboard, Records, Schedule, at Child Profile pages.
+ */
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Child, DoseRecord } from '../data/mockData';
@@ -73,6 +78,7 @@ export default function DoseEntryForm({
   );
   const selectedChild = childList.find((c) => c.id === childId);
 
+  // Chine-check kung may napiling bata, vaccine, valid non-future date, at health worker name.
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (!childId) next.child = 'Choose a child.';
@@ -86,6 +92,7 @@ export default function DoseEntryForm({
     return Object.keys(next).length === 0;
   }
 
+  // Chine-check kung valid yung form at hindi duplicate yung dose bago tumuloy sa Review step.
   function handleReview(e: FormEvent) {
     e.preventDefault();
     setSaveError('');
@@ -99,6 +106,7 @@ export default function DoseEntryForm({
     setStep('review');
   }
 
+  // Sine-save yung na-review na dose record via `onSave`; binabalik sa form step kapag nag-error.
   async function handleConfirm() {
     const result = await onSave({
       childId,
@@ -117,6 +125,7 @@ export default function DoseEntryForm({
     setStep('saved');
   }
 
+  // Helper para magpakita ng red inline validation message sa ilalim ng field.
   function fieldError(name: string) {
     return errors[name] ? (
       <p role="alert" className="mt-1 text-xs font-medium text-red-700">
@@ -125,6 +134,7 @@ export default function DoseEntryForm({
     ) : null;
   }
 
+  // Gumagawa ng <option> list ng mga registered children para sa child dropdown.
   function childOptions() {
     return childList.map((c) => (
       <option key={c.id} value={c.id}>
@@ -133,6 +143,7 @@ export default function DoseEntryForm({
     ));
   }
 
+  // Step 3: Saved screen na may optional shortcut button para i-book agad yung next appointment.
   if (step === 'saved' && selectedChild) {
     return (
       <div className="flex flex-col gap-4">
@@ -164,6 +175,7 @@ export default function DoseEntryForm({
     );
   }
 
+  // Step 2: Read-only summary para ma-double check ng staff lahat ng details bago i-confirm at i-save.
   if (step === 'review' && selectedChild) {
     const v = vaccineById(vaccineId);
     return (
@@ -207,8 +219,10 @@ export default function DoseEntryForm({
     );
   }
 
+  // Step 1: Main dose entry form (child, vaccine, dose number, date, health worker, batch/lot, remarks).
   return (
     <form onSubmit={handleReview} noValidate className="flex flex-col gap-4">
+      {/* Child dropdown (naka-lock kapag binuksan galing mismo sa profile ng bata) */}
       <div>
         <label htmlFor="de-child" className="mb-1 block text-xs font-semibold">
           Child *
@@ -224,6 +238,7 @@ export default function DoseEntryForm({
         </select>
         {fieldError('child')}
       </div>
+      {/* Vaccine at dose number dropdowns (naka-disable yung mga doses na naka-record na) */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="de-vaccine" className="mb-1 block text-xs font-semibold">
@@ -287,6 +302,7 @@ export default function DoseEntryForm({
           )}
         </div>
       </div>
+      {/* Date administered at administering health worker inputs */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="de-date" className="mb-1 block text-xs font-semibold">
@@ -316,6 +332,7 @@ export default function DoseEntryForm({
           {fieldError('healthWorker')}
         </div>
       </div>
+      {/* Optional batch/lot number, remarks picker, API error alert, at Cancel/Review buttons */}
       <div>
         <label htmlFor="de-batch" className="mb-1 block text-xs font-semibold">
           Batch / lot number (optional)

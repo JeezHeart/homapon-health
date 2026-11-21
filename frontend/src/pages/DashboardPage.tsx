@@ -1,3 +1,11 @@
+/**
+ * DashboardPage.tsx
+ * Guide pang-defense: Ito yung main overview dashboard ng clinic (`/`).
+ * Hawak nito yung top KPI stat cards (children, fully immunized, overdue, doses this month), SMS status bar,
+ * quick "Register child" at "Book appointment" modals, vaccination trend chart, mini clinic calendar,
+ * upcoming/overdue appointments list, at lazy-loaded na WHO growth summary.
+ * Dito kayo unang tumingin pag may bug sa dashboard counts, quick-action modals, o layout ng home page (`/`).
+ */
 import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
@@ -19,8 +27,10 @@ import {
 } from '../data/mockData';
 import { useStore } from '../state/store-context';
 
+// Naka-lazy load para hindi bumagal yung initial load ng dashboard dahil sa WHO growth helpers.
 const GrowthSummary = lazy(() => import('../components/GrowthSummary'));
 
+// Isang KPI stat card na clickable agad papunta sa naka-filter na target page (Children, Schedule, o Records).
 function TopStat({
   label,
   value,
@@ -50,6 +60,7 @@ function TopStat({
   );
 }
 
+// Inline SVG icon para sa total registered children card.
 function ChildrenIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -61,6 +72,7 @@ function ChildrenIcon() {
   );
 }
 
+// Inline SVG icon para sa fully immunized at doses-this-month cards.
 function ShieldCheckIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -70,6 +82,7 @@ function ShieldCheckIcon() {
   );
 }
 
+// Inline SVG icon para sa overdue appointments alert card.
 function AlertIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -80,6 +93,7 @@ function AlertIcon() {
   );
 }
 
+// Main Dashboard page component: kumukuha ng live counts sa StoreProvider at live SMS status sa useSmsAvailability.
 export default function DashboardPage() {
   const { children, records, appointments, addChild, addAppointment, dataReady } = useStore();
   const overdue = overdueAppointments(appointments, children, records);
@@ -90,6 +104,7 @@ export default function DashboardPage() {
 
   return (
     <><MagicBento className="flex flex-col gap-5" summaryOnly enableBorderGlow={false} enableSpotlight spotlightRadius={300}>
+      {/* Top toolbar: clickable SMS status link plus quick Register Child at Book Appointment buttons */}
       <div className="dashboard-toolbar">
         <p role="status" aria-live="polite" className="text-sm text-[var(--color-navy-soft)]"><Link to="/sms">SMS: <strong className="font-medium">{smsLabel}</strong></Link></p>
         <div className="flex flex-wrap gap-2">
@@ -97,6 +112,7 @@ export default function DashboardPage() {
           <button type="button" className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={!children.length} title={!children.length ? 'Register a child first' : undefined} onClick={() => setAction('appointment')}>Book appointment</button>
         </div>
       </div>
+      {/* Hidden page heading pang-screen reader accessibility (a11y) */}
       <div className="sr-only">
         <div>
           <h1 className="page-title">
@@ -104,6 +120,7 @@ export default function DashboardPage() {
           </h1>
         </div>
       </div>
+        {/* Apat na main KPI summary cards sa taas ng dashboard */}
         <FadeContent className="dashboard-stats grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <TopStat ready={dataReady !== false} label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
           <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
@@ -111,6 +128,7 @@ export default function DashboardPage() {
           <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description={new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records" />
         </FadeContent>
 
+      {/* Magkatabing monthly vaccination trends chart at interactive clinic calendar */}
       <FadeContent className="dashboard-overview">
         <Card title="Vaccination overview" action={<div className="overview-legend"><span><i className="legend-teal" aria-hidden="true" />Doses</span><span><i className="legend-lavender" aria-hidden="true" />Appointments</span></div>}>
           <MonthlyTrendChart records={records} appointments={appointments} />
@@ -118,13 +136,16 @@ export default function DashboardPage() {
         <DashboardCalendar />
       </FadeContent>
 
+      {/* Panel para sa upcoming at overdue appointments na kailangan i-follow up */}
       <DashboardAppointments />
 
 
 
+      {/* Lazy-loaded na WHO growth summary widget para sa lahat ng bata sa clinic */}
       <Suspense fallback={<p role="status">Loading growth summary...</p>}><FadeContent><GrowthSummary /></FadeContent></Suspense>
     </MagicBento>
 
+      {/* Quick-action modal dialogs para mag-register ng bata o mag-book ng appointment */}
       {action === 'child' && <Dialog title="Register child" onClose={() => setAction(null)}><ChildForm onSubmit={async (data) => { await addChild(data); setAction(null); }} onCancel={() => setAction(null)} /></Dialog>}
       {action === 'appointment' && <Dialog title="Book appointment" onClose={() => setAction(null)}><AppointmentDialog childList={children} records={records} onSave={async (data) => { await addAppointment(data); }} onClose={() => setAction(null)} /></Dialog>}
     </>

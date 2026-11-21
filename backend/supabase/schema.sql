@@ -49,7 +49,7 @@ create table if not exists appointments (
   created_at timestamptz not null default now()
 );
 
--- SMS reminder log (simulated in frontend phase; real Semaphore
+-- SMS reminder log (simulated in frontend phase; real iProg SMS
 -- delivery tracking lands here in Phase 5).
 create table if not exists sms_log (
   id uuid primary key default gen_random_uuid(),

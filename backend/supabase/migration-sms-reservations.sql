@@ -20,7 +20,7 @@ create table if not exists public.sms_send_reservations (
   staff_id uuid not null,
   recipient text not null,
   message text not null,
-  provider text not null check (provider in ('semaphore', 'unisms')),
+  provider text not null check (provider in ('iprog')),
   state text not null check (state in ('reserved', 'dispatching', 'accepted', 'not_sent', 'unknown')),
   provider_id text,
   provider_status text,

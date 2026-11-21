@@ -1,3 +1,8 @@
+/**
+ * DosesChart.tsx
+ * Guide: Hand-coded SVG bar chart na nagpapakita kung ilang vaccine doses ang na-record
+ * per week sa nakaraang 8 weeks (walang external chart library). Ginagamit sa Reports page.
+ */
 import type { DoseRecord } from '../data/mockData';
 import { dosesPerWeek } from '../data/mockData';
 
@@ -6,6 +11,7 @@ import { dosesPerWeek } from '../data/mockData';
  * Hand-rolled to avoid a chart dependency (prd.md section 13).
  */
 export default function DosesChart({ records }: { records: DoseRecord[] }) {
+  // Gini-group ang dose records into 8 weekly buckets at kinakalkula yung sukat ng bawat SVG bar.
   const buckets = dosesPerWeek(records, 8);
   const max = Math.max(1, ...buckets.map((b) => b.count));
   const width = 560;
@@ -20,6 +26,7 @@ export default function DosesChart({ records }: { records: DoseRecord[] }) {
       role="img"
       aria-label={`Bar chart of doses recorded per week for the last 8 weeks. Total ${total} doses.`}
     >
+      {/* Animated SVG bars na may dose count sa taas at week label sa ibaba */}
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="w-full"
@@ -76,6 +83,7 @@ export default function DosesChart({ records }: { records: DoseRecord[] }) {
           );
         })}
       </svg>
+      {/* Caption summary ng total doses sa nakaraang 8 weeks */}
       <p className="mt-1 text-xs text-[var(--color-navy-soft)]">
         Doses recorded per week · {total} total in the last 8 weeks
       </p>

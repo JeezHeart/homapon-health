@@ -1,3 +1,10 @@
+/**
+ * React Context definition at `useStore()` hook para sa global state ng buong app.
+ *
+ * Dito naka-list lahat ng data at actions na pwedeng kunin ng kahit anong page gamit `useStore()`,
+ * pati yung `ROLE_LABEL` para sa Midwife at BHW. Nakahiwalay ito sa `store.tsx` para malinis yung Vite fast-refresh.
+ * Check mo dito kung gusto mong makita lahat ng available na state at CRUD functions sa store.
+ */
 import type { GrowthMeasurement } from '../utils/growth';
 import { createContext, useContext } from 'react';
 import type {
@@ -17,6 +24,7 @@ export interface DemoUser {
   role: DemoRole;
 }
 
+// Display labels ng staff roles na nakikita sa sidebar at SettingsPage.
 export const ROLE_LABEL: Record<DemoRole, string> = {
   midwife: 'Midwife · Admin',
   bhw: 'BHW · Encoder',
@@ -24,6 +32,7 @@ export const ROLE_LABEL: Record<DemoRole, string> = {
 
 export type SaveResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+// Kumpletong listahan ng global React state at API/local actions na binibigay ni `StoreProvider` sa `store.tsx`.
 export interface StoreValue {
   demoGrowth: GrowthMeasurement[];
   setDemoGrowth: (update: (previous: GrowthMeasurement[]) => GrowthMeasurement[]) => void;
@@ -70,8 +79,10 @@ export interface StoreValue {
   resetDemo: () => Promise<void>;
 }
 
+// React Context object na pinupuno ng `StoreProvider` sa pinakataas ng `App.tsx`.
 export const StoreContext = createContext<StoreValue | null>(null);
 
+// Custom hook na tinatawag ng mga pages at dialogs para magbasa ng records/auth at mag-trigger ng save/edit/delete.
 export function useStore(): StoreValue {
   const store = useContext(StoreContext);
   if (!store) throw new Error('useStore must be used inside StoreProvider');

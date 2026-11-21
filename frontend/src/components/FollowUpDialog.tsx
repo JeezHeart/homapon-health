@@ -1,3 +1,8 @@
+/**
+ * FollowUpDialog.tsx
+ * Guide: Popup modal para mag-log ang BHW/staff ng defaulter follow-up (Contacted, Home Visited,
+ * Rescheduled) at dahilan ng delay para sa overdue appointments. Ginagamit sa Schedule page.
+ */
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Dialog from './Dialog';
@@ -12,6 +17,7 @@ interface FollowUpDialogProps {
   onSave: (status: FollowUpStatus, notes: string) => Promise<void>;
 }
 
+// Mga available na follow-up outreach statuses para sa overdue appointments.
 const STATUS_OPTIONS: { id: FollowUpStatus; label: string; desc: string }[] = [
   { id: 'Pending', label: 'Pending / Needs Follow-up', desc: 'No action taken yet' },
   { id: 'Contacted', label: 'Contacted via SMS / Call', desc: 'Guardian reached remotely' },
@@ -19,6 +25,7 @@ const STATUS_OPTIONS: { id: FollowUpStatus; label: string; desc: string }[] = [
   { id: 'Rescheduled', label: 'Rescheduled', desc: 'New appointment date agreed upon' },
 ];
 
+// Preset delay reasons na pwedeng i-click ng staff para maidagdag agad sa notes box.
 const QUICK_REASONS = [
   'Child had fever / mild illness',
   'Parent working / out of town',
@@ -29,6 +36,7 @@ const QUICK_REASONS = [
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
 
+/** Nagre-render ng defaulter follow-up status at notes form sa loob ng modal Dialog. */
 export default function FollowUpDialog({
   appointment,
   onClose,
@@ -43,6 +51,7 @@ export default function FollowUpDialog({
 
   const vaccine = vaccineById(appointment.vaccineId);
 
+  // Sine-save yung piniling follow-up status at trimmed notes, tapos isinasara yung modal kapag success.
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -56,6 +65,7 @@ export default function FollowUpDialog({
     }
   }
 
+  // Dinadagdag yung pinindot na quick-reason tag sa notes textarea nang walang duplicate.
   function appendReason(reason: string) {
     if (!notes.trim()) {
       setNotes(reason);
@@ -70,6 +80,7 @@ export default function FollowUpDialog({
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-sm">
+        {/* Read-only summary ng overdue appointment at contact info ng parent/guardian */}
         <div className="rounded-xl bg-slate-50 p-3 text-xs text-[var(--color-navy-soft)]">
           <p className="font-semibold text-[var(--color-navy)]">
             {childName(appointment.child)} · {vaccine?.shortName} Dose {appointment.doseNumber}
@@ -87,6 +98,7 @@ export default function FollowUpDialog({
           </p>
         )}
 
+        {/* Dropdown para sa follow-up status */}
         <div>
           <label htmlFor="fup-status" className="mb-1 block text-xs font-semibold">
             Follow-up Status *
@@ -105,6 +117,7 @@ export default function FollowUpDialog({
           </select>
         </div>
 
+        {/* Notes textarea at one-click quick reason chips */}
         <div>
           <label htmlFor="fup-notes" className="mb-1 block text-xs font-semibold">
             Follow-up Notes / Reason for Delay
@@ -132,6 +145,7 @@ export default function FollowUpDialog({
           </div>
         </div>
 
+        {/* Cancel at Save Follow-up buttons */}
         <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
           <button
             type="button"

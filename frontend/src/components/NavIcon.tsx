@@ -1,3 +1,9 @@
+/**
+ * NavIcon.tsx
+ * Guide: Lightweight inline SVG icon library para sa sidebar navigation, top header buttons,
+ * table actions (edit/trash), at theme toggle (sun/moon). Walang external icon package needed.
+ */
+// Dictionary ng SVG path data per icon name.
 const paths = {
   dashboard: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
   children: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
@@ -17,6 +23,7 @@ const paths = {
   moon: 'M21 13a9 9 0 0 1-10-10 9 9 0 1 0 10 10z',
 } as const;
 
+/** Nagre-render ng 20x20 decorative SVG icon base sa `name` prop. */
 export default function NavIcon({ name }: { name: keyof typeof paths }) {
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d={paths[name]} /></svg>;
 }

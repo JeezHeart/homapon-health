@@ -1,5 +1,11 @@
+/**
+ * StatusBadge.tsx
+ * Guide: Maliit na color-coded pill badge para sa appointment status (Upcoming, Due today,
+ * Overdue, Completed). Ginagamit sa Dashboard, Schedule, at Child Profile tables.
+ */
 import type { AppointmentStatus } from '../data/mockData';
 
+// Styling at display label config para sa bawat appointment status.
 const STATUS_META: Record<
   AppointmentStatus,
   { label: string; classes: string; dot: string }
@@ -26,6 +32,7 @@ const STATUS_META: Record<
   },
 };
 
+/** Nagre-render ng status pill na may maliit na colored dot base sa `status` prop. */
 export default function StatusBadge({ status }: { status: AppointmentStatus }) {
   const meta = STATUS_META[status];
   return (

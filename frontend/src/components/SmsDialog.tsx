@@ -1,3 +1,9 @@
+/**
+ * SmsDialog.tsx
+ * Guide: Ito yung popup modal kapag mag-se-send ng single SMS reminder kay parent/guardian
+ * para sa isang appointment. Nagpapakita ng exact message preview, 160-char/SMS-unit counter,
+ * at live iProg SMS / demo simulation status. Ginagamit sa Schedule, SMS, at Child Profile pages.
+ */
 import { useSmsAvailability } from '../utils/useSmsAvailability';
 import { useEffect, useState } from 'react';
 import type { EnrichedAppointment, SmsEntry } from '../data/mockData';
@@ -29,6 +35,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
     { status: SmsEntry['status']; dryRun: boolean; provider: string } | null
   >(null);
 
+  // Ina-update every second yung Manila transaction date para ma-catch kung nag-midnight rollover bago mag-send.
   const [transactionDate, setTransactionDate] = useState(todayISO);
   useEffect(() => {
     const timer = window.setInterval(() => setTransactionDate(todayISO()), 1000);
@@ -48,6 +55,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
   // clearly-labeled demo simulation below.
   const live = apiEnabled;
 
+  // Nag-se-send ng SMS sa backend API (iProg SMS / dry-run) o naglo-log ng demo reminder sa offline mode.
   function handleConfirm() {
     if (!availability.enabled || sending || messageError) return;
     if (transactionDate !== todayISO()) {
@@ -64,7 +72,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           setLiveResult({
             status: res.entry.status,
             dryRun: res.provider.dryRun,
-            provider: res.provider.name === 'unisms' ? 'UniSMS' : 'Semaphore',
+            provider: 'iProg SMS',
           });
           setDone(true);
         } catch (err) {
@@ -96,7 +104,9 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
   return (
     <Dialog title="Send SMS reminder" onClose={onClose}>
       {!done ? (
+        /* Confirmation view: mode banner, child/guardian details, exact message preview, at Send button */
         <div className="flex flex-col gap-4">
+          {/* Notice kung live backend SMS (may dry-run option) o pure browser demo simulation */}
           <p
             role="note"
             className={`rounded-xl px-3 py-2 text-xs font-semibold ${live ? 'bg-teal-50 text-[var(--color-accent-dark)]' : 'bg-amber-50 text-amber-800'}`}
@@ -105,6 +115,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
               ? 'Backend SMS — the server may use dry-run. Provider acceptance does not confirm handset delivery.'
               : 'SIMULATED — confirming will log a demo entry only. No real message is sent in this phase.'}
           </p>
+          {/* Summary ng recipient (child, guardian, mobile number, at appointment schedule) */}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-slate-50 p-4 text-sm">
             <dt className="text-[var(--color-navy-soft)]">Child</dt>
             <dd className="font-medium">{childName(child)}</dd>
@@ -121,6 +132,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
               {appointment.scheduledTime ? ` (${formatTime(appointment.scheduledTime)})` : ''}
             </dd>
           </dl>
+          {/* Exact SMS message preview na may character count at 160-unit validation check */}
           <div className="rounded-xl border border-slate-200 p-4">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-navy-soft)]">
               Exact message
@@ -161,6 +173,7 @@ export default function SmsDialog({ appointment, onClose }: SmsDialogProps) {
           </div>
         </div>
       ) : (
+        /* Result screen pagkatapos mag-send o mag-log ng demo SMS */
         <div className="flex flex-col gap-4">
           <p
             className={`rounded-xl px-3 py-2 text-sm font-medium ${liveResult && liveResult.status === 'Failed' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'}`}

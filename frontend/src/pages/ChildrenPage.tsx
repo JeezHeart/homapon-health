@@ -1,3 +1,10 @@
+/**
+ * Child Records directory page (`/children`).
+ *
+ * Hawak nito: searchable at URL-synced filtering (pangalan ng bata/guardian, purok, vaccination completion, at appointment schedule),
+ * paginated table ng mga registered na bata, CSV export ng naka-filter na listahan, at yung "Register child" modal.
+ * Dito kayo tumingin kung may bug sa child search/filter URL params, directory table columns, pagination, o child registration.
+ */
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
@@ -16,10 +23,12 @@ import { calcAge, formatDate, formatTime } from '../utils/dates';
 
 const selectClass = 'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm';
 
+// Nagpapakita ng filterable na child directory at nagpapasa ng current filter URL papunta sa ChildProfilePage para gumana nang maayos ang Back link.
 export default function ChildrenPage() {
   const { children, records, appointments, addChild } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [registering, setRegistering] = useState(false);
+  // Binabasa at vina-validate dito lahat ng active filters mula sa URL query params para hindi mawala ang state pag nag-Back navigation.
   const query = searchParams.get('q') ?? '';
   const rawStatus = searchParams.get('status');
   const status: VaccinationStatus | 'all' = rawStatus === 'Fully immunized' || rawStatus === 'Partially immunized' ? rawStatus : 'all';
@@ -29,11 +38,13 @@ export default function ChildrenPage() {
   const purok = PUROKS.find((value) => value === rawPurok) ?? 'all';
   const size = [5, 10, 25].find((value) => value === Number(searchParams.get('size'))) ?? 10;
   const requestedPage = Number(searchParams.get('page') ?? 1);
+  // Kino-compute yung naka-filter na rows at current page slice gamit yung pure helpers sa utils/childDirectory.
   const filtered = useMemo(() => childDirectoryRows(children, records, appointments, { query, vaccination: status, schedule, purok }), [children, records, appointments, query, status, schedule, purok]);
   const pagination = directoryPage(filtered, requestedPage, size);
   const activeFilters = Boolean(query || status !== 'all' || schedule !== 'all' || purok !== 'all');
   const returnTo = `/children${searchParams.size ? `?${searchParams.toString()}` : ''}`;
 
+  // Ina-update yung URL search params tuwing magpapalit ng filter o page; tinatanggal yung default values para malinis tingnan ang URL.
   function update(patch: Partial<{ q: string; status: string; schedule: string; purok: string; page: number; size: number }>) {
     const values = { q: query, status, schedule, purok, size, page: 1, ...patch };
     const next = new URLSearchParams(searchParams);
@@ -45,6 +56,7 @@ export default function ChildrenPage() {
   }
 
   return <div className="flex flex-col gap-4">
+    {/* Header ng page: count ng nag-match na bata, CSV export, at Register child button */}
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="page-title">Child Records</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">{filtered.length} of {children.length} children</p></div>
       <div className="flex flex-wrap gap-2">
@@ -52,6 +64,7 @@ export default function ChildrenPage() {
         <button type="button" onClick={() => setRegistering(true)} className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-dark)]">Register child</button>
       </div>
     </div>
+    {/* Search bar at mga filter dropdowns para sa purok, vaccination status, at appointment schedule */}
     <Card>
       <div className="flex flex-col items-start gap-3 xl:flex-row">
         <input type="search" aria-label="Search by child or guardian name" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
@@ -64,6 +77,7 @@ export default function ChildrenPage() {
       </div>
       <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Vaccination status uses recorded doses; overdue refers to appointment dates.</p>
     </Card>
+    {/* Directory table at pagination controls (o EmptyState kapag walang nag-match na bata) */}
     <FadeContent className="flex flex-col gap-4">
     {filtered.length === 0 ? <EmptyState title={children.length ? 'No matching records' : 'No children registered'} message={children.length ? 'Change your search or clear the filters.' : 'Register a child to start the registry.'} /> : <>
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
@@ -80,12 +94,14 @@ export default function ChildrenPage() {
           </tr>)}</tbody>
         </table>
       </div>
+      {/* Pagination footer na naka-sync sa `page` at `size` URL params */}
       <nav aria-label="Child directory pagination" className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <p role="status" aria-live="polite" className="text-[var(--color-navy-soft)]">{pagination.first}–{pagination.last} of {filtered.length} children</p>
         <div className="flex flex-wrap items-center gap-2"><label htmlFor="directory-size" className="text-xs">Rows per page</label><select id="directory-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Next</button></div>
       </nav>
     </>}
     </FadeContent>
+    {/* Modal dialog para sa pag-register ng bagong bata */}
     {registering && <Dialog title="Register child" onClose={() => setRegistering(false)}><ChildForm onSubmit={async (data) => { await addChild(data); setRegistering(false); }} onCancel={() => setRegistering(false)} /></Dialog>}
   </div>;
 }

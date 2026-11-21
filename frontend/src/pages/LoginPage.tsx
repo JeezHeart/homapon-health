@@ -1,3 +1,10 @@
+/**
+ * LoginPage.tsx
+ * Guide pang-defense: Ito yung staff sign-in screen na nire-render ng `App.tsx` pag wala pang naka-login.
+ * Sakop nito: email/password login via Supabase Auth pag live API mode, o simpleng name + RBAC role picker
+ * pag local practice mode (`apiEnabled === false`), plus theme toggle sa login page.
+ * Dito ka mag-debug pag may issue sa login validation, auth error messages, o demo-vs-live login mode.
+ */
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiEnabled } from '../data/api';
@@ -10,11 +17,11 @@ const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
 
 /**
- * Sign-in. Two honest modes:
- * - API configured: email + password via Supabase Auth (passwords live
- *   in Supabase, never in our code). Roles come from the staff table.
- * - Demo mode: name + role picker, no password box (a password without
- *   a backend would be security theater).
+ * Staff sign-in component na may dalawang malinaw na mode:
+ * - Live API mode: totoong email + password login via Supabase Auth (nasa Supabase ang passwords,
+ *   wala sa source code natin) at galing sa staff table yung RBAC role.
+ * - Practice/Demo mode: name + role selector lang at walang fake password box para hindi mukhang
+ *   peke o security theater lang kahit walang backend.
  */
 export default function LoginPage() {
   const { signIn, signInReal } = useStore();
@@ -25,6 +32,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // Pang-validate at start ng local practice session (lumalabas lang pag walang naka-set na VITE_API_URL).
   function handleDemo(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
@@ -34,6 +42,7 @@ export default function LoginPage() {
     signIn({ name: name.trim(), role });
   }
 
+  // Nagla-login sa Supabase Auth at nagche-check ng staff role sa `/api/me` via StoreProvider.signInReal.
   async function handleReal(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -53,6 +62,7 @@ export default function LoginPage() {
 
   return (
     <div className="app-ui login-shell">
+      {/* Kaliwang branding panel na nagpapakilala sa Barangay Homapon Health Center */}
       <section className="login-intro" aria-label="Homapon Health">
         <Brand />
         <div className="max-w-lg">
@@ -62,6 +72,7 @@ export default function LoginPage() {
         </div>
         <p className="hidden text-xs text-[var(--color-navy-soft)] md:block">For authorized health-center staff</p>
       </section>
+      {/* Kanang login card na may theme toggle at switchable na live-API o practice-mode form */}
       <div className="login-form-side"><div className="login-form-panel">
         <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
@@ -70,6 +81,7 @@ export default function LoginPage() {
         <ThemeToggle />
         </div>
 
+        {/* Live mode: Supabase email/password form; Practice mode: name + RBAC role picker */}
         {apiEnabled ? (
           <>
             <p

@@ -35,7 +35,7 @@ const success = () => Response.json({
   ok: true,
   entry: { id: 'fictional-log', childId: 'fictional-child', message: 'Fictional reminder',
     sentAt: '2026-11-01', status: 'Accepted', providerId: 'fictional-reference', deliveryStatus: 'unconfirmed' },
-  provider: { name: 'semaphore', dryRun: false, providerId: 'fictional-reference' },
+  provider: { name: 'iprog', dryRun: false, providerId: 'fictional-reference' },
 });
 const limited = (retryAfter) => Response.json(
   { ok: false, error: 'Too many SMS attempts.' },

@@ -1,3 +1,11 @@
+/**
+ * Profile screen ng isang bata (`/children/:id`).
+ *
+ * Hawak nito: mga tabs para sa isang child record (Growth monitoring, Overview, Dose history, Schedule, printable Document, at SMS history),
+ * pati mga modals pang-edit/delete ng bata (midwife-only ang delete para sa RBAC), pag-add o pag-correct ng dose entries,
+ * pag-schedule/reschedule ng visits, at pag-prepare ng SMS reminder sa next incomplete appointment.
+ * Dito kayo mag-check pag may bug sa profile tabs, edit/delete ng bata, dose history actions, o print/PDF document.
+ */
 import { lazy, Suspense, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
@@ -26,8 +34,10 @@ import { REQUIRED_DOSES, vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import { calcAge, formatDate, formatTime } from '../utils/dates';
 
+// Naka-lazy load ito para ma-download lang yung GrowthPanel code kapag binuksan mismo ang Growth tab.
 const GrowthPanel = lazy(() => import('../components/GrowthPanel'));
 
+// Mga section tabs sa profile (pwede ring i-select gamit ang `?tab=` sa URL, halimbawa galing sa ReviewWorklistPage).
 const TABS = [
   { id: 'growth', label: 'Growth monitoring' },
   { id: 'overview', label: 'Overview' },
@@ -44,15 +54,18 @@ const CHILD_BADGE: Record<string, string> = {
   'Partially immunized': 'bg-sky-100 text-sky-800',
 };
 
+// Nagre-render ng kumpletong record at interactive actions para sa batang naka-match sa `:id` ng URL.
 export default function ChildProfilePage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  // Safe na kinukuha kung saan babalik yung "Back" link (Children, Schedule, o Records) habang pinapanatili yung dating filters.
   const returnTo = typeof location.state?.directory === 'string' && /^\/(?:children|schedule|records)(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
   const backLabel = returnTo.startsWith('/schedule') ? 'Back to schedule' : returnTo.startsWith('/records') ? 'Back to vaccination records' : 'Back to child records';
   const [searchParams] = useSearchParams();
   const { children, records, appointments, smsLog, demoUser, deleteChild, addDoseRecord, addAppointment, updateChild, updateAppointment } =
     useStore();
+  // Local React states para sa pag-open/close ng modals (edit, delete, add/correct doses, schedule, at SMS reminders).
   const [addingRecord, setAddingRecord] = useState(false);
   const [editingChild, setEditingChild] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -67,10 +80,12 @@ export default function ChildProfilePage() {
     doseNumber: number;
   } | null>(null);
   const child = id ? childById(children, id) : undefined;
+  // Active na tab sa profile; kinukuha muna sa `?tab=...` kung valid, otherwise default sa `overview`.
   const [tab, setTab] = useState<TabId>(
     TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') as TabId : 'overview',
   );
 
+  // Midwife-only RBAC action: permanenteng binubura yung child record pati lahat ng connected records via StoreProvider.deleteChild.
   async function removeChild() {
     if (!child || deleting || demoUser?.role !== 'midwife') return;
     setDeleting(true); setDeleteError('');
@@ -82,6 +97,7 @@ export default function ChildProfilePage() {
     finally { setDeleting(false); }
   }
 
+  // Fallback UI kapag hindi nag-match yung `:id` sa URL sa kahit anong naka-load na child record.
   if (!child) {
     return (
       <EmptyState
@@ -99,6 +115,7 @@ export default function ChildProfilePage() {
     );
   }
 
+  // Kinukuha at sino-sort dito yung dose history, appointments, SMS log, completion status, at next appointment na pwedeng i-remind para sa batang ito.
   const history = recordsForChild(records, child.id)
     .slice()
     .sort((a, b) => b.dateAdministered.localeCompare(a.dateAdministered));
@@ -114,6 +131,7 @@ export default function ChildProfilePage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Back link pabalik sa pinanggalingang directory, schedule, o records page */}
       <Link
         to={returnTo}
         className="text-sm font-semibold text-[var(--color-accent-dark)] hover:underline"
@@ -121,6 +139,7 @@ export default function ChildProfilePage() {
         ← {backLabel}
       </Link>
 
+      {/* Header ng bata: full name, vaccination status badge, SMS reminder, edit, at midwife-only delete button */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="page-title">
           {childName(child)}
@@ -158,6 +177,7 @@ export default function ChildProfilePage() {
         {child.purok || 'No purok recorded'}
       </p>
 
+      {/* Tab bar ng mga sections sa profile */}
       <div role="tablist" aria-label="Child profile sections" className="flex flex-wrap gap-1.5">
         {TABS.map((t) => (
           <button
@@ -176,8 +196,10 @@ export default function ChildProfilePage() {
         ))}
       </div>
 
+      {/* Growth monitoring tab (naka-lazy load yung WHO GrowthPanel component) */}
       {tab === 'growth' && <Suspense fallback={<p>Loading growth monitoring...</p>}><GrowthPanel key={child.id} child={child} /></Suspense>}
 
+      {/* Overview tab: detalye ng guardian at overall dose progress bar ng bata */}
       {tab === 'overview' && (
         <div className="grid gap-4 md:grid-cols-2">
           <Card title="Child & guardian">
@@ -220,6 +242,7 @@ export default function ChildProfilePage() {
         </div>
       )}
 
+      {/* Dose history tab: listahan ng mga naturok na bakuna na may Add at Edit buttons */}
       {tab === 'history' && (
         <Card
           title={`Vaccine dose history (${history.length})`}
@@ -282,6 +305,7 @@ export default function ChildProfilePage() {
         </Card>
       )}
 
+      {/* Mga modals pang-add ng dose, book/reschedule ng appointment, edit/delete ng bata, correction ng dose, at pag-prepare ng SMS */}
       {addingRecord && (
         <Dialog title="Add vaccination record" onClose={() => setAddingRecord(false)}>
           <DoseEntryForm
@@ -363,6 +387,7 @@ export default function ChildProfilePage() {
         <SmsDialog appointment={smsTarget} onClose={() => setSmsOpen(false)} />
       )}
 
+      {/* Schedule tab: mga appointments ng bata na may Schedule at Reschedule buttons */}
       {tab === 'schedule' && (
         <Card
           title="Upcoming schedule"
@@ -421,6 +446,7 @@ export default function ChildProfilePage() {
         </Card>
       )}
 
+      {/* Document tab: printable paper-style na immunization card ng bata */}
       {tab === 'document' && (
         <div className="flex flex-col gap-3">
           <div className="no-print flex justify-end">
@@ -440,6 +466,7 @@ export default function ChildProfilePage() {
         </div>
       )}
 
+      {/* SMS history tab: log ng mga nakaraang SMS reminder attempts para sa batang ito */}
       {tab === 'sms' && (
         <Card title="SMS reminder history">
           {sms.length === 0 ? (

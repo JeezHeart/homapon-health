@@ -1,3 +1,8 @@
+/**
+ * ChildForm.tsx
+ * Guide: Ito yung form para mag-register ng bagong bata (kasama yung required na first
+ * WHO growth measurement) o mag-edit ng existing child profile. Ginagamit sa Children at Child Profile pages.
+ */
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Child, NewChild } from '../data/mockData';
@@ -13,6 +18,10 @@ interface ChildFormProps {
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-[var(--color-navy)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
 
+/**
+ * Dual-mode form: create new child kapag walang `initial` prop, o edit profile kapag may `initial`.
+ * Kapag bagong registration, required ang unang growth measurement (weight, length/height, position, at oedema).
+ */
 export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProps) {
   const [firstName, setFirstName] = useState(initial?.firstName ?? '');
   const [lastName, setLastName] = useState(initial?.lastName ?? '');
@@ -35,6 +44,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
 
+  // Chine-check nito kung valid lahat ng form inputs (pangalan, DOB, mobile, weight, at first growth) bago i-submit.
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (!firstName.trim()) next.firstName = 'First name is required.';
@@ -65,6 +75,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
     return Object.keys(next).length === 0;
   }
 
+  // Tini-trim ang inputs, sinasama yung initialMeasurement kapag bagong register, tapos pinapasa sa parent `onSubmit`.
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (submitting || !validate()) return;
@@ -93,6 +104,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
     } finally { setSubmitting(false); }
   }
 
+  // Helper para magpakita ng red inline validation message sa ilalim ng input field.
   function fieldError(name: string) {
     return errors[name] ? (
       <p role="alert" className="mt-1 text-xs font-medium text-red-700">
@@ -103,6 +115,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      {/* First name at last name ng bata */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-first" className="mb-1 block text-xs font-semibold">
@@ -129,6 +142,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           {fieldError('lastName')}
         </div>
       </div>
+      {/* Date of birth at sex ng bata */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-dob" className="mb-1 block text-xs font-semibold">
@@ -161,6 +175,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           {fieldError('sex')}
         </div>
       </div>
+      {/* Parent/guardian name, mobile number, at Barangay Homapon purok address */}
       <div>
         <label htmlFor="cf-guardian" className="mb-1 block text-xs font-semibold">
           Parent / guardian name *
@@ -207,6 +222,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
           </datalist>
         </div>
       </div>
+      {/* Weight field at required First Growth Measurement section (para sa bagong registration lang) */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cf-weight" className="mb-1 block text-xs font-semibold">
@@ -231,6 +247,7 @@ export default function ChildForm({ initial, onSubmit, onCancel }: ChildFormProp
         <div><label htmlFor="cf-position" className="mb-1 block text-xs font-semibold">Measurement position *</label><select id="cf-position" value={position} onChange={(e) => setPosition(e.target.value as typeof position)} className={inputClass}><option value="">Select position</option><option value="lying">Lying down (length)</option><option value="standing">Standing (height)</option></select>{fieldError('position')}</div>
         <div><label htmlFor="cf-oedema" className="mb-1 block text-xs font-semibold">Swelling of both feet (staff assessment) *</label><select id="cf-oedema" value={oedema} onChange={(e) => setOedema(e.target.value as typeof oedema)} className={inputClass}><option value="">Select assessment</option><option value="unknown">Not assessed</option><option value="no">Absent</option><option value="yes">Present</option></select>{fieldError('oedema')}</div>
       </fieldset>}
+      {/* Optional notes/remarks, save error alert, at Cancel / Save buttons */}
       <div>
         <label htmlFor="cf-notes" className="mb-1 block text-xs font-semibold">
           Notes / remarks

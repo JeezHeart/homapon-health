@@ -22,11 +22,11 @@ test('logical keys survive booking duplication and mutable contact/provider deta
 test('RPC helpers use server-generated ownership and never fall back when persistence fails', async () => {
   const reservations = require('../src/lib/smsReservations');
   const appt = { child_id: 'child', id: 'booking', vaccine_id: 'bcg', dose_number: 1, scheduled_date: '2026-11-01' };
-  await reservations.reserveSms(appt, 'staff', '09000000000', 'Fictional', 'semaphore');
+  await reservations.reserveSms(appt, 'staff', '09000000000', 'Fictional', 'iprog');
   assert.equal(calls.at(-1).name, 'claim_sms_send');
   assert.match(calls.at(-1).args.p_attempt_id, /^[0-9a-f-]{36}$/);
   rpcError = { message: 'Sensitive database details' };
-  await assert.rejects(reservations.reserveSms(appt, 'staff', '09000000000', 'Fictional', 'semaphore'), (error) => {
+  await assert.rejects(reservations.reserveSms(appt, 'staff', '09000000000', 'Fictional', 'iprog'), (error) => {
     assert.match(error.message, /Could not persist/);
     assert.doesNotMatch(error.message, /Sensitive database details/);
     return true;

@@ -1,3 +1,10 @@
+/**
+ * GrowthPanel.tsx
+ * Guide pang-defense: Ito yung Growth Monitoring tab sa loob ng Child Profile page.
+ * Dito nag-e-encode ang health staff ng weight, length/height, at oedema check ng bata.
+ * Automatic na nakikita rito yung WHO LMS z-score review indicators, trend charts,
+ * at pwede ring mag-delete ng maling entry (strictly midwife RBAC role lang).
+ */
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Child } from '../data/mockData';
@@ -10,12 +17,14 @@ import type { GrowthMeasurement, GrowthMetric, NewGrowthMeasurement } from '../u
 import Card from './Card';
 import { useChartWidth } from '../utils/useChartWidth';
 
+// Listahan ng tatlong WHO growth indicator cards na dino-draw para sa pinaka-latest na measurement ng bata.
 const metrics: { id: GrowthMetric; label: string }[] = [
   { id: 'weight', label: 'Weight for age' },
   { id: 'height', label: 'Length/height for age' },
   { id: 'proportion', label: 'Weight for length/height' },
 ];
 
+/** Internal SVG line chart pang-plot ng weight o height gamit ang WHO LMS median at -2/+2 SD reference curves. */
 function Chart({ rows, child, metric }: { rows: GrowthMeasurement[]; child: Child; metric: 'weight' | 'height' }) {
   const { ref: chartRef, width } = useChartWidth(600);
   const points = rows.flatMap((r) => {
@@ -53,6 +62,7 @@ function Chart({ rows, child, metric }: { rows: GrowthMeasurement[]; child: Chil
   </div>;
 }
 
+/** Main WHO growth monitoring panel: may add form, latest z-score indicators, trend charts, at history table. */
 export default function GrowthPanel({ child }: { child: Child }) {
   const { demoGrowth, setDemoGrowth, demoUser } = useStore();
   const [remote, setRemote] = useState<GrowthMeasurement[]>([]);
@@ -66,6 +76,7 @@ export default function GrowthPanel({ child }: { child: Child }) {
   const [position, setPosition] = useState<'' | 'lying' | 'standing'>('');
   const [oedema, setOedema] = useState<NewGrowthMeasurement['oedema']>('unknown');
   const [notes, setNotes] = useState('');
+  // React effect para i-fetch yung saved growth measurements ng bata sa backend API pag live mode.
   useEffect(() => {
     if (!apiEnabled) return;
     let cancelled = false;
@@ -76,6 +87,7 @@ export default function GrowthPanel({ child }: { child: Child }) {
   }, [child.id]);
   const rows = (apiEnabled ? remote : demoGrowth.filter((r) => r.childId === child.id)).slice().sort((a, b) => a.measuredOn.localeCompare(b.measuredOn));
   const latest = rows.at(-1);
+  // Validation muna (date range, bawal duplicate date, required ang position pag may height) bago i-save via API o demo state.
   async function save(e: FormEvent) {
     e.preventDefault();
     if (saving || loading) return;
@@ -97,6 +109,7 @@ export default function GrowthPanel({ child }: { child: Child }) {
     } catch (e) { setError(apiError(e)); }
     finally { setSaving(false); }
   }
+  // Pang-delete ng isang maling growth row (midwife RBAC lang pwede) sa backend API o local demo store.
   async function remove(id: string) {
     setSaving(true); setError('');
     try {
@@ -107,9 +120,11 @@ export default function GrowthPanel({ child }: { child: Child }) {
     finally { setSaving(false); }
   }
   return <div className="flex flex-col gap-4">
+    {/* WHO decision-support paalala (hindi diagnosis) plus loading at error banners */}
     <p className="rounded-xl bg-slate-50 p-3 text-sm">Record actual measurements only. WHO comparisons support staff review and do not determine whether a child is healthy or unhealthy. Previous weight entries without dates are not plotted. {apiEnabled ? 'Measurements are saved through the protected API.' : 'Demo: fictional measurements only, kept for this session.'}</p>
     {loading && <p role="status">Loading measurements...</p>}
     {error && <p role="alert" className="text-red-700">{error}</p>}
+    {/* Entry form pang-dagdag ng bagong dated weight, length/height, position, at oedema record */}
     <Card title="Add measurement">
       <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">Measurement date<input className="block w-full rounded border p-2" type="date" required min={child.birthDate} max={smsTodayISO()} value={date} onChange={(e) => setDate(e.target.value)} /></label>
@@ -122,11 +137,14 @@ export default function GrowthPanel({ child }: { child: Child }) {
         <button disabled={saving || loading} className="rounded-xl bg-[var(--color-accent)] px-4 py-2 font-semibold text-white disabled:opacity-50">{saving ? 'Saving...' : 'Save measurement'}</button>
       </form>
     </Card>
+    {/* Summary cards ng pinaka-latest na WHO z-score indicators ng bata */}
     {latest && <Card title={`Latest indicators - ${formatDate(latest.measuredOn)}`}><div className="grid gap-3 sm:grid-cols-3">{metrics.map((m) => {
       const result = growthIndicator(latest, child.birthDate, child.sex, m.id);
       return <div key={m.id}><h3 className="font-semibold">{m.label}</h3><p className="text-sm">{result.label}</p>{result.score !== undefined && <p className="text-xs">WHO z-score: {result.score.toFixed(2)} (distance from reference median)</p>}</div>;
     })}</div></Card>}
+    {/* Side-by-side na Weight-for-age at Length/height-for-age WHO trend charts */}
     <div className="grid gap-4 lg:grid-cols-2"><Card title="Weight over time"><Chart rows={rows} child={child} metric="weight" /></Card><Card title="Length / height over time"><Chart rows={rows} child={child} metric="height" /></Card></div>
+    {/* History table ng raw measurements na may inline confirm-delete button para sa midwife */}
     <Card title="Measurement history">
       {!rows.length ? <p>No dated measurements recorded. Add a measurement to start the chart.</p> : <div className="overflow-x-auto"><table role="table" className="mobile-record-table ui-table w-full text-left text-sm"><caption className="sr-only">Actual recorded measurements before position adjustment</caption><thead role="rowgroup"><tr role="row">{['Date', 'Weight (kg)', 'Length / height (cm)', 'Position', 'Swelling', 'Notes', 'Actions'].map((h) => <th role="columnheader" className="p-2" key={h}>{h}</th>)}</tr></thead><tbody role="rowgroup">{rows.map((r) => <tr role="row" key={r.id} className="border-t"><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Date</span><div className="mobile-cell-value">{formatDate(r.measuredOn)}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Weight (kg)</span><div className="mobile-cell-value">{r.weightKg ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Length / height (cm)</span><div className="mobile-cell-value">{r.heightCm ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Position</span><div className="mobile-cell-value">{r.position ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Swelling</span><div className="mobile-cell-value">{r.oedema === 'unknown' ? 'Not assessed' : r.oedema === 'yes' ? 'Present' : 'Absent'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Notes</span><div className="mobile-cell-value">{r.notes}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">{demoUser?.role === 'midwife' && <button type="button" disabled={saving} onClick={() => setRemoveId(r.id)} className="text-red-700 underline">Remove</button>}</div></td></tr>)}</tbody></table></div>}
       {removeId && <div role="alert" className="mt-3 rounded border p-3"><p>Remove this measurement? Record the corrected measurement afterward if needed.</p><button disabled={saving} onClick={() => void remove(removeId)} className="mr-4 text-red-700 underline">Confirm removal</button><button disabled={saving} onClick={() => setRemoveId(null)} className="underline">Cancel</button></div>}

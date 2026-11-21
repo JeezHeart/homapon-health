@@ -11,10 +11,10 @@ const http = require('node:http');
 const { PassThrough } = require('node:stream');
 const path = require('node:path');
 
-process.env.SEMAPHORE_DRY_RUN = 'true';
-process.env.SMS_PROVIDER = 'semaphore';
-delete process.env.UNISMS_SECRET_KEY;
-delete process.env.SEMAPHORE_API_KEY;
+process.env.SMS_DRY_RUN = 'true';
+process.env.SMS_PROVIDER = 'iprog';
+delete process.env.IPROG_API_TOKEN;
+delete process.env.IPROG_API_KEY;
 
 // ---- Fake Supabase -------------------------------------------------
 const STAFF = { id: 'staff-1', name: 'Test Midwife', role: 'midwife' };
@@ -93,7 +93,7 @@ const fakeSupabase = {
     if (name === 'finish_sms_send') return { data: {
       id: 'reservation-log', child_id: CHILD_ID, message: 'Fictional', sent_at: '2026-11-01',
       status: args.p_outcome === 'accepted' ? 'Accepted' : args.p_outcome === 'unknown' ? 'Unknown' : 'Not sent',
-      provider: 'semaphore', provider_id: args.p_provider_id,
+      provider: 'iprog', provider_id: args.p_provider_id,
     }, error: null };
     throw new Error('Unexpected RPC');
   },
@@ -138,7 +138,7 @@ sms.sendSms = async (args) => {
   return sendResult;
 };
 sms.prepareSmsSend = () => useActualSender ? originalPrepareSmsSend() : ({
-  provider: 'semaphore', dryRun: !liveSms,
+  provider: 'iprog', dryRun: !liveSms,
   send: async (args) => {
     const result = await sms.sendSms(args);
     return { ...result, outcome: result.ok ? 'accepted' : 'unknown' };
@@ -487,21 +487,21 @@ test('accepted logical reminder replays across restarts; new schedule can send',
 });
 
 for (const status of ['Failed', 'Refunded']) {
-  test(`Semaphore ${status} response retains reference and blocks a second submission`, async (t) => {
-    liveSendingAs(`semaphore-status-${status}`);
+  test(`iProg SMS ${status} response retains reference and blocks a second submission`, async (t) => {
+    liveSendingAs(`iprog-status-${status}`);
     useActualSender = true;
-    process.env.SEMAPHORE_DRY_RUN = 'false';
-    process.env.SEMAPHORE_API_KEY = 'fictional-test-key';
+    process.env.SMS_DRY_RUN = 'false';
+    process.env.IPROG_API_TOKEN = 'fictional-test-token';
     t.after(() => {
-      process.env.SEMAPHORE_DRY_RUN = 'true';
-      delete process.env.SEMAPHORE_API_KEY;
+      process.env.SMS_DRY_RUN = 'true';
+      delete process.env.IPROG_API_TOKEN;
     });
     const ledger = persistentLedger();
     db.rpcHandler = ledger.rpc;
     let providerCalls = 0;
     t.mock.method(globalThis, 'fetch', async () => {
       providerCalls++;
-      return Response.json([{ message_id: 123, status }]);
+      return Response.json({ message_id: 123, status });
     });
     const first = await api('POST', '/api/sms-log/send', SEND_BODY);
     assert.equal(first.status, 502);
@@ -738,6 +738,262 @@ const VALID_DOSE = {
   dateAdministered: '2025-01-16',
   healthWorker: 'Nurse Joy',
 };
+
+test('guidance rejects patient data, arbitrary prompts and unauthorized requests before provider access', async (t) => {
+  const endpoint = '/api/dose-records/review-guidance';
+  const provider = t.mock.method(globalThis, 'fetch', async () => Response.json({
+    choices: [{ finish_reason: 'stop', message: { content: '{"explanation":1,"order":[1,0,2]}' } }],
+  }));
+  const allowed = { issueCode: 'missing_date' };
+  assert.equal((await api('POST', endpoint, allowed, { token: null })).status, 401);
+  db.staffResult = { data: { ...STAFF, role: 'other' }, error: null };
+  assert.equal((await api('POST', endpoint, allowed)).status, 403);
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  for (const field of ['childId', 'name', 'birthDate', 'dateAdministered', 'weightKg', 'notes', 'prompt']) {
+    assert.equal((await api('POST', endpoint, { ...allowed, [field]: 'Private fixture' })).status, 400);
+  }
+  assert.equal((await api('POST', endpoint + '?name=Private', allowed)).status, 400);
+  assert.equal((await api('POST', endpoint, { issueCode: 'Private fixture' })).status, 400);
+  assert.equal((await api('POST', endpoint, { ...allowed, mode: 'Private fixture' })).status, 400);
+  assert.equal((await api('POST', endpoint, { ...allowed, mode: 'preparation', remarks: 'Private fixture' })).status, 400);
+  assert.equal(provider.mock.callCount(), 0);
+
+  const previous = process.env.GROQ_API_KEY;
+  delete process.env.GROQ_API_KEY;
+  try {
+    const response = await api('POST', endpoint, allowed);
+    assert.equal(response.status, 200);
+    assert.equal(response.json.guidance.source, 'reference');
+    assert.equal(provider.mock.callCount(), 0);
+
+    process.env.GROQ_API_KEY = 'mock-test-key';
+    const generated = await api('POST', endpoint, allowed);
+    assert.equal(generated.status, 200);
+    assert.equal(generated.json.guidance.source, 'ai_assisted');
+    assert.equal(provider.mock.callCount(), 1);
+    const [url, init] = provider.mock.calls[0].arguments;
+    assert.equal(url, 'https://api.groq.com/openai/v1/chat/completions');
+    const prompt = JSON.parse(JSON.parse(init.body).messages[1].content);
+    assert.deepEqual(Object.keys(prompt).sort(), ['excerpts', 'issue']);
+    assert.equal(prompt.issue, allowed.issueCode);
+    assert.doesNotMatch(init.body, /Private fixture|good-token|mock-test-key/);
+  } finally {
+    if (previous === undefined) delete process.env.GROQ_API_KEY;
+    else process.env.GROQ_API_KEY = previous;
+  }
+});
+
+test('review findings reject unauthenticated and unauthorized requests before loading doses', async () => {
+  const endpoint = '/api/dose-records/review-findings';
+  assert.equal((await api('GET', endpoint, undefined, { token: null })).status, 401);
+  db.staffResult = { data: null, error: null };
+  assert.equal((await api('GET', endpoint)).status, 403);
+  db.staffResult = { data: { ...STAFF, role: 'other' }, error: null };
+  assert.equal((await api('GET', endpoint)).status, 403);
+  assert.equal(db.calls.some((q) => q.table === 'dose_records'), false);
+});
+
+test('review findings return an empty list to authorized staff when there are no dose records', async () => {
+  db.handler = (q) => {
+    assert.equal(q.table, 'dose_records');
+    return { data: [], error: null };
+  };
+  const response = await api('GET', '/api/dose-records/review-findings');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.json, { ok: true, findings: [] });
+});
+
+test('review findings use stored child IDs and detect duplicates across query pages', async () => {
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  const row = (id, childId, dose, date, vaccine = 'penta') => ({
+    id, child_id: childId, vaccine_id: vaccine, dose_number: dose, date_administered: date,
+  });
+  db.handler = (q) => {
+    assert.equal(q.table, 'dose_records');
+    assert.deepEqual(q.ops.map(([name]) => name), ['select', 'order', 'range']);
+    assert.deepEqual(q.arg('order'), ['id']);
+    const [start, end] = q.arg('range');
+    if (start === 0) {
+      assert.equal(end, 499);
+      return { data: [
+        row('first', CHILD_ID, 1, '2024-01-01'),
+        ...Array.from({ length: 499 }, (_, i) => row(`filler-${i}`, `child-${i}`, 1, '2024-01-01')),
+      ], error: null };
+    }
+    assert.deepEqual([start, end], [500, 999]);
+    return { data: [
+      row('second', CHILD_ID, 2, '2024-01-01'),
+      row('other-vaccine', CHILD_ID, 1, '2024-01-01', 'opv'),
+      row('other-child', APPT_ID, 1, '2024-01-01'),
+      row('invalid', APPT_ID, 2, '2024-02-30'),
+    ], error: null };
+  };
+  const response = await api('GET', '/api/dose-records/review-findings');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.json.findings.map(({ issueType, explanationCode, childId, recordIds }) =>
+    [issueType, explanationCode, childId, recordIds]), [
+    ['same_day_doses', 'same_day_doses', CHILD_ID, ['first', 'second']],
+    ['potential_duplicate', 'same_vaccine_same_administration_date', CHILD_ID, ['first', 'second']],
+    ['invalid_date', 'invalid_date', APPT_ID, ['invalid']],
+  ]);
+  assert.equal(db.calls.filter((q) => q.table === 'dose_records').length, 2);
+  assert.ok(response.json.findings.every(({ priority, priorityReason }) => priority === 'high' && priorityReason));
+});
+
+test('review worklist gives an earlier undocumented dose standard priority', async () => {
+  db.handler = () => ({ data: [
+    { id: 'third', child_id: CHILD_ID, vaccine_id: 'penta', dose_number: 3, date_administered: '2024-01-01' },
+  ], error: null });
+  const response = await api('GET', '/api/dose-records/review-findings');
+  assert.equal(response.status, 200);
+  const [finding] = response.json.findings;
+  assert.equal(finding.issueType, 'prior_dose_not_recorded');
+  assert.equal(finding.priority, 'standard');
+  assert.match(finding.priorityReason, /documented elsewhere/);
+  assert.equal(Object.hasOwn(finding, 'reviewStatus'), false);
+});
+
+test('review tracking persists decisions, scopes history, and reopens changed findings', async () => {
+  const worklist = '/api/dose-records/review-findings?tracking=1';
+  const transition = '/api/dose-records/review-transition';
+  let revision = null;
+  let decision;
+  const row = { id: APPT_ID, child_id: CHILD_ID, vaccine_id: 'penta', dose_number: 3, date_administered: '2024-01-01' };
+  let records = [row];
+  db.handler = (q) => {
+    if (q.table === 'immunization_review_latest') return { data: decision && (!q.arg('eq') || q.arg('eq')[1] === CHILD_ID)
+      ? [{ ...decision, dose_review_revision: revision }] : [], error: null };
+    if (q.table === 'immunization_review_events') {
+      assert.ok(q.ops.some(([name, args]) => name === 'eq' && args[0] === 'child_id' && args[1] === CHILD_ID));
+      assert.ok(q.ops.some(([name, args]) => name === 'eq' && args[0] === 'finding_key' && args[1] === decision.finding_key));
+      return { data: [{ id: '1', status: 'escalated', from_status: 'pending', reviewer_name: 'Test Worker', remarks: 'Check register' }], error: null };
+    }
+    assert.equal(q.table, 'dose_records');
+    const child = q.arg('eq')?.[1];
+    return { data: child && child !== CHILD_ID ? [] : records.map((r) => ({ ...r, children: { dose_review_revision: revision } })), error: null };
+  };
+  const initial = (await api('GET', worklist)).json.findings[0];
+  assert.equal(initial.reviewStatus, 'pending');
+  assert.equal(initial.eventId, null);
+  const body = { childId: CHILD_ID, findingKey: initial.findingKey, version: initial.version, eventId: null, status: 'escalated', remarks: ' Check register ' };
+  assert.equal((await api('POST', transition, body, { token: null })).status, 401);
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  assert.equal((await api('POST', transition, { ...body, status: 'resolved' })).status, 403);
+  assert.equal((await api('POST', transition, { ...body, childId: APPT_ID })).status, 409);
+  assert.equal(db.rpcCalls.length, 0);
+
+  db.rpcHandler = (name, args) => {
+    assert.equal(name, 'transition_immunization_review');
+    assert.equal(args.p_actor, STAFF.id);
+    assert.equal(args.p_child, CHILD_ID);
+    assert.deepEqual(args.p_records, [APPT_ID]);
+    if (args.p_status === 'verified') return { data: { error: 'transition' }, error: null };
+    if (decision) return { data: { error: 'stale' }, error: null };
+    assert.equal(args.p_remarks, 'Check register');
+    decision = { finding_key: args.p_finding, version: args.p_version, status: 'escalated', event_id: '1',
+      child_id: CHILD_ID, vaccine_id: args.p_vaccine, record_ids: args.p_records, issue_type: args.p_issue };
+    return { data: { eventId: '1', status: 'escalated' }, error: null };
+  };
+  assert.deepEqual((await api('POST', transition, body)).json, { ok: true, eventId: '1', status: 'escalated' });
+  assert.equal((await api('POST', transition, body)).status, 409);
+  assert.equal((await api('POST', transition, { ...body, status: 'verified', eventId: '1' })).status, 403);
+  assert.equal((await api('POST', transition, { ...body, status: 'pending', eventId: '1' })).status, 400);
+  assert.equal((await api('GET', worklist)).json.findings[0].reviewStatus, 'escalated');
+  const summary = (await api('GET', worklist + '&summary=1')).json.summary;
+  assert.deepEqual(summary.statuses, { pending: 0, verified: 0, escalated: 1, resolved: 0 });
+
+  revision = APPT_ID;
+  records.push({ ...row, id: CHILD_ID, vaccine_id: 'bcg', dose_number: 1 });
+  const unchanged = (await api('GET', worklist)).json.findings[0];
+  assert.equal(unchanged.version, initial.version);
+  assert.equal(unchanged.reviewStatus, 'escalated');
+  row.date_administered = '2024-01-02';
+  const changed = (await api('GET', worklist)).json.findings[0];
+  assert.equal(changed.findingKey, initial.findingKey);
+  assert.notEqual(changed.version, initial.version);
+  assert.equal(changed.reviewStatus, 'escalated');
+  assert.equal(changed.eventId, '1');
+  assert.equal(changed.reassessed, true);
+  assert.equal((await api('POST', transition, body)).status, 409);
+  const history = '/api/dose-records/review-history?childId=' + CHILD_ID + '&findingKey=' + initial.findingKey;
+  assert.equal((await api('GET', history, undefined, { token: null })).status, 401);
+  assert.equal((await api('GET', history)).json.events[0].remarks, 'Check register');
+
+  records = [];
+  const cleared = (await api('GET', worklist)).json.findings[0];
+  assert.equal(cleared.screeningCleared, true);
+  assert.equal(cleared.reviewStatus, 'escalated');
+  assert.equal(cleared.findingKey, initial.findingKey);
+  const resolve = { ...body, version: cleared.version, status: 'resolved', eventId: '1' };
+  assert.equal((await api('POST', transition, { ...resolve, status: 'verified' })).status, 403);
+  db.staffResult = { data: STAFF, error: null };
+  assert.equal((await api('POST', transition, { ...resolve, version: changed.version })).status, 409);
+  db.rpcHandler = (_, args) => {
+    assert.equal(args.p_status, 'resolved');
+    assert.equal(args.p_expected, '1');
+    return { data: null, error: { code: 'XX000', message: 'Write failure' } };
+  };
+  assert.equal((await api('POST', transition, resolve)).status, 500);
+  db.rpcHandler = (_, args) => {
+    decision = { ...decision, status: 'resolved', version: args.p_version, event_id: '2' };
+    return { data: { eventId: '2', status: 'resolved' }, error: null };
+  };
+  assert.equal((await api('POST', transition, resolve)).status, 200);
+  assert.deepEqual((await api('GET', worklist)).json.findings, []);
+  assert.equal((await api('POST', transition, resolve)).status, 409);
+});
+
+test('daily review summary is staff-only and omits saved statuses when tracking is unavailable', async () => {
+  const endpoint = '/api/dose-records/review-findings?tracking=1&summary=1';
+  assert.equal((await api('GET', endpoint, undefined, { token: null })).status, 401);
+  db.staffResult = { data: { ...STAFF, role: 'other' }, error: null };
+  assert.equal((await api('GET', endpoint)).status, 403);
+  assert.equal(db.calls.some((q) => q.table === 'dose_records'), false);
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  db.handler = (q) => q.arg('select')[0].includes('dose_review_revision')
+    ? { data: null, error: { code: '42703' } }
+    : { data: [{ id: APPT_ID, child_id: CHILD_ID, dose_number: 3, vaccine_id: 'penta', date_administered: '2024-01-01' }], error: null };
+  const response = await api('GET', endpoint);
+  assert.equal(response.status, 200);
+  assert.equal(response.json.trackingAvailable, false);
+  assert.equal(response.json.summary.findings, 1);
+  assert.equal(response.json.summary.uniqueChildren, 1);
+  assert.equal(response.json.summary.statuses, null);
+  assert.equal(response.json.summary.guidance.source, 'reference');
+});
+
+test('screening remains available before the tracking migration is applied', async () => {
+  db.handler = (q) => ({
+    data: q.arg('select')[0].includes('dose_review_revision') ? null : [],
+    error: q.arg('select')[0].includes('dose_review_revision') ? { code: '42703' } : null,
+  });
+  const response = await api('GET', '/api/dose-records/review-findings?tracking=1');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.json, { ok: true, trackingAvailable: false, findings: [] });
+});
+
+test('interval review is staff protected, child scoped and read-only', async () => {
+  const endpoint = '/api/dose-records/intervals';
+  assert.equal((await api('GET', endpoint, undefined, { token: null })).status, 401);
+  assert.equal((await api('GET', endpoint)).status, 400);
+  db.staffResult = { data: null, error: null };
+  assert.equal((await api('GET', endpoint + '?childId=' + CHILD_ID)).status, 403);
+  db.staffResult = { data: { ...STAFF, role: 'bhw' }, error: null };
+  db.handler = (q) => {
+    assert.equal(q.table, 'dose_records');
+    assert.deepEqual(q.arg('eq'), ['child_id', CHILD_ID]);
+    assert.deepEqual(q.arg('range'), [0, 499]);
+    assert.deepEqual(q.ops.map(([name]) => name), ['select', 'eq', 'order', 'range']);
+    return { data: [
+      { id: 'first', vaccine_id: 'penta', dose_number: 1, date_administered: '2024-01-01' },
+      { id: 'second', vaccine_id: 'penta', dose_number: 2, date_administered: '2024-01-28' },
+    ], error: null };
+  };
+  const response = await api('GET', endpoint + '?childId=' + CHILD_ID);
+  assert.equal(response.status, 200);
+  assert.equal(response.json.intervals[0].days, 27);
+  assert.equal(response.json.flags[0].code, 'below_minimum_interval');
+});
 
 test('POST /dose-records non-string remarks returns 400 (no crash)', async () => {
   db.handler = (q) =>

@@ -1,3 +1,10 @@
+/**
+ * Immunization Schedule page (`/schedule`).
+ *
+ * Hawak nito: monthly calendar picker na may per-day appointment counts, filterable at paginated appointment table,
+ * overdue follow-up status tracking, at modals pang-book, pang-reschedule, pang-follow-up, at pang-prepare ng SMS reminder.
+ * Dito kayo mag-check pag may bug sa calendar date selection, schedule filters, overdue follow-up actions, o appointment modals.
+ */
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
@@ -29,6 +36,7 @@ import { filterSchedule, validScheduleDate } from '../utils/scheduleDirectory';
 import type { ScheduleFilter } from '../utils/scheduleDirectory';
 import { directoryPage } from '../utils/childDirectory';
 
+// Mga options para sa status filter dropdown ng schedule.
 const FILTERS: { id: ScheduleFilter; label: string }[] = [
   { id: 'all', label: 'All appointments' },
   { id: 'today', label: 'Today' },
@@ -40,6 +48,7 @@ const FILTERS: { id: ScheduleFilter; label: string }[] = [
 
 
 
+// Kulay ng badge depende sa follow-up status ng overdue appointment.
 const FOLLOW_UP_BADGE: Record<FollowUpStatus, string> = {
   Pending: 'bg-amber-100 text-amber-800 border-amber-200',
   Contacted: 'bg-sky-100 text-sky-800 border-sky-200',
@@ -47,10 +56,12 @@ const FOLLOW_UP_BADGE: Record<FollowUpStatus, string> = {
   Rescheduled: 'bg-purple-100 text-purple-800 border-purple-200',
 };
 
+// Nagpapakita ng monthly calendar at listahan ng vaccination appointments na may URL-synced filters at actions.
 export default function SchedulePage() {
   const { children, records, appointments, addAppointment, updateAppointment } =
     useStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  // Binabasa dito lahat ng active schedule filters, selected date/month, at page size galing sa URL query params.
   const filter = FILTERS.find((item) => item.id === searchParams.get('filter'))?.id ?? 'upcoming';
   const query = searchParams.get('q') ?? '';
   const purokFilter = PUROKS.find((purok) => purok === searchParams.get('purok')) ?? 'all';
@@ -60,6 +71,7 @@ export default function SchedulePage() {
   const monthCursor = { year, month: month - 1 };
   const size = [5, 10, 25].find((value) => value === Number(searchParams.get('size'))) ?? 10;
   const returnTo = `/schedule${searchParams.size ? `?${searchParams.toString()}` : ''}`;
+  // Ina-update yung URL query params pag nagbago ng filter, petsa, o page size, at nire-reset ang page sa 1.
   function update(patch: Record<string, string | number>) {
     const next = new URLSearchParams(searchParams);
     next.delete('page');
@@ -69,21 +81,25 @@ export default function SchedulePage() {
     }
     setSearchParams(next, { replace: true });
   }
+  // Local React modal states para sa SMS reminder, overdue follow-up, bagong booking, at rescheduling.
   const [smsFor, setSmsFor] = useState<EnrichedAppointment | null>(null);
   const [followUpFor, setFollowUpFor] = useState<EnrichedAppointment | null>(null);
   const [booking, setBooking] = useState(false);
   const [rescheduling, setRescheduling] =
     useState<EnrichedAppointment | null>(null);
 
+  // Pinagsasama yung appointments, child info, at dose records via useMemo para malaman ang status (upcoming/overdue/completed).
   const all = useMemo(
     () => enrichedAppointments(appointments, children, records),
     [appointments, children, records],
   );
 
+  // Hiwalay yung `calendarRows` (lahat ng statuses para sa count badges sa calendar) sa `filtered` (yung table sa kanan).
   const calendarRows = filterSchedule(all, { query, purok: purokFilter, filter: 'all' });
   const filtered = filterSchedule(all, { query, purok: purokFilter, filter, date: selectedDay });
   const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), size);
   const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming');
+  // Gini-group ang appointments per date string (`YYYY-MM-DD`) para mabilis makuha ang count ng bawat calendar cell.
   const byDay = new Map<string, EnrichedAppointment[]>();
   for (const appointment of calendarRows) {
     const day = byDay.get(appointment.scheduledDate) ?? [];
@@ -98,6 +114,7 @@ export default function SchedulePage() {
   ).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
 
   const cells = monthCells(monthCursor.year, monthCursor.month);
+  // Pang-lipat ng buwan sa calendar (-1 para previous month, +1 para next month).
   function shiftMonth(delta: number) {
     const cursor = shiftMonthCursor(monthCursor, delta);
     update({ month: `${cursor.year}-${String(cursor.month + 1).padStart(2, '0')}` });
@@ -108,6 +125,7 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Header ng Schedule page na may Book Appointment button */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="page-title">
@@ -126,6 +144,7 @@ export default function SchedulePage() {
         </button>
       </div>
 
+      {/* Filter card: search bar, status dropdown, at purok selector */}
       <Card>
         <div className="flex flex-wrap items-center gap-3">
           <input type="search" aria-label="Search appointments by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="min-w-0 w-full flex-none rounded-xl border border-slate-300 px-3 py-2 text-sm sm:w-auto sm:flex-1" />
@@ -135,7 +154,9 @@ export default function SchedulePage() {
         </div>
       </Card>
 
+      {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
       <FadeContent className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+        {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
         <div className="min-w-0">
           <Card title={monthLabel}>
             <div className="flex items-center justify-between pb-3">
@@ -207,6 +228,7 @@ export default function SchedulePage() {
           </Card>
         </div>
 
+        {/* Appointments table card sa kanan kasama ang pagination footer */}
         <div className="min-w-0">
       <Card
         title={`${selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} (${filtered.length})`}
@@ -290,6 +312,7 @@ export default function SchedulePage() {
         </div>
       </FadeContent>
 
+      {/* Mga modals pang-prepare ng SMS, pang-log ng overdue follow-up, pang-book, at pang-reschedule */}
       {smsFor && <SmsDialog appointment={smsFor} onClose={() => setSmsFor(null)} />}
 
       {followUpFor && (

@@ -1,3 +1,10 @@
+/**
+ * Vaccination Records page (`/records`).
+ *
+ * Hawak nito: accordion list ng mga naturok na doses na naka-group per bata, URL-synced na search/vaccine/date-range filters,
+ * pagination per child group, at mga modals para mag-add ng dose, mag-schedule ng next dose, o mag-correct ng maling dose entry.
+ * Dito kayo mag-check pag may bug sa dose search/date-range, accordion expand/collapse, o dose entry/correction dialogs.
+ */
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
@@ -24,10 +31,12 @@ const STATUS_BADGE: Record<string, string> = {
   'Partially immunized': 'bg-sky-100 text-sky-800',
 };
 
+// Nagpapakita ng mga naka-record na vaccine doses per bata para madaling ma-audit, madagdagan, o ma-correct ng staff yung dating entries.
 export default function RecordsPage() {
   const { children, records, addDoseRecord, addAppointment } =
     useStore();
   const [params, setParams] = useSearchParams();
+  // Binabasa dito yung URL-backed filters para sa search query, vaccine, date range, at page size.
   const query = params.get('q') ?? '';
   const vaccineFilter = VACCINES.find((vaccine) => vaccine.id === params.get('vaccine'))?.id ?? 'all';
   const from = validScheduleDate(params.get('from')) ?? '';
@@ -36,6 +45,8 @@ export default function RecordsPage() {
   const size = [5, 10, 25].find((value) => value === Number(params.get('size'))) ?? 10;
   const [expanded, setExpanded] = useState<Map<string, boolean>>(new Map());
   const returnTo = `/records${params.size ? `?${params.toString()}` : ''}`;
+
+  // Ina-update yung URL search params pag nagpalit ng filter o page size, tapos nire-reset ang page sa 1 kapag bagong filter.
   function update(patch: Record<string, string | number>) {
     const next = new URLSearchParams(params);
     next.delete('page');
@@ -45,6 +56,7 @@ export default function RecordsPage() {
     }
     setParams(next, { replace: true });
   }
+  // React modal states para sa pag-add ng bagong dose, pag-correct ng lumang entry, o pag-book ng follow-up visit pagka-save.
   const [adding, setAdding] = useState(false);
   const [correcting, setCorrecting] = useState<DoseRecord | null>(null);
   const [scheduling, setScheduling] = useState<{
@@ -53,11 +65,15 @@ export default function RecordsPage() {
     doseNumber: number;
   } | null>(null);
 
+  // Gini-group yung nag-match na dose records per bata (empty kapag baliktad yung date range) tapos pinapa-paginate per child group.
   const groups = useMemo(() => invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, from, to }), [children, records, query, vaccineFilter, from, to, invalidRange]);
   const shownDoses = groups.reduce((total, group) => total + group.doses.length, 0);
   const pagination = directoryPage(groups, Number(params.get('page') ?? 1), size);
+  // Auto-expand kapag iisang bata lang ang lumabas sa filter; otherwise sinusunod yung manual click ng user sa accordion.
   const isExpanded = (id: string) => expanded.get(id) ?? groups.length === 1;
   const allExpanded = groups.length > 0 && groups.every((group) => isExpanded(group.child.id));
+
+  // Pang-open o close ng dose-history accordion ng isang bata.
   function toggle(id: string) {
     const open = isExpanded(id);
     setExpanded((previous) => new Map(previous).set(id, !open));
@@ -65,6 +81,7 @@ export default function RecordsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Header ng page: count ng nag-match na doses, Expand/Collapse All button, at Add Vaccination Record button */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title">
@@ -87,6 +104,7 @@ export default function RecordsPage() {
         </div>
       </div>
 
+      {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
       <Card>
         <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_auto_150px_150px_auto]">
           <input
@@ -117,6 +135,7 @@ export default function RecordsPage() {
         {invalidRange && <p role="alert" className="mt-3 text-sm text-red-700">From date must be on or before To date.</p>}
       </Card>
 
+      {/* Accordion list ng mga bata at ng kanilang recorded doses */}
       {groups.length === 0 ? (
         <EmptyState
           title="No matching records"
@@ -226,11 +245,13 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {/* Pagination controls para sa mga child groups */}
       {groups.length > 0 && <nav aria-label="Vaccination records pagination" className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <p role="status" aria-live="polite">{pagination.first} - {pagination.last} of {groups.length} children</p>
         <div className="flex flex-wrap items-center gap-2"><label htmlFor="record-size" className="text-xs">Children per page</label><select id="record-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Next</button></div>
       </nav>}
 
+      {/* Mga modal dialogs pang-add ng dose, pang-book ng next dose, at pang-correct ng maling entry */}
       {adding && (
         <Dialog title="Add vaccination record" onClose={() => setAdding(false)}>
           <DoseEntryForm

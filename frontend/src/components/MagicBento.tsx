@@ -1,3 +1,9 @@
+/**
+ * MagicBento.tsx
+ * Guide: Wrapper component na nagdadagdag ng subtle glow/spotlight hover effect sa mga
+ * dashboard cards gamit ang mouse pointer (pure CSS variables, walang extra animation library).
+ * Ginagamit sa DashboardPage; auto-off sa touch screens, print mode, at reduced-motion.
+ */
 import { useEffect, useRef, type ReactNode } from 'react';
 import './MagicBento.css';
 
@@ -14,11 +20,15 @@ interface MagicBentoProps {
   summaryOnly?: boolean;
 }
 
+// Target CSS selectors ng mga cards na lalagyan ng hover glow effect.
 const CARD_SELECTOR = '.summary-stat, .health-card';
+// Listahan ng custom CSS variables na ina-update habang gumagalaw ang mouse.
 const VARIABLES = ['--mb-x', '--mb-y', '--mb-edge-opacity', '--mb-spot-opacity'];
 
+/** Nag-a-apply ng cursor spotlight at border glow effect sa child dashboard cards. */
 export default function MagicBento({ children, className = '', enableBorderGlow = true, enableSpotlight = true, spotlightRadius = 300, summaryOnly = false }: MagicBentoProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  // Nagse-setup ng pointer/media listeners para i-track ang mouse at i-clear agad kapag nag-scroll, nag-print, o nag-touch.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -33,6 +43,7 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
     let pointer: { x: number; y: number; target: EventTarget | null } | null = null;
     root.style.setProperty('--mb-radius', `${radius}px`);
 
+    // Tinatanggal lahat ng glow CSS variables at kina-cancel ang pending animation frame.
     function clear() {
       cancelAnimationFrame(frame);
       frame = 0;
@@ -40,11 +51,13 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
       for (const card of touched) for (const variable of VARIABLES) card.style.removeProperty(variable);
       touched.clear();
     }
+    // Chine-check kung pwedeng i-enable yung effect (desktop mouse only, hindi print, hindi reduced motion).
     function sync() {
       clear();
       enabled = finePointer.matches && !reducedMotion.matches && !print.matches && (enableBorderGlow || enableSpotlight);
       root!.toggleAttribute('data-mb-active', enabled);
     }
+    // Kinakalkula kung gaano kalapit ang mouse sa bawat card para i-update ang border glow at spotlight opacity.
     function draw() {
       frame = 0;
       if (!enabled || !pointer) return;
@@ -68,6 +81,7 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
         card.style.setProperty('--mb-spot-opacity', enableSpotlight && card === hovered ? '1' : '0');
       }
     }
+    // Nagse-save ng latest pointer coordinates at nag-i-schedule ng isang redraw per animation frame.
     function move(event: PointerEvent) {
       if (!enabled || document.hidden || event.pointerType === 'touch') { clear(); return; }
       pointer = { x: event.clientX, y: event.clientY, target: event.target };

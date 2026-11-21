@@ -2,7 +2,7 @@
 
 Project location: Barangay Homapon, Legazpi City
 Product type: Responsive web-based health-center management system
-Canonical repo: https://github.com/JeezHeart/homapon-immunization-capstone.git (main)
+Canonical repo: https://github.com/JeezHeart/capstone-system.git (main)
 This document version: 2026-10-14 (supersedes the frontend-only PRD;
 Phases 0–3 are built — see §2).
 
@@ -52,7 +52,7 @@ upcoming or missed appointments through SMS.
 - AGENTS.md — operating rules + role mapping (repo standard).
 - NEVER commit .env files. NEVER put real child data in fixtures,
   mocks, seeds, logs, or screenshots. NEVER expose service-role or
-  Semaphore keys in client code.
+  iProg SMS keys in client code.
 
 ## 5. UI/UX Direction (unchanged)
 
@@ -96,7 +96,7 @@ Fixed central template (frontend constant): "Good day! This is Barangay
 Homapon Health Center. A vaccination appointment for [Child Name] is
 scheduled on [Appointment Date]. Please bring your child's immunization
 record. For questions, please contact the health center. Thank you."
-Frontend = simulated only, explicitly labeled. Real Semaphore delivery
+Frontend = simulated only, explicitly labeled. Real iProg SMS delivery
 belongs in a protected backend endpoint (Phase 5) — never in browser
 code.
 
@@ -104,7 +104,7 @@ code.
 
 React + TS + Tailwind · Node/Express backend · Supabase = managed
 Postgres (+ Auth; RLS enforced) — no separate Postgres container
-needed · Vercel for frontend (later) · Semaphore for SMS (Phase 5) ·
+needed · Vercel for frontend (later) · iProg SMS for SMS (Phase 5) ·
 Docker only if a concrete need appears. One source of truth per
 dataset; server validates, frontend validation is UX only. No chart/
 calendar libraries without a proven need (charts are hand-rolled SVG).
@@ -113,7 +113,7 @@ calendar libraries without a proven need (charts are hand-rolled SVG).
 
 - Human review pass: browser console, print/PDF, mobile layout.
 - Phase 4: confirm official schedule/forms with health center; encode.
-- Phase 5: Semaphore via backend, delivery tracking, duplicate-send
+- Phase 5: iProg SMS via backend, delivery tracking, duplicate-send
   guards, consent/rate-limit compliance. No live tests without approval.
 - Phase 6: define the prediction task + permitted data + evaluation;
   rule-based overdue baseline first; decision support only, never

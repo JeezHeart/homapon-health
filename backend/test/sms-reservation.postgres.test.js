@@ -44,7 +44,7 @@ test('Postgres reservation transactions, independent connections, and privileges
   const literal = (s) => `'${String(s).replaceAll("'", "''")}'`;
   const claim = async (key, scope, attempt = randomUUID(), appointment = booking) => JSON.parse(await sql(
     `select public.claim_sms_send('${key}','${scope}','${attempt}','${child}','${appointment}','${staff}',` +
-    `'09000000000','Fictional reminder','semaphore');`,
+    `'09000000000','Fictional reminder','iprog');`,
   ));
   const begin = (key, attempt) => sql(`select public.begin_sms_dispatch('${key}','${attempt}');`);
   const finish = async (key, attempt, outcome, reference = null) => JSON.parse(await sql(
@@ -116,7 +116,7 @@ test('Postgres reservation transactions, independent connections, and privileges
         await assert.rejects(sql('select * from public.sms_send_reservations;', role), /permission denied/);
         await assert.rejects(sql(`select public.begin_sms_dispatch('${hex()}','${randomUUID()}');`, role), /permission denied/);
         await assert.rejects(sql(`select public.claim_sms_send('${hex()}','${hex()}','${randomUUID()}','${child}',
-          '${booking}','${staff}','09000000000','Fictional','semaphore');`, role), /permission denied/);
+          '${booking}','${staff}','09000000000','Fictional','iprog');`, role), /permission denied/);
         await assert.rejects(sql(`select public.finish_sms_send('${hex()}','${randomUUID()}','accepted','fictional-reference',null);`, role), /permission denied/);
       }
       assert.equal(await sql("select relrowsecurity from pg_class where oid='public.sms_send_reservations'::regclass;", null), 't');
