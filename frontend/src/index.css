@@ -168,6 +168,9 @@ body {
     color: var(--color-avatar-ink); font-weight: 700; font-size: 1.125rem;
   }
   .brand-dot { position: absolute; right: -0.125rem; top: -0.125rem; width: 0.625rem; height: 0.625rem; border: 2px solid var(--color-surface); border-radius: 50%; background: var(--color-secondary); }
+  .brand-logo-dark { display: none; }
+  :root[data-theme="dark"] .brand-logo-light { display: none; }
+  :root[data-theme="dark"] .brand-logo-dark { display: block; }
   .nav-item {
     display: flex; align-items: center; gap: 0.75rem; min-height: 2.875rem;
     border-radius: 0.375rem; padding: 0.75rem; font-size: 1rem;
