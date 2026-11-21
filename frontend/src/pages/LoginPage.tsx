@@ -95,7 +95,7 @@ export default function LoginPage() {
           <Brand />
         </div>
 
-        <div className="login-fade-in relative z-10 max-w-lg">
+        <div className="login-fade-in relative z-10 my-auto max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
             Barangay Homapon Health Center · Legazpi City
           </p>
@@ -123,10 +123,6 @@ export default function LoginPage() {
             ))}
           </ul>
         </div>
-
-        <p className="relative z-10 hidden text-xs text-[var(--color-navy-soft)] md:block">
-          Authorized Barangay Health Center Staff Portal
-        </p>
       </section>
 
       {/* Kanang login card na nakasentro at kasya sa iisang screen */}
@@ -259,7 +255,7 @@ export default function LoginPage() {
                   )}
                 </button>
                 <p className="border-t border-[var(--color-border)] pt-3 text-center text-xs text-[var(--color-navy-soft)]">
-                  Need access or a password reset? Contact the Barangay Midwife.
+                  Authorized Barangay Homapon Health Center staff only.
                 </p>
               </form>
             ) : (
