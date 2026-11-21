@@ -17,8 +17,8 @@
 // iProg SMS sending (Phase 5). Sa backend/.env lang naka-save yung API keys — wag ilalagay sa frontend.
 // Naka-DRY-RUN by default (log lang, walang totoong send) hangga't hindi pa approved yung live test.
 
-// Reference template lang 'to para sa docs at tests (dapat kasya lagi sa 1 GSM-7 SMS).
-const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], [Child] is due for [Vaccine] (Dose [N]) on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+// Reference template lang 'to para sa docs at tests (sakto sa 1 credit kahit may 46-char iProg header).
+const SMS_TEMPLATE = 'Hi [Guardian], [Child] is due for [Vaccine] (D[N]) on [Appt Date]. Bring Brgy. Booklet.';
 
 // Maikling pangalan ng bakuna na tugma sa frontend/src/data/vaccines.ts para pareho yung text sa UI at server.
 const VACCINE_SHORT_NAMES = {
@@ -91,15 +91,15 @@ function composeMessage(guardian, child, appointmentISO, time, transactionISO, v
     // Kino-convert yung 24-hour time sa 12-hour AM/PM para madaling basahin ng magulang.
     if (!/^([01]\d|2[0-3]):[0-5]\d(?::00)?$/.test(time.trim())) return '';
     const [h, m] = time.trim().split(':').map(Number);
-    appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+    appointment += ` ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
   const cleanVaccine = typeof vaccineId === 'string' && vaccineId.trim()
     ? (VACCINE_SHORT_NAMES[vaccineId.trim().toLowerCase()] || vaccineId.trim())
     : '';
   const doseText = cleanVaccine && Number.isInteger(doseNumber) && doseNumber >= 1
-    ? `${cleanVaccine} (Dose ${doseNumber})`
+    ? `${cleanVaccine} (D${doseNumber})`
     : cleanVaccine || 'vaccination';
-  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
+  return normalizeSmsText(`Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring Brgy. Booklet.`);
 }
 
 // Nililinis yung Philippine mobile number para maging standard 11-digit 09XXXXXXXXX format.

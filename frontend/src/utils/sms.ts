@@ -10,8 +10,8 @@
  * `GrowthPanel.tsx`, at nire-re-export ng `data/mockData.ts`.
  */
 
-/** Standard Barangay Homapon vaccination reminder template na pinapakita sa Settings at previews. */
-export const SMS_TEMPLATE = 'Brgy Homapon HC: Hi [Guardian], [Child] is due for [Vaccine] (Dose [N]) on [Appt Date]. Bring the Brgy. Booklet. ([Transaction Date])';
+/** Standard Barangay Homapon vaccination reminder template (kasya sa 1 credit kahit may 46-char iProg header). */
+export const SMS_TEMPLATE = 'Hi [Guardian], [Child] is due for [Vaccine] (D[N]) on [Appt Date]. Bring Brgy. Booklet.';
 
 /** Maikling pangalan ng bakuna na tugma sa backend/src/lib/sms.js para eksaktong pareho yung preview at actual SMS. */
 const VACCINE_SHORT_NAMES: Record<string, string> = {
@@ -126,15 +126,15 @@ export function renderSmsMessage(
     // I-reject agad yung maling time format para hindi magulo yung oras na matatanggap ng guardian.
     if (!/^([01]\d|2[0-3]):[0-5]\d(?::00)?$/.test(time.trim())) return '';
     const [h, m] = time.trim().split(':').map(Number);
-    appointment += ` at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+    appointment += ` ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   }
   const cleanVaccine = typeof vaccineId === 'string' && vaccineId.trim()
     ? (VACCINE_SHORT_NAMES[vaccineId.trim().toLowerCase()] || vaccineId.trim())
     : '';
   const doseText = cleanVaccine && Number.isInteger(doseNumber) && (doseNumber as number) >= 1
-    ? `${cleanVaccine} (Dose ${doseNumber})`
+    ? `${cleanVaccine} (D${doseNumber})`
     : cleanVaccine || 'vaccination';
-  return normalizeSmsText(`Brgy Homapon HC: Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring the Brgy. Booklet. (${transaction})`);
+  return normalizeSmsText(`Hi ${guardian}, ${child} is due for ${doseText} on ${appointment}. Bring Brgy. Booklet.`);
 }
 
 /**
