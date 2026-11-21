@@ -132,7 +132,6 @@ export default function LoginPage() {
       {/* Kanang login card na nakasentro at kasya sa iisang screen */}
       <main className="login-form-side">
         <div className="login-card-wrap login-fade-delay">
-          <div aria-hidden="true" className="login-card-glow" />
           <div className="login-form-panel">
             <h1 className="sr-only">Staff sign-in</h1>
 
