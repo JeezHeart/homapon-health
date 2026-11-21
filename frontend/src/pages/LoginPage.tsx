@@ -10,30 +10,10 @@ import type { FormEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
-import { Brand } from '../components/Layout';
 import ThemeToggle from '../components/ThemeToggle';
 
 const inputClass =
   'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
-
-// Tatlong core clinic capabilities na pinapakita sa kaliwang branding panel para malinaw agad sa staff at defense panel.
-const CLINIC_HIGHLIGHTS = [
-  {
-    title: 'Wednesday Clinic Scheduling',
-    detail: 'Regular clinic queuing, exception reasons, and overdue follow-ups.',
-    icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
-  },
-  {
-    title: 'WHO Growth & AI Record Review',
-    detail: 'Official WHO z-score checks and DOH-grounded review checklists.',
-    icon: 'M22 12h-4l-3 9L9 3l-3 9H2',
-  },
-  {
-    title: 'iProg SMS Reminders',
-    detail: 'Vaccine-specific appointment reminders for parents and guardians.',
-    icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
-  },
-] as const;
 
 /**
  * Staff sign-in component na may dalawang malinaw na mode:
@@ -82,78 +62,28 @@ export default function LoginPage() {
 
   return (
     <div className="app-ui login-shell">
-      {/* Kaliwang branding panel na nagpapakilala sa Barangay Homapon Health Center */}
-      <section className="login-intro" aria-label="Homapon Health">
-        {/* Banayad na logo watermark sa ibabang kanan ng branding panel */}
-        <img
-          src="/homapon-logo-light.svg"
-          alt=""
-          aria-hidden="true"
-          className="brand-logo-light login-watermark hidden md:block"
-        />
-        <img
-          src="/homapon-logo-dark.svg"
-          alt=""
-          aria-hidden="true"
-          className="brand-logo-dark login-watermark hidden md:block"
-        />
+      {/* Itaas na utility bar para sa Wednesday clinic badge at light/dark theme toggle */}
+      <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
+        <span className="login-pill">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-safe:animate-pulse" />
+          Clinic every Wednesday
+        </span>
+        <ThemeToggle />
+      </header>
 
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
-          <Brand />
-          <span className="login-pill">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-safe:animate-pulse" />
-            Clinic every Wednesday
-          </span>
-        </div>
-
-        <div className="login-fade-in relative z-10 max-w-lg">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-            Barangay Homapon Health Center · Legazpi City
-          </p>
-          <p className="mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-            A clear record<br />for every child.
-          </p>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--color-navy-soft)] sm:text-base">
-            Child immunization tracking, Wednesday scheduling, WHO growth screening, and parent SMS reminders in one workspace.
-          </p>
-
-          {/* Mga pangunahing feature highlights (nakatago sa maliliit na screen para kita agad ang form) */}
-          <ul className="mt-7 hidden flex-col gap-2.5 md:flex">
-            {CLINIC_HIGHLIGHTS.map((item) => (
-              <li key={item.title} className="login-feature-item">
-                <span className="login-feature-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                    <path d={item.icon} />
-                  </svg>
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold leading-snug text-[var(--color-navy)]">{item.title}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-navy-soft)]">{item.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="relative z-10 hidden text-xs text-[var(--color-navy-soft)] md:block">
-          Authorized Barangay Health Center Staff Portal
-        </p>
-      </section>
-
-      {/* Kanang login card na may theme toggle at switchable na live-API o practice-mode form */}
-      <div className="login-form-side">
-        <div className="login-form-panel login-fade-delay">
-          <div className="flex items-center justify-between gap-3">
+      {/* Nakasentrong staff sign-in card na may Homapon Health app icon */}
+      <main className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
+        <div className="login-form-panel login-fade-in">
+          <div className="flex flex-col items-center text-center">
             <img
               src="/favicon.svg"
               alt="Homapon Health app icon"
-              className="h-11 w-11 rounded-[10px] shadow-sm"
+              className="h-14 w-14 rounded-[13px] shadow-sm"
             />
-            <ThemeToggle />
-          </div>
-
-          <div className="mt-5">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              Homapon Health · Barangay Immunization
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-[var(--color-navy)]">
               Staff sign-in
             </h1>
             <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
@@ -287,7 +217,11 @@ export default function LoginPage() {
             </form>
           )}
         </div>
-      </div>
+      </main>
+
+      <footer className="px-5 py-4 text-center text-xs text-[var(--color-navy-soft)]">
+        Barangay Homapon Health Center · Legazpi City
+      </footer>
     </div>
   );
 }
