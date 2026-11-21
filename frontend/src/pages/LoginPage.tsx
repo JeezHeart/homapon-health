@@ -2,7 +2,7 @@
  * LoginPage.tsx
  * Guide pang-defense: Ito yung staff sign-in screen na nire-render ng `App.tsx` pag wala pang naka-login.
  * Sakop nito: email/password login via Supabase Auth pag live API mode, o simpleng name + RBAC role picker
- * pag local practice mode (`apiEnabled === false`), sa iisang centered single-page login screen.
+ * pag local practice mode (`apiEnabled === false`), sa split-screen layout (branding sa kaliwa, sign-in sa kanan).
  * Dito ka mag-debug pag may issue sa login validation, auth error messages, o demo-vs-live login mode.
  */
 import { useState } from 'react';
@@ -10,9 +10,29 @@ import type { FormEvent, KeyboardEvent } from 'react';
 import { apiEnabled } from '../data/api';
 import type { DemoRole } from '../state/store-context';
 import { useStore } from '../state/store-context';
+import { Brand } from '../components/Layout';
 
 const inputClass =
   'w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-sm text-[var(--color-navy)] placeholder:text-[var(--color-navy-soft)]/75 transition-colors focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40';
+
+// Tatlong core clinic capabilities na pinapakita sa kaliwang branding panel para malinaw agad sa staff at defense panel.
+const CLINIC_HIGHLIGHTS = [
+  {
+    title: 'Wednesday Clinic Scheduling',
+    detail: 'Regular clinic queuing, exception reasons, and overdue follow-ups.',
+    icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+  },
+  {
+    title: 'WHO Growth & AI Record Review',
+    detail: 'Official WHO z-score checks and DOH-grounded review checklists.',
+    icon: 'M22 12h-4l-3 9L9 3l-3 9H2',
+  },
+  {
+    title: 'iProg SMS Reminders',
+    detail: 'Vaccine-specific appointment reminders for parents and guardians.',
+    icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  },
+] as const;
 
 /**
  * Staff sign-in component na may dalawang malinaw na mode:
@@ -69,9 +89,49 @@ export default function LoginPage() {
 
   return (
     <div className="app-ui login-shell">
-      {/* Nakasentrong staff sign-in card na kasya sa iisang screen nang walang vertical scroll */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:px-6">
-        <div className="login-card-wrap login-fade-in">
+      {/* Kaliwang branding panel na nagpapakilala sa Barangay Homapon Health Center */}
+      <section className="login-intro" aria-label="Homapon Health">
+        <div className="relative z-10">
+          <Brand />
+        </div>
+
+        <div className="login-fade-in relative z-10 max-w-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+            Barangay Homapon Health Center · Legazpi City
+          </p>
+          <p className="mt-2.5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
+            A clear record<br />for every child.
+          </p>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--color-navy-soft)]">
+            Child immunization tracking, Wednesday scheduling, WHO growth screening, and parent SMS reminders in one workspace.
+          </p>
+
+          {/* Mga pangunahing feature highlights (nakatago sa maliliit na screen para kita agad ang form) */}
+          <ul className="mt-5 hidden flex-col gap-2 md:flex">
+            {CLINIC_HIGHLIGHTS.map((item) => (
+              <li key={item.title} className="login-feature-item">
+                <span className="login-feature-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <path d={item.icon} />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-snug text-[var(--color-navy)]">{item.title}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-[var(--color-navy-soft)]">{item.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative z-10 hidden text-xs text-[var(--color-navy-soft)] md:block">
+          Authorized Barangay Health Center Staff Portal
+        </p>
+      </section>
+
+      {/* Kanang login card na nakasentro at kasya sa iisang screen */}
+      <main className="login-form-side">
+        <div className="login-card-wrap login-fade-delay">
           <div aria-hidden="true" className="login-card-glow" />
           <div className="login-form-panel">
             <div className="flex flex-col items-center text-center">
@@ -281,10 +341,6 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
-
-      <footer className="relative z-10 px-5 py-2.5 text-center text-xs text-[var(--color-navy-soft)]">
-        Barangay Homapon Health Center · Legazpi City
-      </footer>
     </div>
   );
 }
