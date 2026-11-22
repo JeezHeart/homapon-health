@@ -1,7 +1,7 @@
 /**
  * Record Review worklist page (`/review`).
  *
- * Hawak nito: listahan ng mga flagged vaccination records mula sa backend screening API (rules + Isolation Forest priority cues),
+ * Hawak nito: listahan ng mga flagged vaccination records mula sa backend screening API (DOH interval/duplicate rules + guardrailed Groq AI guidance),
  * kasama ang daily review summary, search/issue/priority/sort filters na naka-sync sa URL, guidance panel, at RBAC review tracking.
  * Dito kayo mag-check pag may bug sa pag-load ng review findings, auto-refresh on focus, filters, o review status updates.
  */
