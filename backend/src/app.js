@@ -17,9 +17,12 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { requireAuth } = require('./lib/auth');
+const { createApiRateLimiter } = require('./lib/apiRateLimit');
 
 // Binubuo yung Express app nang hindi pa nag-li-listen, para madaling ma-import ng tests.
 const app = express();
+// Pinagkakatiwalaan ang unang reverse proxy hop (Render) para tama ang client IP sa rate limiter.
+app.set('trust proxy', 1);
 // Tinatago yung "X-Powered-By: Express" header para mas konti yung info na kita ng attackers.
 app.disable('x-powered-by');
 // Hini-split yung comma-separated allowed frontend URLs para sa CORS; default ay Vite dev server.
@@ -41,11 +44,15 @@ app.use(cors({ origin: origins }));
 // Nagpa-parse ng JSON request body hanggang 256 KB max para iwas oversized payload abuse.
 app.use(express.json({ limit: '256kb' }));
 
-// Public health check endpoint (hindi kailangan ng login).
+// Public health check endpoint (hindi kailangan ng login at exempted sa general rate limit).
 // Output: { ok: true, service, phase } para ma-check kung buhay pa yung API server.
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'homapon-immunization-server', phase: 2 });
 });
+
+// General per-IP rate limiter (240 req/min) para protektado ang lahat ng `/api/*` endpoints laban sa flooding.
+const apiRateLimiter = createApiRateLimiter();
+app.use('/api', apiRateLimiter.middleware);
 
 // Resource routes (lahat nasa likod ng login) na may server-side validation.
 // Security guard: lahat ng routes dito dadaan muna sa requireAuth bago maka-touch ng DB.
