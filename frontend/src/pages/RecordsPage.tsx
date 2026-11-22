@@ -69,9 +69,13 @@ export default function RecordsPage() {
   const groups = useMemo(() => invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, from, to }), [children, records, query, vaccineFilter, from, to, invalidRange]);
   const shownDoses = groups.reduce((total, group) => total + group.doses.length, 0);
   const pagination = directoryPage(groups, Number(params.get('page') ?? 1), size);
-  // Auto-expand kapag iisang bata lang ang lumabas sa filter; otherwise sinusunod yung manual click ng user sa accordion.
-  const isExpanded = (id: string) => expanded.get(id) ?? groups.length === 1;
-  const allExpanded = groups.length > 0 && groups.every((group) => isExpanded(group.child.id));
+  // Auto-expand lahat kung <= 3 bata, o yung unang bata sa page kapag mas marami, para may nakikitang dose agad sa unang bukas; sinusunod pa rin yung manual click ng user.
+  const firstVisibleId = pagination.visible[0]?.child.id;
+  const isExpanded = (id: string) =>
+    expanded.get(id) ?? (groups.length <= 3 || id === firstVisibleId);
+  const allExpanded =
+    pagination.visible.length > 0 &&
+    pagination.visible.every((group) => isExpanded(group.child.id));
 
   // Pang-open o close ng dose-history accordion ng isang bata.
   function toggle(id: string) {
@@ -146,7 +150,13 @@ export default function RecordsPage() {
           {pagination.visible.map(({ child, doses }) => {
             const open = isExpanded(child.id);
             const done = completedDoses(records, child.id);
+            const pct = Math.min(100, Math.round((done / REQUIRED_DOSES) * 100));
             const st = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
+            const vaccineTags = Array.from(
+              new Set(doses.map((dose) => vaccineById(dose.vaccineId)?.shortName ?? dose.vaccineId)),
+            );
+            const previewTags = vaccineTags.slice(0, 4);
+            const extraTagCount = vaccineTags.length - previewTags.length;
             return (
               <section
                 key={child.id}
@@ -159,13 +169,23 @@ export default function RecordsPage() {
                   onClick={() => toggle(child.id)}
                   aria-expanded={open}
                   aria-controls={`doses-${child.id}`}
-                  className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                  className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
                 >
                   <span
                     aria-hidden="true"
-                    className={`text-xs font-bold text-[var(--color-navy-soft)] transition-transform ${open ? 'rotate-90' : ''}`}
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-navy-soft)]"
                   >
-                    ▶
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                    >
+                      <path d="M7.5 4.5 13 10l-5.5 5.5" />
+                    </svg>
                   </span>
                   <span className="text-base font-bold text-[var(--color-navy)]">
                     {childName(child)}
@@ -175,11 +195,37 @@ export default function RecordsPage() {
                   >
                     {st}
                   </span>
-                  <span className="text-sm font-semibold text-[var(--color-navy-soft)]">
-                    {done}/{REQUIRED_DOSES} doses
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-navy-soft)]">
+                    <span>{done}/{REQUIRED_DOSES} doses</span>
+                    <span
+                      aria-hidden="true"
+                      className="hidden h-1.5 w-14 overflow-hidden rounded-full bg-[var(--color-border)] sm:inline-block"
+                    >
+                      <span
+                        className="block h-full rounded-full bg-[var(--color-accent)]"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </span>
                   </span>
+                  {!open && previewTags.length > 0 && (
+                    <span className="hidden flex-wrap items-center gap-1 lg:inline-flex">
+                      {previewTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-navy-soft)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {extraTagCount > 0 && (
+                        <span className="text-[11px] font-medium text-[var(--color-navy-soft)]">
+                          +{extraTagCount} more
+                        </span>
+                      )}
+                    </span>
+                  )}
                   <span className="ml-auto text-xs text-[var(--color-navy-soft)]">
-                    {child.guardian} · {doses.length} shown
+                    {child.guardian} · {doses.length} {doses.length === 1 ? 'dose' : 'doses'} shown
                   </span>
                 </button>
                 <Link to={`/children/${child.id}`} state={{ directory: returnTo }} aria-label={`View record for ${childName(child)}`} className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium">View record</Link>
