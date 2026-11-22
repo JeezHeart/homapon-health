@@ -68,15 +68,15 @@ export default function ReviewGuidancePanel({ issueCode }: { issueCode: string }
         href={url} target="_blank" rel="noreferrer">{title}</a>)}
       {/* Bilingual (English / Filipino) staff reference Q&A selector */}
       <h4 className="font-semibold">Reference assistant</h4>
-      <div className="flex flex-wrap gap-3">
-        <label>Answer language
-          <select className="ml-2 max-w-full rounded border bg-[var(--color-surface)]" value={language}
+      <div className="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+        <label className="flex flex-col gap-1">Answer language
+          <select className="max-w-full rounded border bg-[var(--color-surface)]" value={language}
             onChange={event => setLanguage(event.target.value === 'fil' ? 'fil' : 'en')}>
             <option value="en">English</option><option value="fil">Filipino</option>
           </select>
         </label>
-        <label className="min-w-0">Staff question
-          <select className="block max-w-full rounded border bg-[var(--color-surface)]" value={questionIndex}
+        <label className="flex min-w-0 flex-col gap-1">Staff question
+          <select className="w-full max-w-full rounded border bg-[var(--color-surface)]" value={questionIndex}
             onChange={event => setQuestionIndex(Number(event.target.value))}>
             {guidance.questions.map((item, index) => <option key={item.question} value={index}>
               {language === 'fil' ? item.filipinoQuestion : item.question}

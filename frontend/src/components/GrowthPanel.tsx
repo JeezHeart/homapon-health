@@ -134,7 +134,7 @@ export default function GrowthPanel({ child }: { child: Child }) {
         <label className="text-sm">Swelling of both feet (staff assessment)<select aria-label="Swelling of both feet (staff assessment)" className="block w-full rounded border p-2" value={oedema} onChange={(e) => setOedema(e.target.value as typeof oedema)}><option value="unknown">Not assessed</option><option value="no">Absent</option><option value="yes">Present</option></select></label>
         <label className="text-sm">Notes<textarea className="block w-full rounded border p-2" maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
         <p className="text-xs sm:col-span-2">Weight comparisons are unavailable when swelling is present or has not been assessed. WHO length/height calculations adjust for measurement position by 0.7 cm when required.</p>
-        <button disabled={saving || loading} className="rounded-xl bg-[var(--color-accent)] px-4 py-2 font-semibold text-white disabled:opacity-50">{saving ? 'Saving...' : 'Save measurement'}</button>
+        <div className="flex justify-start sm:col-span-2"><button disabled={saving || loading} className="rounded-xl bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] disabled:opacity-50">{saving ? 'Saving...' : 'Save measurement'}</button></div>
       </form>
     </Card>
     {/* Summary cards ng pinaka-latest na WHO z-score indicators ng bata */}

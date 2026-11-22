@@ -213,7 +213,7 @@ function DoseRowEditor({
   return (
     <div className="flex flex-col gap-2">
       {/* Status dropdown plus conditional inputs para sa date, health worker, batch/lot, at remarks */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={`doc-status-${vaccineId}-${doseNumber}`} className={editorLabelClass}>
             Status *
@@ -291,7 +291,7 @@ function DoseRowEditor({
           </div>
         )}
         {status === 'completed' && (
-          <div className="sm:col-span-1">
+          <div className="sm:col-span-2">
             <RemarksField
               id={`doc-remarks-${vaccineId}-${doseNumber}`}
               value={remarks}

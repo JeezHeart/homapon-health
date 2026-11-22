@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
+import { createPortal } from 'react-dom';
 
 interface DialogProps {
   title: string;
@@ -33,7 +34,7 @@ export default function Dialog({ title, onClose, children, variant = 'dialog', r
     };
   }, [returnFocusRef]);
 
-  return <div className={`app-ui dialog-backdrop no-print ${variant === 'drawer' ? 'drawer-backdrop' : ''}`}
+  const content = <div className={`app-ui dialog-backdrop no-print ${variant === 'drawer' ? 'drawer-backdrop' : ''}`}
     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     onKeyDown={(e) => {
       if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
@@ -56,4 +57,5 @@ export default function Dialog({ title, onClose, children, variant = 'dialog', r
       {children}
     </div>
   </div>;
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 }

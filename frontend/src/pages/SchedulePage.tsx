@@ -155,7 +155,7 @@ export default function SchedulePage() {
       </Card>
 
       {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
-      <FadeContent className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <FadeContent className="grid items-start gap-4 xl:grid-cols-[268px_minmax(0,1fr)]">
         {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
         <div className="min-w-0">
           <Card title={monthLabel}>
@@ -240,15 +240,15 @@ export default function SchedulePage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table role="table" className="mobile-record-table ui-table w-full min-w-[700px] text-left text-sm">
+            <table role="table" className="mobile-record-table ui-table w-full text-left text-sm">
               <caption className="sr-only">Vaccination appointments</caption>
               <thead role="rowgroup">
                 <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Child</th>
-                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Vaccination</th>
-                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Guardian</th>
-                  <th role="columnheader" scope="col" className="pb-2 pr-4 font-semibold">Status</th>
-                  <th role="columnheader" scope="col" className="pb-2 font-semibold">Actions</th>
+                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Child</th>
+                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Vaccination</th>
+                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Guardian</th>
+                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Status</th>
+                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody role="rowgroup">
@@ -257,8 +257,8 @@ export default function SchedulePage() {
                   const followUp = a.followUpStatus ?? 'Pending';
                   return (
                     <tr role="row" key={a.id} className="border-t border-slate-100 hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
-                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Child</span><div className="mobile-cell-value"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></div></td>
-                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Vaccination</span><div className="mobile-cell-value">
+                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Child</span><div className="mobile-cell-value"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></div></td>
+                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Vaccination</span><div className="mobile-cell-value">
                         <div className="flex flex-col gap-1">
                           <span className="font-medium">{v?.shortName} · Dose {a.doseNumber}</span>
                           <span className="whitespace-nowrap text-xs">{formatDate(a.scheduledDate)}</span>
@@ -279,20 +279,20 @@ export default function SchedulePage() {
                           )}
                         </div>
                       </div></td>
-                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Guardian</span><div className="mobile-cell-value"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></div></td>
-                      <td role="cell" className="py-2.5 pr-4"><span className="mobile-cell-label" aria-hidden="true">Status</span><div className="mobile-cell-value">
+                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Guardian</span><div className="mobile-cell-value"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></div></td>
+                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Status</span><div className="mobile-cell-value">
                         <StatusBadge status={a.status} />
                         {a.status === 'overdue' && <div className="mt-2"><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${FOLLOW_UP_BADGE[followUp]}`}>{followUp}</span>{a.followUpNotes && <p className="mt-1 max-w-[150px] break-words text-xs text-[var(--color-navy-soft)]">{a.followUpNotes}</p>}</div>}
                       </div></td>
-                      <td role="cell" className="py-2.5"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">
+                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">
                         <div className="flex flex-col items-start gap-2 text-xs font-medium">
-                          <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50">View record</Link>
-                          {a.status !== 'completed' && <details className="min-w-[100px]">
+                          <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="w-[104px] whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 text-center hover:bg-slate-50">View record</Link>
+                          {a.status !== 'completed' && <details className="w-[104px]">
                             <summary className="cursor-pointer rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2">More</summary>
-                            <div className="mt-2 flex flex-col items-start gap-2">
-                              {a.status === 'overdue' && <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setFollowUpFor(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-red-700 hover:bg-red-50">Follow-up</button>}
-                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setRescheduling(a); }} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-50">Reschedule</button>
-                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setSmsFor(a); }} className="whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-2.5 py-1.5 text-white">Prepare SMS</button>
+                            <div className="mt-2 flex flex-col items-stretch gap-1.5">
+                              {a.status === 'overdue' && <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setFollowUpFor(a); }} className="w-full whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-red-700 hover:bg-red-50">Follow-up</button>}
+                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setRescheduling(a); }} className="w-full whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left hover:bg-slate-50">Reschedule</button>
+                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setSmsFor(a); }} className="w-full whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-2.5 py-1.5 text-center text-white">Prepare SMS</button>
                             </div>
                           </details>}
                         </div>

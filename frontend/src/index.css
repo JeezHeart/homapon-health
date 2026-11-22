@@ -190,8 +190,8 @@ body {
   .skip-link { position: fixed; left: 1rem; top: 1rem; z-index: 70; transform: translateY(-200%); border-radius: var(--radius-xl); background: var(--color-navy); color: var(--color-on-ink); padding: 0.75rem 1rem; }
   .skip-link:focus { transform: none; }
   .health-card { min-width: 0; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface); padding: 1.5rem; }
-  .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: #0b101480; }
-  .dialog-panel { width: 100%; max-width: 34rem; max-height: calc(100dvh - 2rem); overflow-y: auto; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-card); padding: 1.5rem; box-shadow: 0 20px 70px #0b10142b; }
+  .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; background: #0b101480; }
+  .dialog-panel { width: 100%; max-width: 34rem; max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; margin: auto 0; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-card); padding: 1.5rem; box-shadow: 0 20px 70px #0b10142b; }
   .drawer-backdrop { justify-content: flex-start; padding: 0; }
   .drawer-panel { max-width: min(20rem, 90vw); height: 100dvh; max-height: 100dvh; border-radius: 0 1rem 1rem 0; padding: 1.25rem; }
   .summary-stat { display: flex; min-width: 0; min-height: 11.75rem; flex-direction: column; align-items: stretch; gap: 1rem; padding: 1.25rem; border: 1px solid var(--color-border); border-radius: 0.875rem; background: var(--color-surface); transition: border-color 140ms; }
@@ -490,11 +490,9 @@ table {
 @keyframes page-fade {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 
