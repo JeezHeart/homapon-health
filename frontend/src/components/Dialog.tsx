@@ -13,6 +13,7 @@ interface DialogProps {
   onClose: () => void;
   children: ReactNode;
   variant?: 'dialog' | 'drawer';
+  size?: 'default' | 'wide';
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
@@ -20,7 +21,7 @@ interface DialogProps {
 const focusableSelector = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]';
 
 /** Nagre-render ng centered modal (`variant="dialog"`) o mobile side drawer (`variant="drawer"`). */
-export default function Dialog({ title, onClose, children, variant = 'dialog', returnFocusRef }: DialogProps) {
+export default function Dialog({ title, onClose, children, variant = 'dialog', size = 'default', returnFocusRef }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   // Nilo-lock ang body scroll habang bukas ang modal, fina-focus ang unang input/button, at binabalik ang focus pagkasara.
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function Dialog({ title, onClose, children, variant = 'dialog', r
     }}>
     {/* Main dialog/drawer box na may title header, close (X) button, at body content */}
     <div ref={panelRef} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}
-      className={`dialog-pop dialog-panel ${variant === 'drawer' ? 'drawer-panel' : ''}`}>
+      className={`dialog-pop dialog-panel ${variant === 'drawer' ? 'drawer-panel' : ''} ${size === 'wide' ? 'dialog-panel-wide' : ''}`}>
       {/* Header row ng dialog na may title at close button */}
       <div className="mb-5 flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>

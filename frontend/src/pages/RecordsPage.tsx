@@ -1,9 +1,9 @@
 /**
  * Vaccination Records page (`/records`).
  *
- * Hawak nito: accordion list ng mga naturok na doses na naka-group per bata, URL-synced na search/vaccine/date-range filters,
- * pagination per child group, at mga modals para mag-add ng dose, mag-schedule ng next dose, o mag-correct ng maling dose entry.
- * Dito kayo mag-check pag may bug sa dose search/date-range, accordion expand/collapse, o dose entry/correction dialogs.
+ * Hawak nito: summary card list ng mga bata na may naturok na doses, click-to-open detail card para makita
+ * ang buong dose context per bata, URL-synced na search/vaccine/date-range filters, pagination per child,
+ * at mga modals para mag-add ng dose, mag-schedule ng next dose, o mag-correct ng maling dose entry.
  */
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -31,7 +31,11 @@ const STATUS_BADGE: Record<string, string> = {
   'Partially immunized': 'bg-sky-100 text-sky-800',
 };
 
-// Nagpapakita ng mga naka-record na vaccine doses per bata para madaling ma-audit, madagdagan, o ma-correct ng staff yung dating entries.
+function initials(firstName: string, lastName: string) {
+  return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || 'CH';
+}
+
+// Nagpapakita ng mga naka-record na vaccine doses per bata: pindutin ang pangalan/card para buksan ang buong dose detail card.
 export default function RecordsPage() {
   const { children, records, addDoseRecord, addAppointment } =
     useStore();
@@ -43,7 +47,7 @@ export default function RecordsPage() {
   const to = validScheduleDate(params.get('to')) ?? '';
   const invalidRange = Boolean(from && to && from > to);
   const size = [5, 10, 25].find((value) => value === Number(params.get('size'))) ?? 10;
-  const [expanded, setExpanded] = useState<Map<string, boolean>>(new Map());
+  const hasFilters = Boolean(query || vaccineFilter !== 'all' || from || to);
   const returnTo = `/records${params.size ? `?${params.toString()}` : ''}`;
 
   // Ina-update yung URL search params pag nagpalit ng filter o page size, tapos nire-reset ang page sa 1 kapag bagong filter.
@@ -56,8 +60,10 @@ export default function RecordsPage() {
     }
     setParams(next, { replace: true });
   }
-  // React modal states para sa pag-add ng bagong dose, pag-correct ng lumang entry, o pag-book ng follow-up visit pagka-save.
-  const [adding, setAdding] = useState(false);
+
+  // Modal states para sa click-to-open detail card, pag-add ng dose, pag-correct ng lumang entry, at follow-up appointment.
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [addingForChildId, setAddingForChildId] = useState<string | null | undefined>(undefined);
   const [correcting, setCorrecting] = useState<DoseRecord | null>(null);
   const [scheduling, setScheduling] = useState<{
     childId: string;
@@ -66,46 +72,37 @@ export default function RecordsPage() {
   } | null>(null);
 
   // Gini-group yung nag-match na dose records per bata (empty kapag baliktad yung date range) tapos pinapa-paginate per child group.
-  const groups = useMemo(() => invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, from, to }), [children, records, query, vaccineFilter, from, to, invalidRange]);
+  const groups = useMemo(
+    () => (invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, from, to })),
+    [children, records, query, vaccineFilter, from, to, invalidRange],
+  );
   const shownDoses = groups.reduce((total, group) => total + group.doses.length, 0);
   const pagination = directoryPage(groups, Number(params.get('page') ?? 1), size);
-  // Auto-expand lahat kung <= 3 bata, o yung unang bata sa page kapag mas marami, para may nakikitang dose agad sa unang bukas; sinusunod pa rin yung manual click ng user.
-  const firstVisibleId = pagination.visible[0]?.child.id;
-  const isExpanded = (id: string) =>
-    expanded.get(id) ?? (groups.length <= 3 || id === firstVisibleId);
-  const allExpanded =
-    pagination.visible.length > 0 &&
-    pagination.visible.every((group) => isExpanded(group.child.id));
-
-  // Pang-open o close ng dose-history accordion ng isang bata.
-  function toggle(id: string) {
-    const open = isExpanded(id);
-    setExpanded((previous) => new Map(previous).set(id, !open));
-  }
+  const selectedGroup = useMemo(
+    () => (selectedChildId ? groups.find((group) => group.child.id === selectedChildId) ?? null : null),
+    [groups, selectedChildId],
+  );
+  const adding = addingForChildId !== undefined;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header ng page: count ng nag-match na doses, Expand/Collapse All button, at Add Vaccination Record button */}
+      {/* Header ng page: count ng nag-match na doses at Add Vaccination Record button */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title">
             Vaccination Records
           </h1>
           <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-            {shownDoses} of {records.length} recorded doses · find and
-            fix past entries
+            {shownDoses} of {records.length} recorded doses · click a child to view or fix past entries
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {groups.length > 0 && <button type="button" onClick={() => setExpanded(new Map(groups.map((group) => [group.child.id, !allExpanded])))} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium hover:bg-slate-50">{allExpanded ? 'Collapse all' : 'Expand all'}</button>}
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
-          >
-            Add Vaccination Record
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setAddingForChildId(null)}
+          className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+        >
+          Add Vaccination Record
+        </button>
       </div>
 
       {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
@@ -134,21 +131,20 @@ export default function RecordsPage() {
           </select>
           <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">From date<input type="date" value={from} max={to || undefined} onChange={(event) => update({ from: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
           <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">To date<input type="date" value={to} min={from || undefined} onChange={(event) => update({ to: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
-          {(query || vaccineFilter !== 'all' || from || to) && <button type="button" onClick={() => update({ q: '', vaccine: 'all', from: '', to: '' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
+          {hasFilters && <button type="button" onClick={() => update({ q: '', vaccine: 'all', from: '', to: '' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
         </div>
         {invalidRange && <p role="alert" className="mt-3 text-sm text-red-700">From date must be on or before To date.</p>}
       </Card>
 
-      {/* Accordion list ng mga bata at ng kanilang recorded doses */}
+      {/* Click-to-open summary cards per bata */}
       {groups.length === 0 ? (
         <EmptyState
           title="No matching records"
           message="Change your search, vaccine, or date range. You can also clear the filters."
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {pagination.visible.map(({ child, doses }) => {
-            const open = isExpanded(child.id);
             const done = completedDoses(records, child.id);
             const pct = Math.min(100, Math.round((done / REQUIRED_DOSES) * 100));
             const st = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
@@ -157,132 +153,99 @@ export default function RecordsPage() {
             );
             const previewTags = vaccineTags.slice(0, 4);
             const extraTagCount = vaccineTags.length - previewTags.length;
+            const latestDate = doses[0]?.dateAdministered;
+
             return (
               <section
                 key={child.id}
                 aria-label={`Records for ${childName(child)}`}
-                className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                className="flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-colors hover:border-[var(--color-accent)]"
               >
-                <div className="record-group-header flex items-center gap-2 pr-4">
                 <button
                   type="button"
-                  onClick={() => toggle(child.id)}
-                  aria-expanded={open}
-                  aria-controls={`doses-${child.id}`}
-                  className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                  onClick={() => setSelectedChildId(child.id)}
+                  className="flex w-full flex-1 flex-col gap-3 p-4 text-left hover:bg-[var(--color-elevated)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-navy-soft)]"
-                  >
-                    <svg
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-                    >
-                      <path d="M7.5 4.5 13 10l-5.5 5.5" />
-                    </svg>
-                  </span>
-                  <span className="text-base font-bold text-[var(--color-navy)]">
-                    {childName(child)}
-                  </span>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[st]}`}
-                  >
-                    {st}
-                  </span>
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-navy-soft)]">
-                    <span>{done}/{REQUIRED_DOSES} doses</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="child-avatar text-xs font-bold" aria-hidden="true">
+                        {initials(child.firstName, child.lastName)}
+                      </span>
+                      <div className="min-w-0">
+                        <h2 className="truncate text-base font-bold text-[var(--color-navy)]">
+                          {childName(child)}
+                        </h2>
+                        <p className="truncate text-xs text-[var(--color-navy-soft)]">
+                          {child.guardian} · {child.purok || 'Barangay Homapon'}
+                        </p>
+                      </div>
+                    </div>
                     <span
-                      aria-hidden="true"
-                      className="hidden h-1.5 w-14 overflow-hidden rounded-full bg-[var(--color-border)] sm:inline-block"
+                      className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[st]}`}
                     >
-                      <span
-                        className="block h-full rounded-full bg-[var(--color-accent)]"
+                      {st}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-[var(--color-navy)]">
+                        {done}/{REQUIRED_DOSES} required doses
+                      </span>
+                      <span className="text-[var(--color-navy-soft)]">
+                        {latestDate ? `Latest: ${formatDate(latestDate)}` : `${doses.length} recorded`}
+                      </span>
+                    </div>
+                    <div
+                      aria-hidden="true"
+                      className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]"
+                    >
+                      <div
+                        className="h-full rounded-full bg-[var(--color-accent)] transition-all"
                         style={{ width: `${pct}%` }}
                       />
-                    </span>
-                  </span>
-                  {!open && previewTags.length > 0 && (
-                    <span className="hidden flex-wrap items-center gap-1 lg:inline-flex">
+                    </div>
+                  </div>
+
+                  {previewTags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {previewTags.map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-navy-soft)]"
+                          className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-xs font-medium text-[var(--color-navy-soft)]"
                         >
                           {tag}
                         </span>
                       ))}
                       {extraTagCount > 0 && (
-                        <span className="text-[11px] font-medium text-[var(--color-navy-soft)]">
+                        <span className="text-xs font-medium text-[var(--color-navy-soft)]">
                           +{extraTagCount} more
                         </span>
                       )}
-                    </span>
-                  )}
-                  <span className="ml-auto text-xs text-[var(--color-navy-soft)]">
-                    {child.guardian} · {doses.length} {doses.length === 1 ? 'dose' : 'doses'} shown
-                  </span>
-                </button>
-                <Link to={`/children/${child.id}`} state={{ directory: returnTo }} aria-label={`View record for ${childName(child)}`} className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium">View record</Link>
-                </div>
-                <div
-                  id={`doses-${child.id}`}
-                  inert={!open}
-                  className="accordion-glide border-t border-slate-100"
-                  data-open={open}
-                >
-                  <div className="accordion-glide-inner">
-                    <div className="overflow-x-auto">
-                    <table role="table" className="mobile-record-table ui-table w-full min-w-[620px] text-left text-sm">
-                      <thead role="rowgroup">
-                        <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                          {[
-                            'Vaccine / dose',
-                            'Date given',
-                            'Health worker',
-                            'Batch / lot',
-                            'Action',
-                          ].map((h) => (
-                            <th role="columnheader" key={h} scope="col" className="px-4 py-2 font-semibold">
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody role="rowgroup">
-                        {doses.map((r) => {
-                          const v = vaccineById(r.vaccineId);
-                          return (
-                            <tr role="row" key={r.id} className="border-t border-slate-100">
-                              <td role="cell" className="px-4 py-2 font-medium"><span className="mobile-cell-label" aria-hidden="true">Vaccine / dose</span><div className="mobile-cell-value">
-                                {v?.shortName ?? r.vaccineId} · Dose{' '}
-                                {r.doseNumber}
-                              </div></td>
-                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Date given</span><div className="mobile-cell-value">
-                                {formatDate(r.dateAdministered)}
-                              </div></td>
-                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Health worker</span><div className="mobile-cell-value">{r.healthWorker}</div></td>
-                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Batch / lot</span><div className="mobile-cell-value">{r.batchLot ?? '—'}</div></td>
-                              <td role="cell" className="px-4 py-2"><span className="mobile-cell-label" aria-hidden="true">Action</span><div className="mobile-cell-value">
-                                <button
-                                  type="button"
-                                  onClick={() => setCorrecting(r)}
-                                  className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                                >
-                                  Correct entry
-                                </button>
-                              </div></td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
                     </div>
+                  )}
+                </button>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2.5 text-xs">
+                  <span className="text-[var(--color-navy-soft)]">
+                    {doses.length} {doses.length === 1 ? 'dose' : 'doses'} {hasFilters ? 'matching filter' : 'recorded'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChildId(child.id)}
+                      className="rounded-lg bg-[var(--color-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-dark)] hover:opacity-90"
+                    >
+                      View doses
+                    </button>
+                    <Link
+                      to={`/children/${child.id}`}
+                      state={{ directory: returnTo }}
+                      aria-label={`Open full profile for ${childName(child)}`}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+                    >
+                      Full profile
+                    </Link>
                   </div>
                 </div>
               </section>
@@ -291,22 +254,183 @@ export default function RecordsPage() {
         </div>
       )}
 
-      {/* Pagination controls para sa mga child groups */}
+      {/* Pagination controls para sa mga child cards */}
       {groups.length > 0 && <nav aria-label="Vaccination records pagination" className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <p role="status" aria-live="polite">{pagination.first} - {pagination.last} of {groups.length} children</p>
         <div className="flex flex-wrap items-center gap-2"><label htmlFor="record-size" className="text-xs">Children per page</label><select id="record-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className="rounded-xl border border-slate-300 px-3 py-2 disabled:opacity-40">Next</button></div>
       </nav>}
 
+      {/* Click-to-open detail card ng napiling bata */}
+      {selectedGroup && !correcting && !adding && !scheduling && (() => {
+        const { child, doses } = selectedGroup;
+        const done = completedDoses(records, child.id);
+        const pct = Math.min(100, Math.round((done / REQUIRED_DOSES) * 100));
+        const st = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
+        const totalForChild = records.filter((r) => r.childId === child.id).length;
+
+        return (
+          <Dialog
+            title={`Vaccination records — ${childName(child)}`}
+            size="wide"
+            onClose={() => setSelectedChildId(null)}
+          >
+            <div className="flex flex-col gap-4">
+              {/* Context card ng bata: guardian, contact, purok, DOB, at completion progress */}
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[st]}`}
+                    >
+                      {st}
+                    </span>
+                    <span className="text-sm font-semibold text-[var(--color-navy)]">
+                      {done}/{REQUIRED_DOSES} required doses completed ({pct}%)
+                    </span>
+                  </div>
+                  <span className="text-xs text-[var(--color-navy-soft)]">
+                    Showing {doses.length} of {totalForChild} {totalForChild === 1 ? 'entry' : 'entries'}
+                  </span>
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]"
+                >
+                  <div
+                    className="h-full rounded-full bg-[var(--color-accent)]"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <dt className="text-[var(--color-navy-soft)]">Guardian</dt>
+                    <dd className="mt-0.5 font-medium text-[var(--color-navy)]">{child.guardian}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-navy-soft)]">Mobile number</dt>
+                    <dd className="mt-0.5 font-medium text-[var(--color-navy)]">{child.guardianMobile || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-navy-soft)]">Address / Purok</dt>
+                    <dd className="mt-0.5 font-medium text-[var(--color-navy)]">{child.purok || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-navy-soft)]">Date of birth</dt>
+                    <dd className="mt-0.5 font-medium text-[var(--color-navy)]">{formatDate(child.birthDate)}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              {/* Listahan ng mga na-record na doses */}
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+                <div className="overflow-x-auto">
+                  <table role="table" className="mobile-record-table ui-table w-full text-left text-sm">
+                    <thead role="rowgroup">
+                      <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
+                        {[
+                          'Vaccine / dose',
+                          'Date given',
+                          'Health worker',
+                          'Batch / lot',
+                          'Action',
+                        ].map((h) => (
+                          <th role="columnheader" key={h} scope="col" className="!px-3 !py-2.5 font-semibold">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                      {doses.map((r) => {
+                        const v = vaccineById(r.vaccineId);
+                        return (
+                          <tr role="row" key={r.id}>
+                            <td role="cell" className="!px-3 !py-2.5 font-medium">
+                              <span className="mobile-cell-label" aria-hidden="true">Vaccine / dose</span>
+                              <div className="mobile-cell-value">
+                                <div>{v?.shortName ?? r.vaccineId} · Dose {r.doseNumber}</div>
+                                {r.remarks && (
+                                  <p className="mt-0.5 text-xs font-normal text-[var(--color-navy-soft)]">
+                                    {r.remarks}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td role="cell" className="!px-3 !py-2.5 whitespace-nowrap">
+                              <span className="mobile-cell-label" aria-hidden="true">Date given</span>
+                              <div className="mobile-cell-value">{formatDate(r.dateAdministered)}</div>
+                            </td>
+                            <td role="cell" className="!px-3 !py-2.5">
+                              <span className="mobile-cell-label" aria-hidden="true">Health worker</span>
+                              <div className="mobile-cell-value">{r.healthWorker}</div>
+                            </td>
+                            <td role="cell" className="!px-3 !py-2.5 whitespace-nowrap">
+                              <span className="mobile-cell-label" aria-hidden="true">Batch / lot</span>
+                              <div className="mobile-cell-value">{r.batchLot ?? '—'}</div>
+                            </td>
+                            <td role="cell" className="!px-3 !py-2.5 whitespace-nowrap">
+                              <span className="mobile-cell-label" aria-hidden="true">Action</span>
+                              <div className="mobile-cell-value">
+                                <button
+                                  type="button"
+                                  onClick={() => setCorrecting(r)}
+                                  className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                                >
+                                  Correct entry
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Footer actions sa loob ng detail card */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4">
+                <Link
+                  to={`/children/${child.id}`}
+                  state={{ directory: returnTo }}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                >
+                  Open full profile
+                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChildId(null)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAddingForChildId(child.id)}
+                    className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)]"
+                  >
+                    Add dose
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Dialog>
+        );
+      })()}
+
       {/* Mga modal dialogs pang-add ng dose, pang-book ng next dose, at pang-correct ng maling entry */}
       {adding && (
-        <Dialog title="Add vaccination record" onClose={() => setAdding(false)}>
+        <Dialog title="Add vaccination record" onClose={() => setAddingForChildId(undefined)}>
           <DoseEntryForm
             childList={children}
             records={records}
+            defaultChildId={addingForChildId ?? undefined}
+            lockChild={Boolean(addingForChildId)}
             onSave={(data) => addDoseRecord(data)}
-            onDone={() => setAdding(false)}
+            onDone={() => setAddingForChildId(undefined)}
             onScheduleNext={(info) => {
-              setAdding(false);
+              setAddingForChildId(undefined);
               setScheduling(info);
             }}
           />
