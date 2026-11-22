@@ -58,10 +58,10 @@ export default function DashboardCalendar() {
     {/* Legend para sa kulay ng status dots sa calendar */}
     <div className="calendar-status-legend"><span><i className="calendar-status-dot calendar-status-upcoming" aria-hidden="true" />Upcoming</span><span><i className="calendar-status-dot calendar-status-due-today" aria-hidden="true" />Due today</span><span><i className="calendar-status-dot calendar-status-overdue" aria-hidden="true" />Overdue</span></div>
     {/* Footer summary ng susunod na clinic session o susunod na regular Wednesday */}
-    <div className="mt-4 border-t border-[var(--color-border)] pt-3">
-      <h3 className="text-xs font-medium">Next clinic session</h3>
-      {session ? <Link className="mt-1 block text-sm hover:underline" to={`/schedule?date=${session.date}&filter=upcoming`}>{formatDate(session.date)}<span className="block text-xs text-[var(--color-navy-soft)]">{session.childCount} {session.childCount === 1 ? 'child' : 'children'} · {session.appointmentCount} appointments{!isRegularClinicDay(session.date) && ' · Different clinic day'}</span></Link>
-        : <p className="mt-1 text-xs text-[var(--color-navy-soft)]">No appointments booked. Next regular Wednesday: {formatDate(nextRegularClinicDate())}. Confirm holiday changes with staff.</p>}
+    <div className="mt-3 border-t border-[var(--color-border)] pt-2.5">
+      <h3 className="text-xs font-medium text-[var(--color-navy-soft)]">Next clinic session</h3>
+      {session ? <Link className="mt-0.5 block text-sm font-medium hover:underline" to={`/schedule?date=${session.date}&filter=upcoming`}>{formatDate(session.date)}<span className="block text-xs font-normal text-[var(--color-navy-soft)]">{session.childCount} {session.childCount === 1 ? 'child' : 'children'} · {session.appointmentCount} {session.appointmentCount === 1 ? 'appointment' : 'appointments'}{!isRegularClinicDay(session.date) && ' · Different clinic day'}</span></Link>
+        : <p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">No appointments booked. Next regular Wednesday: {formatDate(nextRegularClinicDate())}.</p>}
     </div>
   </Card>;
 }

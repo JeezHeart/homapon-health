@@ -16,8 +16,8 @@ export default function MonthlyTrendChart({ records, appointments }: { records: 
   const { ref: chartRef, width } = useChartWidth(720);
   const step = Math.max(1, Math.ceil(Math.max(1, ...buckets.flatMap((bucket) => [bucket.doses, bucket.appointments])) / 5));
   const maximum = step * 5;
-  const height = 285;
-  const left = 36; const right = width - 14; const top = 16; const bottom = height - 35;
+  const height = 210;
+  const left = 36; const right = width - 14; const top = 12; const bottom = height - 28;
   // Helper functions para i-convert ang month index at count value into SVG x/y pixel coordinates.
   const x = (index: number) => left + index * (right - left) / (buckets.length - 1);
   const y = (value: number) => bottom - value / maximum * (bottom - top);

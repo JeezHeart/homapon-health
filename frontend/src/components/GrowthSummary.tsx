@@ -1,12 +1,13 @@
 /**
  * GrowthSummary.tsx
- * Guide pang-defense: Dashboard widget ito na nagsu-summarize ng pinaka-latest na WHO growth status
- * ng lahat ng naka-register na bata. Naka-group sila sa clickable review buckets na may direct link
- * papunta agad sa Growth tab ng bawat bata para madaling i-check ng staff.
+ * Guide pang-defense: Compact Dashboard widget na nagsu-summarize ng pinaka-latest na WHO growth status
+ * ng lahat ng naka-register na bata. Pindutin ang kahit aling bucket o "View records" para buksan
+ * ang click-to-open detail card na may direct link papunta sa Growth tab ng bawat bata.
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from './Card';
+import Dialog from './Dialog';
 import { api, apiEnabled, apiError } from '../data/api';
 import { childName } from '../data/mockData';
 import { useStore } from '../state/store-context';
@@ -18,12 +19,12 @@ import { formatDate } from '../utils/dates';
 // Apat na summary buckets na nagso-sort sa bawat bata base sa latest WHO growth indicator nila.
 const groups: { id: GrowthGroup; label: string }[] = [
   { id: 'review', label: 'Needs staff review' },
-  { id: 'within', label: 'Comparisons within range' },
-  { id: 'incomplete', label: 'Incomplete / unavailable comparisons' },
+  { id: 'within', label: 'Within WHO range' },
+  { id: 'incomplete', label: 'Incomplete / unavailable' },
   { id: 'missing', label: 'No dated measurements' },
 ];
 
-/** Nagfe-fetch ng pinaka-latest na growth records at nagdi-display ng clickable counts + expandable list ng mga bata. */
+/** Compact WHO growth counts widget na may click-to-open detail card para manatiling maikli ang Dashboard. */
 export default function GrowthSummary() {
   const { children, demoGrowth, dataReady, connected } = useStore();
   const [remote, setRemote] = useState<GrowthMeasurement[]>([]);
@@ -31,40 +32,145 @@ export default function GrowthSummary() {
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<GrowthGroup | 'all' | null>(null);
+
   // React effect pang-fetch ng latest growth measurement per child sa backend API (nagre-rerun pag nag-click ng Retry).
   useEffect(() => {
     if (!apiEnabled) return;
     let cancelled = false;
-    api.latestGrowthMeasurements().then((rows) => { if (!cancelled) setRemote(rows); })
+    api.latestGrowthMeasurements()
+      .then((rows) => { if (!cancelled) setRemote(rows); })
       .catch((e) => { if (!cancelled) setError(apiError(e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [attempt]);
+
   const rows = summarizeGrowth(children, apiEnabled ? remote : demoGrowth);
   const recorded = rows.filter((r) => r.measurement).length;
   const listed = rows.filter((r) => selected === 'all' || r.group === selected);
-  return <Card title="Growth Monitoring Summary" action={<button type="button" className="text-sm font-semibold text-[var(--color-accent-dark)] underline" aria-expanded={selected !== null} onClick={() => setSelected(selected === null ? 'all' : null)}>{selected === null ? 'View records' : 'Hide records'}</button>}>
-    {loading || !dataReady ? <p role="status">Loading growth measurements...</p>
-      : error || (apiEnabled && !connected) ? <div role="alert"><p>Growth summary unavailable. {error || 'Child records are unavailable. Restore the connection and reload the page.'}</p><button className="mt-2 underline" type="button" onClick={() => { setLoading(true); setError(''); setAttempt((n) => n + 1); }}>Retry growth summary</button></div>
-      : <>
-        {/* Headline ng bilang ng may records plus clickable counter buttons per growth bucket */}
-        <p className="mb-4 text-sm"><strong>{recorded}</strong> of {children.length} registered children have dated measurements. {!apiEnabled && 'Demo records only.'}</p>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {groups.map((group) => {
-            const count = rows.filter((r) => r.group === group.id).length;
-            return <button key={group.id} type="button" aria-pressed={selected === group.id} onClick={() => setSelected(group.id)} className="rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700">
-              <span className="mb-1 block text-xl font-semibold">{count}</span><span className="block text-xs">{group.label}</span>
-            </button>;
-          })}
-        </div>
-        {/* Paalala na review indicator lang ito (hindi diagnosis) plus dropdown guide kung paano ang bilang */}
-        <p className="mt-3 text-xs text-slate-600">Growth comparisons are review indicators, not diagnoses.</p>
-        <details className="mt-2 text-xs text-slate-600"><summary className="w-fit cursor-pointer">How counts work</summary><p className="mt-2 max-w-prose">Each child is counted once using their latest dated record. Review includes out-of-range indicators or measurements needing verification. Incomplete comparisons include missing inputs, unassessed swelling, or age outside the supported WHO range.</p></details>
-        {/* Expandable list ng mga bata sa napiling bucket na may direct link sa Growth tab nila */}
-        {selected !== null && <div className="mt-4">
-          <h3 className="mb-2 font-semibold">{selected === 'all' ? 'All growth records' : groups.find((g) => g.id === selected)?.label}</h3>
-          {!listed.length ? <p className="text-sm">No children in this group.</p> : <ul className="max-h-72 overflow-y-auto divide-y divide-slate-100">{listed.map(({ child, measurement, group }) => <li key={child.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span><span className="font-medium">{childName(child)}</span><span className="block text-xs text-slate-600">{groups.find((g) => g.id === group)?.label}{measurement ? ` - ${formatDate(measurement.measuredOn)}` : ''}</span></span><Link className="shrink-0 font-semibold text-[var(--color-accent-dark)] underline" to={`/children/${child.id}?tab=growth`}>View growth<span className="sr-only"> for {childName(child)}</span></Link></li>)}</ul>}
-        </div>}
-      </>}
-  </Card>;
+  const activeTitle =
+    selected === 'all'
+      ? 'All growth monitoring records'
+      : groups.find((g) => g.id === selected)?.label ?? 'Growth monitoring records';
+
+  return (
+    <>
+      <Card
+        title="Growth Monitoring Summary"
+        action={
+          <button
+            type="button"
+            className="rounded-lg bg-[var(--color-accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-accent-dark)] hover:opacity-90"
+            onClick={() => setSelected('all')}
+          >
+            View records
+          </button>
+        }
+      >
+        {loading || !dataReady ? (
+          <p role="status" className="text-sm text-[var(--color-navy-soft)]">Loading growth measurements...</p>
+        ) : error || (apiEnabled && !connected) ? (
+          <div role="alert" className="text-sm">
+            <p>Growth summary unavailable. {error || 'Child records are unavailable. Restore the connection and reload the page.'}</p>
+            <button
+              className="mt-2 font-medium underline"
+              type="button"
+              onClick={() => { setLoading(true); setError(''); setAttempt((n) => n + 1); }}
+            >
+              Retry growth summary
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 text-xs text-[var(--color-navy-soft)]">
+              <p>
+                <strong className="font-semibold text-[var(--color-navy)]">{recorded}</strong> of {children.length} registered children have dated measurements.{!apiEnabled && ' Demo records only.'}
+              </p>
+              <p>Review indicators only, not diagnoses.</p>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              {groups.map((group) => {
+                const count = rows.filter((r) => r.group === group.id).length;
+                return (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => setSelected(group.id)}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-xl font-semibold leading-tight text-[var(--color-navy)]">{count}</span>
+                      <span className="mt-0.5 block text-xs text-[var(--color-navy-soft)]">{group.label}</span>
+                    </span>
+                    <span aria-hidden="true" className="text-xs text-[var(--color-navy-soft)]">›</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* Click-to-open detail card para sa listahan ng mga bata sa napiling WHO growth bucket */}
+      {selected !== null && (
+        <Dialog title={activeTitle} size="wide" onClose={() => setSelected(null)}>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                aria-pressed={selected === 'all'}
+                onClick={() => setSelected('all')}
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${selected === 'all' ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-dark)]' : 'border-[var(--color-border)] text-[var(--color-navy-soft)]'}`}
+              >
+                All ({rows.length})
+              </button>
+              {groups.map((group) => {
+                const count = rows.filter((r) => r.group === group.id).length;
+                return (
+                  <button
+                    key={group.id}
+                    type="button"
+                    aria-pressed={selected === group.id}
+                    onClick={() => setSelected(group.id)}
+                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${selected === group.id ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-dark)]' : 'border-[var(--color-border)] text-[var(--color-navy-soft)]'}`}
+                  >
+                    {group.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {!listed.length ? (
+              <p className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center text-sm text-[var(--color-navy-soft)]">
+                No children in this group.
+              </p>
+            ) : (
+              <ul className="max-h-80 divide-y divide-[var(--color-border)] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+                {listed.map(({ child, measurement, group }) => (
+                  <li key={child.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[var(--color-navy)]">{childName(child)}</p>
+                      <p className="text-xs text-[var(--color-navy-soft)]">
+                        {groups.find((g) => g.id === group)?.label}
+                        {measurement ? ` · Measured ${formatDate(measurement.measuredOn)}` : ''}
+                      </p>
+                    </div>
+                    <Link
+                      className="shrink-0 rounded-lg bg-[var(--color-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-dark)] hover:opacity-90"
+                      to={`/children/${child.id}?tab=growth`}
+                    >
+                      View growth<span className="sr-only"> for {childName(child)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-xs text-[var(--color-navy-soft)]">
+              Each child is counted once using their latest dated measurement. Growth comparisons are review indicators for staff, not medical diagnoses.
+            </p>
+          </div>
+        </Dialog>
+      )}
+    </>
+  );
 }
