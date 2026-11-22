@@ -26,7 +26,9 @@ function mountFrontend(app, directory = path.resolve(__dirname, '../../../fronte
   if (!fs.existsSync(index)) throw new Error('Frontend build missing. Build frontend before starting production.');
   // Dapat laging JSON ang balik ng maling /api paths, hindi dapat maligaw sa React index.html.
   app.use('/api', (_req, res) => res.status(404).json({ ok: false, error: 'Not found.' }));
-  // Sine-serve yung static assets (JS, CSS, images) pero naka-deny yung hidden dotfiles (gaya ng .env).
+  // Hashed Vite bundles sa /assets/* ay safe i-cache nang matagal (1y immutable) dahil nagbabago ang hash bawat build.
+  app.use('/assets', express.static(path.join(directory, 'assets'), { index: false, dotfiles: 'deny', maxAge: '1y', immutable: true }));
+  // Sine-serve yung ibang static assets (logos, favicon, theme.js) na naka-deny yung hidden dotfiles (gaya ng .env).
   app.use(express.static(directory, { index: false, dotfiles: 'deny' }));
   // SPA fallback: ibigay yung index.html sa normal page routes, pero i-404 yung may file extension o dot segment.
   app.get('*', (req, res, next) => {

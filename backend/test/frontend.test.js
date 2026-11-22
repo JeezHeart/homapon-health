@@ -8,8 +8,10 @@ const { mountFrontend } = require('../src/lib/frontend');
 
 test('one web service serves SPA routes and assets while preserving API failures', async (t) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'homapon-hosting-'));
+  fs.mkdirSync(path.join(directory, 'assets'));
   fs.writeFileSync(path.join(directory, 'index.html'), '<html>Fictional frontend</html>');
   fs.writeFileSync(path.join(directory, 'app.js'), '/* fictional asset */');
+  fs.writeFileSync(path.join(directory, 'assets', 'index-abc123.js'), '/* hashed bundle */');
   const app = express();
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   mountFrontend(app, directory);
@@ -23,6 +25,9 @@ test('one web service serves SPA routes and assets while preserving API failures
     assert.match(await response.text(), /Fictional frontend/);
   }
   assert.equal((await fetch(base + '/app.js')).status, 200);
+  const hashed = await fetch(base + '/assets/index-abc123.js');
+  assert.equal(hashed.status, 200);
+  assert.match(hashed.headers.get('cache-control') || '', /immutable/i);
   assert.equal((await fetch(base + '/missing.js')).status, 404);
   assert.equal((await fetch(base + '/.env')).status, 404);
   const missing = await fetch(base + '/api/missing');
