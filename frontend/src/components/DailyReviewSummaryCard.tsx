@@ -36,19 +36,23 @@ export default function DailyReviewSummaryCard({ summary, findings, selectedStat
     ['Active findings', summary.findings], ['Affected children', summary.uniqueChildren],
   ];
 
-  return <Card title="Daily review summary">
+  return <Card
+    title="Daily review summary"
+    action={
+      <dl className="flex flex-wrap items-center gap-2 text-xs">
+        {totals.map(([label, count]) => (
+          <div key={label} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-1">
+            <dt className="text-[var(--color-navy-soft)]">{label}</dt><dd className="font-semibold tabular-nums text-[var(--color-navy)]">{count}</dd>
+          </div>
+        ))}
+      </dl>
+    }
+  >
     {/* Petsa ng worklist snapshot */}
     <p className="text-sm text-[var(--color-navy-soft)]">
       <time dateTime={summary.date}>{date}</time> · Current worklist snapshot, including findings from earlier days
     </p>
-    {/* Metric grid para sa active findings, affected children, at review status breakdown */}
-    <dl className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-      {totals.map(([label, count]) => <div key={label} className="rounded-xl border border-[var(--color-border)] p-2.5">
-        <dt className="text-sm">{label}</dt>
-        <dd className="mt-1 text-xl font-semibold tabular-nums">{count}</dd>
-      </div>)}
-    </dl>
-    {statuses && <div className={`mt-2 ${KPI_GRID}`}>
+    {statuses && <div className={`mt-3 ${KPI_GRID}`}>
       {STATUS_TOTALS.map(([key, label, color]) => {
         const visual = findings ? (
           <KpiSparkline
