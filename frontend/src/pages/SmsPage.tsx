@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BatchSmsDialog from '../components/BatchSmsDialog';
 import Card from '../components/Card';
-import KpiCard, { KPI_GRID } from '../components/KpiCard';
+import KpiCard, { KPI_GRID, KpiSparkline } from '../components/KpiCard';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
 import SmsDialog from '../components/SmsDialog';
@@ -18,7 +18,7 @@ import type { EnrichedAppointment, SmsEntry } from '../data/mockData';
 import { childById, childName, enrichedAppointments, extractPurok, PUROKS, smsDeliveryLabel } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
-import { formatDate, formatTime } from '../utils/dates';
+import { formatDate, formatTime, todayISO } from '../utils/dates';
 import { directoryPage } from '../utils/childDirectory';
 import { smsDirectory } from '../utils/smsDirectory';
 import type { ReminderFilter, SmsHistoryFilter } from '../utils/smsDirectory';
@@ -64,6 +64,32 @@ export default function SmsPage() {
   // Kino-compute ang enriched appointments, naka-filter na reminders/history, at active pagination slice.
   const all = useMemo(() => enrichedAppointments(appointments, children, records), [appointments, children, records]);
   const { reminders, history, latest, totals } = smsDirectory(children, all, smsLog, { query, purok, filter, smsStatus });
+  // Real sparkline trends para sa 4 SMS KPI cards base sa active search/purok scope.
+  const today = todayISO();
+  const [todayYear, todayMonth, todayDay] = today.split('-').map(Number);
+  const { reminders: allPending, history: allScopedHistory } = smsDirectory(children, all, smsLog, { query, purok });
+  const next7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay + i));
+    return {
+      iso: d.toISOString().slice(0, 10),
+      label: d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+    };
+  });
+  const recentMonths = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(Date.UTC(todayYear, todayMonth - 6 + i, 1));
+    return {
+      prefix: d.toISOString().slice(0, 7),
+      label: d.toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' }),
+    };
+  });
+  const smsTrends = {
+    dayLabels: next7.map(d => d.label),
+    pending: next7.map(d => allPending.filter(item => item.scheduledDate === d.iso).length),
+    monthLabels: recentMonths.map(m => m.label),
+    accepted: recentMonths.map(m => allScopedHistory.filter(e => e.status === 'Accepted' && e.sentAt.startsWith(m.prefix)).length),
+    uncertain: recentMonths.map(m => allScopedHistory.filter(e => e.status === 'Unknown' && e.sentAt.startsWith(m.prefix)).length),
+    failedOrNotSent: recentMonths.map(m => allScopedHistory.filter(e => (e.status === 'Failed' || e.status === 'Not sent') && e.sentAt.startsWith(m.prefix)).length),
+  };
   const reminderPage = directoryPage(reminders, Number(params.get('page') ?? 1), size);
   const historyPage = directoryPage(history, Number(params.get('page') ?? 1), size);
   const pagination = view === 'prepare' ? reminderPage : historyPage;
@@ -101,12 +127,16 @@ export default function SmsPage() {
     </div>
     <section aria-label="SMS totals" className={KPI_GRID}>
       <KpiCard label="Reminders to prepare" count={totals.pending} icon="calendar" description="Pending appointments"
+        visual={<KpiSparkline counts={smsTrends.pending} labels={smsTrends.dayLabels} color="var(--color-secondary)" />}
         selected={view === 'prepare' && filter === 'all'} onSelect={() => update({ view: 'prepare', filter: 'all' })} />
       <KpiCard label="Provider accepted" count={totals.accepted} icon="sms" description="Handset delivery unconfirmed"
+        visual={<KpiSparkline counts={smsTrends.accepted} labels={smsTrends.monthLabels} color="var(--color-chart-teal)" />}
         selected={view === 'history' && smsStatus === 'Accepted'} onSelect={() => update({ view: 'history', smsStatus: 'Accepted' })} />
       <KpiCard label="Uncertain" count={totals.uncertain} icon="bell" description="Check before resending"
+        visual={<KpiSparkline counts={smsTrends.uncertain} labels={smsTrends.monthLabels} color="var(--color-warning)" />}
         selected={view === 'history' && smsStatus === 'Unknown'} onSelect={() => update({ view: 'history', smsStatus: 'Unknown' })} />
       <KpiCard label="Failed or not sent" count={totals.failedOrNotSent} icon="mail" description="Attempts to check"
+        visual={<KpiSparkline counts={smsTrends.failedOrNotSent} labels={smsTrends.monthLabels} color="var(--color-danger)" />}
         selected={view === 'history' && smsStatus === 'failed-or-not-sent'} onSelect={() => update({ view: 'history', smsStatus: 'failed-or-not-sent' })} />
     </section>
     {/* Toggle buttons sa pagitan ng "Prepare reminders" at "SMS history" */}

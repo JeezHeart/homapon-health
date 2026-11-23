@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import KpiCard from '../components/KpiCard';
+import KpiCard, { KpiSparkline } from '../components/KpiCard';
 import ChildForm from '../components/ChildForm';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
@@ -19,7 +19,7 @@ import { useStore } from '../state/store-context';
 import { AGE_GROUPS, childDirectoryRows, directoryPage } from '../utils/childDirectory';
 import type { DirectorySchedule, VaccinationStatus } from '../utils/childDirectory';
 import { exportChildrenList } from '../utils/csv';
-import { calcAge, formatDate, formatTime } from '../utils/dates';
+import { calcAge, formatDate, formatTime, todayISO } from '../utils/dates';
 
 const selectClass = 'clinic-control';
 
@@ -47,6 +47,42 @@ export default function ChildrenPage() {
     [children, records, appointments, query, schedule, purok, ageGroup],
   );
   const fullyImmunized = matchingChildren.filter(row => row.vaccination === 'Fully immunized').length;
+  // 6-month trend sparklines para sa 3 KPI cards gamit ang totoong birth dates at recorded dose dates.
+  const kpiTrends = useMemo(() => {
+    const today = todayISO();
+    const [year, month] = today.split('-').map(Number);
+    const doseDatesByChild = new Map<string, string[]>();
+    for (const record of records) {
+      const list = doseDatesByChild.get(record.childId) ?? [];
+      list.push(record.dateAdministered);
+      doseDatesByChild.set(record.childId, list);
+    }
+    const labels: string[] = [];
+    const registered: number[] = [];
+    const fully: number[] = [];
+    const partial: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const monthEnd = new Date(Date.UTC(year, month - 5 + i, 0));
+      const cutoff = i === 5 ? today : monthEnd.toISOString().slice(0, 10);
+      labels.push(monthEnd.toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' }));
+      let regCount = 0;
+      let fullCount = 0;
+      for (const { child, vaccination } of matchingChildren) {
+        if (i < 5 && child.birthDate > cutoff) continue;
+        regCount++;
+        const dates = doseDatesByChild.get(child.id);
+        const isFull =
+          i === 5
+            ? vaccination === 'Fully immunized'
+            : Boolean(dates && dates.filter((date) => date <= cutoff).length >= REQUIRED_DOSES);
+        if (isFull) fullCount++;
+      }
+      registered.push(regCount);
+      fully.push(fullCount);
+      partial.push(regCount - fullCount);
+    }
+    return { labels, registered, fully, partial };
+  }, [matchingChildren, records]);
   const filtered = status === 'all' ? matchingChildren : matchingChildren.filter(row => row.vaccination === status);
   const pagination = directoryPage(filtered, requestedPage, size);
   const activeFilters = Boolean(query || status !== 'all' || schedule !== 'all' || purok !== 'all' || ageGroup);
@@ -68,10 +104,13 @@ export default function ChildrenPage() {
       <h1 className="sr-only">Child Records</h1>
       <section aria-label="Child records totals" className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
         <KpiCard label="Registered children" count={matchingChildren.length} icon="children" description="Matching directory filters"
+          visual={<KpiSparkline counts={kpiTrends.registered} labels={kpiTrends.labels} />}
           selected={status === 'all'} onSelect={() => update({ status: 'all' })} />
         <KpiCard label="Fully immunized" count={fullyImmunized} icon="records" description="All required doses recorded"
+          visual={<KpiSparkline counts={kpiTrends.fully} labels={kpiTrends.labels} color="var(--color-chart-teal)" />}
           selected={status === 'Fully immunized'} onSelect={() => update({ status: 'Fully immunized' })} />
         <KpiCard label="Partially immunized" count={matchingChildren.length - fullyImmunized} icon="review" description="Required dose records incomplete"
+          visual={<KpiSparkline counts={kpiTrends.partial} labels={kpiTrends.labels} color="var(--color-chart-lavender)" />}
           selected={status === 'Partially immunized'} onSelect={() => update({ status: 'Partially immunized' })} />
       </section>
       {/* Compact search & filter bar */}

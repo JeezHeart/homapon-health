@@ -1,8 +1,52 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import NavIcon from './NavIcon';
 
 export const KPI_GRID = 'grid grid-cols-2 gap-2.5 lg:grid-cols-4';
+
+export function KpiSparkline({
+  counts,
+  labels,
+  color = 'var(--color-chart-teal)',
+}: {
+  counts: number[];
+  labels?: string[];
+  color?: string;
+}) {
+  if (!counts.length) return null;
+  const peak = Math.max(1, ...counts);
+  const points = counts.map((count, index) => {
+    const x = counts.length === 1 ? 43 : 3 + (index * 80) / (counts.length - 1);
+    const y = 29 - (count / peak) * 24;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const [lastX, lastY] = points[points.length - 1].split(',');
+  const areaPoints = `3,32 ${points.join(' ')} ${lastX},32`;
+  const title = labels
+    ? counts.map((count, index) => `${labels[index] ?? ''}: ${count}`).join(' · ')
+    : undefined;
+
+  return (
+    <span aria-hidden="true" title={title} className="shrink-0">
+      <svg viewBox="0 0 86 34" className="h-9 w-[clamp(3rem,36%,5.5rem)] overflow-visible">
+        {counts.length > 1 && (
+          <>
+            <polygon points={areaPoints} fill={color} opacity="0.12" />
+            <polyline
+              points={points.join(' ')}
+              fill="none"
+              stroke={color}
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </>
+        )}
+        <circle cx={lastX} cy={lastY} r="2.8" fill={color} />
+      </svg>
+    </span>
+  );
+}
 
 type KpiProps = {
   label: string;
@@ -10,12 +54,13 @@ type KpiProps = {
   description?: string;
   icon: ComponentProps<typeof NavIcon>['name'];
   alert?: boolean;
+  visual?: ReactNode;
 } & (
   { to: string; onSelect?: never; selected?: never } |
   { to?: never; onSelect?: () => void; selected?: boolean }
 );
 
-export default function KpiCard({ label, count, description, icon, alert, to, onSelect, selected }: KpiProps) {
+export default function KpiCard({ label, count, description, icon, alert, visual, to, onSelect, selected }: KpiProps) {
   const classes = 'summary-stat kpi-card' + (alert ? ' summary-stat-alert' : '') + (selected ? ' kpi-card-selected' : '');
   const content = <>
     <span className="flex items-center gap-2">
@@ -23,7 +68,14 @@ export default function KpiCard({ label, count, description, icon, alert, to, on
       <span className="min-w-0 flex-1 text-sm font-medium leading-tight">{label}</span>
       {(to || onSelect) && <span aria-hidden="true" className="text-xs text-[var(--color-navy-soft)]">›</span>}
     </span>
-    <strong className="summary-stat-value">{count}</strong>
+    {visual ? (
+      <span className="flex min-h-10 items-center justify-between gap-2">
+        <strong className="summary-stat-value">{count}</strong>
+        {visual}
+      </span>
+    ) : (
+      <strong className="summary-stat-value">{count}</strong>
+    )}
     {description && <span className="mt-auto text-xs text-[var(--color-navy-soft)]">{description}</span>}
   </>;
   if (to) return <Link to={to} className={classes}>{content}</Link>;

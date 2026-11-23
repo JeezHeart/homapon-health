@@ -8,7 +8,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
-import KpiCard, { KPI_GRID } from '../components/KpiCard';
+import KpiCard, { KPI_GRID, KpiSparkline } from '../components/KpiCard';
 import AppointmentDialog from '../components/AppointmentDialog';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
@@ -114,11 +114,63 @@ export default function SchedulePage() {
   const calendarRows = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter: 'all' });
   const filtered = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter, date: selectedDay });
   const countScope = selectedDay ? calendarRows.filter(appointment => appointment.scheduledDate === selectedDay) : calendarRows;
+  // Real sparkline series para sa 4 KPI cards base sa actual scheduled dates/times ng naka-filter na appointments.
+  const today = todayISO();
+  const [todayYear, todayMonth, todayDay] = today.split('-').map(Number);
+
+  // 1. Upcoming: next 7 days (Today .. +6 days)
+  const upcomingDays = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay + i));
+    const iso = date.toISOString().slice(0, 10);
+    return {
+      iso,
+      label: date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+    };
+  });
+  const upcomingSpark = {
+    labels: upcomingDays.map(d => d.label),
+    counts: upcomingDays.map(d =>
+      countScope.filter(item => (item.status === 'upcoming' || item.status === 'due-today') && item.scheduledDate === d.iso).length,
+    ),
+  };
+
+  // 2. Due today: 6 clinic time slots across the day
+  const dueTodayItems = countScope.filter(item => item.status === 'due-today');
+  const dueTodaySlots = [
+    { label: 'Before 9 AM', match: (t?: string) => Boolean(t && t < '09:00') },
+    { label: '9–10 AM', match: (t?: string) => Boolean(t && t >= '09:00' && t < '10:00') },
+    { label: '10–11 AM', match: (t?: string) => Boolean(t && t >= '10:00' && t < '11:00') },
+    { label: '11 AM–12 PM', match: (t?: string) => Boolean(t && t >= '11:00' && t < '12:00') },
+    { label: 'Afternoon', match: (t?: string) => Boolean(t && t >= '12:00') },
+    { label: 'No time set', match: (t?: string) => !t },
+  ];
+  const dueTodaySpark = {
+    labels: dueTodaySlots.map(s => s.label),
+    counts: dueTodaySlots.map(s => dueTodayItems.filter(item => s.match(item.scheduledTime)).length),
+  };
+
+  // 3 & 4. Overdue and Completed: last 6 months ending this month
+  const recentMonths = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date(Date.UTC(todayYear, todayMonth - 6 + i, 1));
+    return {
+      prefix: date.toISOString().slice(0, 7),
+      label: date.toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' }),
+    };
+  });
+  const overdueSpark = {
+    labels: recentMonths.map(m => m.label),
+    counts: recentMonths.map(m => countScope.filter(item => item.status === 'overdue' && item.scheduledDate.startsWith(m.prefix)).length),
+  };
+  const completedSpark = {
+    labels: recentMonths.map(m => m.label),
+    counts: recentMonths.map(m => countScope.filter(item => item.status === 'completed' && item.scheduledDate.startsWith(m.prefix)).length),
+  };
+
   const scheduleTotals = [
-    { filter: 'upcoming', label: 'Upcoming', count: countScope.filter(item => item.status === 'upcoming' || item.status === 'due-today').length, description: 'Includes appointments due today' },
-    { filter: 'today', label: 'Due today', count: countScope.filter(item => item.status === 'due-today').length, description: 'Pending appointments today' },
-    { filter: 'overdue', label: 'Overdue', count: countScope.filter(item => item.status === 'overdue').length, description: 'Appointments for follow-up' },
-    { filter: 'completed', label: 'Completed', count: countScope.filter(item => item.status === 'completed').length, description: 'Appointments with a recorded dose' },
+    { filter: 'upcoming', label: 'Upcoming', count: countScope.filter(item => item.status === 'upcoming' || item.status === 'due-today').length, description: 'Includes appointments due today', spark: upcomingSpark, color: 'var(--color-secondary)' },
+    { filter: 'today', label: 'Due today', count: dueTodayItems.length, description: 'Pending appointments today', spark: dueTodaySpark, color: 'var(--color-warning)' },
+    { filter: 'overdue', label: 'Overdue', count: countScope.filter(item => item.status === 'overdue').length, description: 'Appointments for follow-up', spark: overdueSpark, color: 'var(--color-danger)' },
+    { filter: 'completed', label: 'Completed', count: countScope.filter(item => item.status === 'completed').length, description: 'Appointments with a recorded dose', spark: completedSpark, color: 'var(--color-chart-teal)' },
   ] as const;
   const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), PAGE_SIZE);
   const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming' || vaccine !== 'all');
@@ -153,6 +205,7 @@ export default function SchedulePage() {
         {scheduleTotals.map(item => <KpiCard key={item.filter} label={item.label} count={item.count}
           description={item.description} icon={item.filter === 'overdue' ? 'bell' : 'calendar'}
           alert={item.filter === 'overdue' && item.count > 0} selected={filter === item.filter}
+          visual={<KpiSparkline counts={item.spark.counts} labels={item.spark.labels} color={item.color} />}
           onSelect={() => update({ filter: item.filter })} />)}
       </section>
       {/* Filter card: search bar, status dropdown, at purok selector */}

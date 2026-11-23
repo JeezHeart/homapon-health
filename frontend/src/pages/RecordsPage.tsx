@@ -8,7 +8,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
-import KpiCard from '../components/KpiCard';
+import KpiCard, { KpiSparkline } from '../components/KpiCard';
 import AppointmentDialog from '../components/AppointmentDialog';
 import CorrectionForm from '../components/CorrectionForm';
 import Dialog from '../components/Dialog';
@@ -22,7 +22,7 @@ import {
 } from '../data/mockData';
 import { REQUIRED_DOSES, VACCINES, vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
-import { formatDate } from '../utils/dates';
+import { formatDate, todayISO } from '../utils/dates';
 import { recordDirectory } from '../utils/recordDirectory';
 import { directoryPage } from '../utils/childDirectory';
 import { validScheduleDate } from '../utils/scheduleDirectory';
@@ -44,10 +44,14 @@ export default function RecordsPage() {
   // Binabasa dito yung URL-backed filters para sa search query, vaccine, date range, at page size.
   const query = params.get('q') ?? '';
   const vaccineFilter = VACCINES.find((vaccine) => vaccine.id === params.get('vaccine'))?.id ?? 'all';
-  const doseOptions = [...new Set([
-    ...VACCINES.flatMap(vaccine => vaccine.doses.map(dose => dose.doseNumber)),
-    ...records.map(record => record.doseNumber),
-  ])].sort((a, b) => a - b);
+  const doseOptions = useMemo(
+    () =>
+      [...new Set([
+        ...VACCINES.flatMap(vaccine => vaccine.doses.map(dose => dose.doseNumber)),
+        ...records.map(record => record.doseNumber),
+      ])].sort((a, b) => a - b),
+    [records],
+  );
   const doseNumber = doseOptions.find(dose => String(dose) === params.get('dose'));
   const from = validScheduleDate(params.get('from')) ?? '';
   const to = validScheduleDate(params.get('to')) ?? '';
@@ -83,6 +87,33 @@ export default function RecordsPage() {
     [children, records, query, vaccineFilter, doseNumber, from, to, invalidRange],
   );
   const shownDoses = groups.reduce((total, group) => total + group.doses.length, 0);
+  // 6-month trend sparklines para sa Recorded doses at Children with records cards base sa matching doses.
+  const recordTrends = useMemo(() => {
+    const [year, month] = todayISO().split('-').map(Number);
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date(Date.UTC(year, month - 6 + i, 1));
+      return {
+        prefix: date.toISOString().slice(0, 7),
+        label: date.toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' }),
+      };
+    });
+    const doseCounts = months.map(() => 0);
+    const childSets = months.map(() => new Set<string>());
+    for (const { child, doses } of groups) {
+      for (const dose of doses) {
+        const idx = months.findIndex(m => dose.dateAdministered.startsWith(m.prefix));
+        if (idx >= 0) {
+          doseCounts[idx]++;
+          childSets[idx].add(child.id);
+        }
+      }
+    }
+    return {
+      labels: months.map(m => m.label),
+      doses: doseCounts,
+      children: childSets.map(set => set.size),
+    };
+  }, [groups]);
   const pagination = directoryPage(groups, Number(params.get('page') ?? 1), size);
   const selectedGroup = useMemo(
     () => (selectedChildId ? groups.find((group) => group.child.id === selectedChildId) ?? null : null),
@@ -94,8 +125,10 @@ export default function RecordsPage() {
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">Vaccination Records</h1>
       <section aria-label="Vaccination record totals" className="grid grid-cols-2 gap-2.5">
-        <KpiCard label="Recorded doses" count={shownDoses} icon="records" description="Matching current filters" />
-        <KpiCard label="Children with records" count={groups.length} icon="children" description="At least one matching dose" />
+        <KpiCard label="Recorded doses" count={shownDoses} icon="records" description="Matching current filters"
+          visual={<KpiSparkline counts={recordTrends.doses} labels={recordTrends.labels} color="var(--color-chart-teal)" />} />
+        <KpiCard label="Children with records" count={groups.length} icon="children" description="At least one matching dose"
+          visual={<KpiSparkline counts={recordTrends.children} labels={recordTrends.labels} color="var(--color-secondary)" />} />
       </section>
       {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
       <Card>

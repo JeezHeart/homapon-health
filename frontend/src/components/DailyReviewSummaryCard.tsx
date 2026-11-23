@@ -5,19 +5,25 @@
  * reference documentation checklist.
  */
 import type { DailyReviewSummary } from '../data/api';
+import { ISSUE_LABELS, type ReviewFinding } from '../utils/reviewWorklist';
 import Card from './Card';
-import KpiCard, { KPI_GRID } from './KpiCard';
+import KpiCard, { KPI_GRID, KpiSparkline } from './KpiCard';
 
-// Mapping mula sa backend review status keys papunta sa readable card labels.
+// Mapping mula sa backend review status keys papunta sa readable card labels at semantic sparkline colors.
 const STATUS_TOTALS = [
-  ['pending', 'Pending findings'], ['verified', 'Verified findings'],
-  ['escalated', 'Escalated findings'], ['resolved', 'Resolved findings'],
+  ['pending', 'Pending findings', 'var(--color-secondary)'],
+  ['verified', 'Verified findings', 'var(--color-chart-teal)'],
+  ['escalated', 'Escalated findings', 'var(--color-danger)'],
+  ['resolved', 'Resolved findings', 'var(--color-success)'],
 ] as const;
 type Status = typeof STATUS_TOTALS[number][0];
 
+const ISSUE_ENTRIES = Object.entries(ISSUE_LABELS);
+
 /** Nagre-render ng daily worklist snapshot metrics at documentation checklist sa loob ng Card. */
-export default function DailyReviewSummaryCard({ summary, selectedStatus, onStatusSelect }: {
+export default function DailyReviewSummaryCard({ summary, findings, selectedStatus, onStatusSelect }: {
   summary: DailyReviewSummary;
+  findings?: ReviewFinding[];
   selectedStatus?: Status | 'all';
   onStatusSelect?: (status: Status) => void;
 }) {
@@ -43,10 +49,22 @@ export default function DailyReviewSummaryCard({ summary, selectedStatus, onStat
       </div>)}
     </dl>
     {statuses && <div className={`mt-2 ${KPI_GRID}`}>
-      {STATUS_TOTALS.map(([key, label]) => <KpiCard key={key} label={label} count={statuses[key]}
-        icon="review" description="Active findings" alert={key === 'escalated' && statuses[key] > 0}
-        selected={onStatusSelect ? selectedStatus === key : undefined}
-        onSelect={onStatusSelect && (() => onStatusSelect(key))} />)}
+      {STATUS_TOTALS.map(([key, label, color]) => {
+        const visual = findings ? (
+          <KpiSparkline
+            counts={ISSUE_ENTRIES.map(([code]) =>
+              findings.filter(f => (f.reviewStatus ?? 'pending') === key && f.issueType === code).length,
+            )}
+            labels={ISSUE_ENTRIES.map(([, issueLabel]) => issueLabel)}
+            color={color}
+          />
+        ) : undefined;
+        return <KpiCard key={key} label={label} count={statuses[key]}
+          icon="review" description="Active findings" alert={key === 'escalated' && statuses[key] > 0}
+          visual={visual}
+          selected={onStatusSelect ? selectedStatus === key : undefined}
+          onSelect={onStatusSelect && (() => onStatusSelect(key))} />;
+      })}
     </div>}
     {!statuses && <p className="mt-2 text-sm text-[var(--color-navy-soft)]">Saved review statuses are unavailable.</p>}
     {/* AI-assisted o reference documentation checklist at official source links */}

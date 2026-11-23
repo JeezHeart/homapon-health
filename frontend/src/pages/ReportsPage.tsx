@@ -9,8 +9,9 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import KpiCard, { KPI_GRID } from '../components/KpiCard';
+import KpiCard, { KPI_GRID, KpiSparkline } from '../components/KpiCard';
 import { childName, extractPurok, PUROKS } from '../data/mockData';
+import { REQUIRED_DOSES } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import { exportAdministeredDoses, exportVaccinationRegister } from '../utils/csv';
 import { formatDate, todayISO } from '../utils/dates';
@@ -38,6 +39,40 @@ export default function ReportsPage() {
   const size = [5, 10, 25].find((value) => value === Number(params.get('size'))) ?? 10;
   // Kino-compute via useMemo yung summary stats, purok breakdown, at per-vaccine totals sa napiling date period.
   const report = useMemo(() => reportOverview(children, records, appointments, { purok, from, to }), [children, records, appointments, purok, from, to]);
+  // 6-month trend sparklines para sa 4 Current registry summary KPI cards.
+  const registryTrends = useMemo(() => {
+    const [year, month] = today.split('-').map(Number);
+    const doseDatesByChild = new Map<string, string[]>();
+    for (const record of report.registryRecords) {
+      const list = doseDatesByChild.get(record.childId) ?? [];
+      list.push(record.dateAdministered);
+      doseDatesByChild.set(record.childId, list);
+    }
+    const labels: string[] = [];
+    const registered: number[] = [];
+    const fully: number[] = [];
+    const partial: number[] = [];
+    const overdue: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const monthEnd = new Date(Date.UTC(year, month - 5 + i, 0));
+      const cutoff = i === 5 ? today : monthEnd.toISOString().slice(0, 10);
+      const prefix = monthEnd.toISOString().slice(0, 7);
+      labels.push(monthEnd.toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' }));
+      let regCount = 0;
+      let fullCount = 0;
+      for (const child of report.registry) {
+        if (i < 5 && child.birthDate > cutoff) continue;
+        regCount++;
+        const dates = doseDatesByChild.get(child.id);
+        if (dates && dates.filter(d => d <= cutoff).length >= REQUIRED_DOSES) fullCount++;
+      }
+      registered.push(i === 5 ? report.registry.length : regCount);
+      fully.push(i === 5 ? report.fully : fullCount);
+      partial.push(i === 5 ? report.partial : regCount - fullCount);
+      overdue.push(new Set(report.overdue.filter(a => a.scheduledDate.startsWith(prefix)).map(a => a.childId)).size);
+    }
+    return { labels, registered, fully, partial, overdue };
+  }, [report, today]);
   const validRange = report.periodValid && to <= today;
   const weeklyDoses = useMemo(() => weeklyDoseCounts(report.periodRecords), [report.periodRecords]);
   const largestWeek = weeklyDoses.reduce((largest, [, count]) => Math.max(largest, count), 1);
@@ -74,12 +109,16 @@ export default function ReportsPage() {
       <Card title="Current registry summary" action={<button type="button" disabled={report.registry.length === 0} onClick={() => exportVaccinationRegister(report.registry, report.registryRecords)} className={`${control} no-print disabled:opacity-40`}>Export vaccination register (CSV)</button>}>
         <p className="text-sm text-[var(--color-navy-soft)]">As of {formatDate(today)} - {currentPurok}. Uses all recorded vaccination dates.</p>
         <div className={`mt-4 ${KPI_GRID}`}>
-          <KpiCard label="Registered children" count={report.registry.length} icon="children" to={directoryUrl} />
+          <KpiCard label="Registered children" count={report.registry.length} icon="children" to={directoryUrl}
+            visual={<KpiSparkline counts={registryTrends.registered} labels={registryTrends.labels} color="var(--color-chart-teal)" />} />
           <KpiCard label="Fully immunized" count={report.fully} icon="records"
+            visual={<KpiSparkline counts={registryTrends.fully} labels={registryTrends.labels} color="var(--color-chart-teal)" />}
             to={directoryUrl + (purokQuery ? '&' : '?') + 'status=Fully%20immunized'} />
           <KpiCard label="Partially immunized" count={report.partial} icon="records"
+            visual={<KpiSparkline counts={registryTrends.partial} labels={registryTrends.labels} color="var(--color-chart-lavender)" />}
             to={directoryUrl + (purokQuery ? '&' : '?') + 'status=Partially%20immunized'} />
           <KpiCard label="Children with overdue appointments" count={new Set(report.overdue.map(appointment => appointment.childId)).size}
+            visual={<KpiSparkline counts={registryTrends.overdue} labels={registryTrends.labels} color="var(--color-danger)" />}
             icon="calendar" alert={report.overdue.length > 0} to={overdueUrl} />
         </div>
         <p className="mt-3 text-sm font-medium">{percentage}% fully immunized among registered children</p>

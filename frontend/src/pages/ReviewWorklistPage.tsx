@@ -93,7 +93,7 @@ export default function ReviewWorklistPage() {
       : <>
         {/* Daily review summary card at status note kapag hindi available yung tracking table */}
         {load.status === 'ready' && load.summary && <div id="daily-review-summary" tabIndex={-1}>
-          <DailyReviewSummaryCard summary={load.summary} selectedStatus={reviewStatus}
+          <DailyReviewSummaryCard summary={load.summary} findings={load.findings} selectedStatus={reviewStatus}
             onStatusSelect={trackingAvailable ? (status) => update('reviewStatus', reviewStatus === status ? 'all' : status) : undefined} />
         </div>}
         {load.status === 'ready' && !load.trackingAvailable && <p role="status" className="text-sm text-[var(--color-navy-soft)]">Review tracking is unavailable. Screening and guidance are still available.</p>}
@@ -144,7 +144,7 @@ export default function ReviewWorklistPage() {
               <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(findingId(row))}
                 className="clinic-entry block h-full w-full px-3 py-2.5 text-left">
                 <strong className="block break-words">{row.name}</strong>
-                <span className="block text-sm">{ISSUE_LABELS[row.issueType] ?? 'Documentation issue'} ? {row.vaccine}{row.doses.length > 0 && ' ? Dose ' + row.doses.join(', ')}</span>
+                <span className="block text-sm">{ISSUE_LABELS[row.issueType] ?? 'Documentation issue'} · {row.vaccine}{row.doses.length > 0 && ' · Dose ' + row.doses.join(', ')}</span>
                 <span className="mt-1 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 font-medium">{row.priority === 'high' ? 'High review priority' : 'Standard review priority'}</span>
                   {row.reviewStatus && <span className={row.reviewStatus === 'escalated' ? 'rounded-full bg-amber-100 px-2 py-0.5 font-semibold capitalize text-amber-900' : 'px-2 py-0.5 capitalize'}>{row.reviewStatus}</span>}

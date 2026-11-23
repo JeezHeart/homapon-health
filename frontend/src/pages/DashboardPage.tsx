@@ -180,14 +180,14 @@ export default function DashboardPage() {
       <FadeContent className="dashboard-stats grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <TopStat ready={dataReady !== false} label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children"
           visual={<StatMiniBars label="Infant ages" bars={AGE_GROUPS.map(({ id, label }) => ({ label, count: infantsByAge.get(id) ?? 0 }))} />} />
+        <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth} icon={<ShieldCheckIcon />}
+          description={new Date(today + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records"
+          visual={<DoseSparkline counts={dailyDoses} />} />
         <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} total={children.length} icon={<ShieldCheckIcon />}
           description="Among registered children" to="/children?status=Fully%20immunized"
           visual={<ImmunizationRing count={fullyImmunized} total={children.length} />} />
         <TopStat ready={dataReady !== false} label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" alert={overdue.length > 0}
           visual={<StatMiniBars label="Days overdue" bars={overdueByAge} overdue />} />
-        <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth} icon={<ShieldCheckIcon />}
-          description={new Date(today + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records"
-          visual={<DoseSparkline counts={dailyDoses} />} />
       </FadeContent>
 
       <FadeContent className="grid gap-3 lg:grid-cols-2 [&>.health-card]:!p-3 [&>.health-card>.health-card-header]:mb-1.5 [&>.health-card>.health-card-header]:min-h-6">
