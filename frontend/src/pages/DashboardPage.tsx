@@ -8,6 +8,7 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import { KpiSparkline } from '../components/KpiCard';
 import MagicBento from '../components/MagicBento';
 import CountUp from '../components/CountUp';
 import FadeContent from '../components/FadeContent';
@@ -94,17 +95,6 @@ function StatMiniBars({ label, bars, overdue = false }: {
   </span>;
 }
 
-function DoseSparkline({ counts }: { counts: number[] }) {
-  const peak = Math.max(1, ...counts);
-  const points = counts.map((count, index) =>
-    (counts.length === 1 ? 43 : 3 + index * 80 / (counts.length - 1)) + ',' + (29 - count / peak * 24));
-  const [lastX, lastY] = points.at(-1)!.split(',');
-  return <svg viewBox="0 0 86 34" className="h-9 w-[clamp(2.75rem,35%,5.375rem)] shrink-0" aria-hidden="true">
-    {counts.length > 1 && <polyline points={points.join(' ')} fill="none" stroke="var(--color-chart-teal)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-    <circle cx={lastX} cy={lastY} r="2.8" fill="var(--color-chart-teal)" />
-  </svg>;
-}
-
 function ImmunizationRing({ count, total }: { count: number; total: number }) {
   const percentage = total ? count / total * 100 : 0;
   return <span className="relative grid size-11 shrink-0 place-items-center text-[10px] font-semibold tabular-nums" aria-hidden="true">
@@ -157,6 +147,8 @@ export default function DashboardPage() {
   const fullyImmunized = children.filter((child) => isFullyImmunized(records, child.id)).length;
   const today = todayISO();
   const dailyDoses = dosesByDayThisMonth(records, today);
+  const monthShort = new Date(today + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'short', timeZone: 'UTC' });
+  const dailyLabels = dailyDoses.map((_, i) => `${monthShort} ${i + 1}`);
   const dosesThisMonth = dailyDoses.reduce((sum, count) => sum + count, 0);
   const infantsByAge = new Map<string, number>();
   for (const child of children) {
@@ -182,7 +174,7 @@ export default function DashboardPage() {
           visual={<StatMiniBars label="Infant ages" bars={AGE_GROUPS.map(({ id, label }) => ({ label, count: infantsByAge.get(id) ?? 0 }))} />} />
         <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth} icon={<ShieldCheckIcon />}
           description={new Date(today + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records"
-          visual={<DoseSparkline counts={dailyDoses} />} />
+          visual={<KpiSparkline counts={dailyDoses} labels={dailyLabels} color="var(--color-chart-teal)" />} />
         <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} total={children.length} icon={<ShieldCheckIcon />}
           description="Among registered children" to="/children?status=Fully%20immunized"
           visual={<ImmunizationRing count={fullyImmunized} total={children.length} />} />
