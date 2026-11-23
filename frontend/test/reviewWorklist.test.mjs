@@ -45,3 +45,10 @@ test('sorts and filters the complete worklist before pagination', () => {
   }).map((row) => row.childId), ['b']);
   assert.deepEqual(filterReviewRows(rows, { ...defaults, query: 'absent' }), []);
 });
+
+test('review status combines with priority and keeps untracked findings out of status results', () => {
+  const tracked = [rows[0], { ...rows[1], reviewStatus: 'escalated' }];
+  assert.deepEqual(filterReviewRows(tracked, { ...defaults, reviewStatus: 'escalated', priority: 'high' }), [tracked[1]]);
+  assert.deepEqual(filterReviewRows(tracked, { ...defaults, reviewStatus: 'pending' }), []);
+  assert.equal(filterReviewRows(tracked, { ...defaults, reviewStatus: 'all' }).length, 2);
+});

@@ -18,6 +18,7 @@ import {
 import type { Appointment, Child, DoseRecord, SmsEntry } from '../data/mockData';
 import { api, apiEnabled, apiError } from '../data/api';
 import { supabase } from '../data/supabaseClient';
+import { setThemePreference } from '../utils/themePreference';
 import type { DemoUser, StoreValue } from './store-context';
 import { StoreContext } from './store-context';
 
@@ -393,6 +394,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       // Naglo-logout sa Supabase Auth, nililinis yung cached records sa memory, at tinatanggal yung local practice session.
       signOut: () => {
+        setThemePreference('light');
         setDemoGrowth([]);
         if (supabase) void supabase.auth.signOut();
         setDemoUser(null);

@@ -36,7 +36,9 @@ export type ReminderFilter = 'all' | 'today' | 'tomorrow' | 'overdue';
  */
 export function smsDirectory(
   children: Child[], appointments: EnrichedAppointment[], smsLog: SmsEntry[],
-  { query = '', purok = 'all', filter = 'all' }: { query?: string; purok?: string; filter?: ReminderFilter },
+  { query = '', purok = 'all', filter = 'all', smsStatus = 'all' }: {
+    query?: string; purok?: string; filter?: ReminderFilter; smsStatus?: SmsEntry['status'] | 'all';
+  },
   today = todayISO(), tomorrow = daysFromNow(1),
 ) {
   const search = query.trim().toLocaleLowerCase();
@@ -56,5 +58,7 @@ export function smsDirectory(
     || filter === 'today' && appointment.scheduledDate === today
     || filter === 'tomorrow' && appointment.scheduledDate === tomorrow
   )).sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id));
-  return { reminders, history: orderedHistory.filter((entry) => matches(byId.get(entry.childId))), latest };
+  const history = orderedHistory.filter((entry) =>
+    (smsStatus === 'all' || entry.status === smsStatus) && matches(byId.get(entry.childId)));
+  return { reminders, history, latest };
 }

@@ -121,11 +121,13 @@ export function filterReviewRows(rows: ReturnType<typeof reviewRows>, filters: {
   issue: string;
   priority: string;
   sort: string;
+  reviewStatus?: ReviewStatus | 'all';
 }) {
   const query = filters.query.trim().toLocaleLowerCase();
   return rows.filter((row) =>
     (filters.issue === 'all' || filters.issue === row.issueType) &&
     (filters.priority === 'all' || filters.priority === row.priority) &&
+    (!filters.reviewStatus || filters.reviewStatus === 'all' || filters.reviewStatus === row.reviewStatus) &&
     `${row.name} ${row.vaccine}`.toLocaleLowerCase().includes(query),
   ).sort((a, b) =>
     // Kapag naka-sort by priority, inuuna yung high-priority findings (1) bago yung standard (0).

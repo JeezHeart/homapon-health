@@ -1,12 +1,11 @@
 /**
  * SettingsPage.tsx
  * Guide pang-defense: Ito yung Settings page (`/settings`) para sa account info ng naka-login na staff,
- * light/dark theme toggle, health center details, SMS availability status + fixed reminder template,
+ * staff access, health center details, SMS availability status + fixed reminder template,
  * system overview, at two-step clear button ng local practice data (pag naka-demo mode lang).
  */
 import { useState } from 'react';
 import Card from '../components/Card';
-import ThemeToggle from '../components/ThemeToggle';
 import { apiEnabled } from '../data/api';
 import { SMS_TEMPLATE } from '../data/mockData';
 import { ROLE_LABEL, useStore } from '../state/store-context';
@@ -14,7 +13,7 @@ import { useSmsAvailability } from '../utils/useSmsAvailability';
 
 /** Main Settings page component na nagre-read ng staff RBAC role sa store at live SMS status via hook. */
 export default function SettingsPage() {
-  const { demoUser, signOut, resetDemo } = useStore();
+  const { demoUser, resetDemo } = useStore();
   const availability = useSmsAvailability();
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetDone, setResetDone] = useState(false);
@@ -35,17 +34,23 @@ export default function SettingsPage() {
     : availability.status === 'unavailable' ? 'SMS availability could not be verified'
     : availability.status === 'practice' ? 'Practice only - no real SMS is sent' : 'SMS sending enabled';
 
-  return <div className="flex flex-col gap-4">
+  return <div className="flex flex-col gap-3 [&_.health-card]:!p-3.5 [&_.health-card>div:first-child]:mb-3">
     <div><h1 className="page-title">Settings</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">Staff account, appearance, and health-center information.</p></div>
-    <div className="grid items-start gap-4 xl:grid-cols-2">
-      {/* Staff profile card: pangalan, assigned RBAC role, at sign-out button */}
+    <div className="grid gap-3 md:grid-cols-2">
+      {/* Staff profile card: pangalan at assigned RBAC role */}
       <Card title="Staff account">
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm"><dt className="text-[var(--color-navy-soft)]">Name</dt><dd className="break-words font-medium">{demoUser?.name ?? 'Not available'}</dd><dt className="text-[var(--color-navy-soft)]">Role</dt><dd className="break-words font-medium">{demoUser ? ROLE_LABEL[demoUser.role] : 'Not available'}</dd></dl>
-        <p className="mt-3 text-xs text-[var(--color-navy-soft)]">{apiEnabled ? 'Your assigned role controls which actions you can perform.' : 'Local practice session.'}</p>
-        <button type="button" onClick={signOut} className="mt-3 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50">Sign out</button>
+        {!apiEnabled && <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Local practice session.</p>}
       </Card>
-      {/* Light/Dark theme switcher card */}
-      <section aria-label="Appearance"><Card title="Appearance"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm">Light or dark appearance</p><ThemeToggle /></div></Card></section>
+      <Card title="Staff access">
+        <p className="text-sm font-medium">Record Review</p>
+        <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
+          {!apiEnabled ? 'Record Review is available in the connected staff system.'
+            : demoUser?.role === 'midwife' ? 'You can verify findings, flag them for review, and resolve escalations.'
+            : demoUser?.role === 'bhw' ? 'You can verify findings and escalate them to the midwife. The midwife handles resolution.'
+            : 'Sign in with a staff account to review findings.'}
+        </p>
+      </Card>
       {/* Static info ng Barangay Homapon Health Center at regular Wednesday clinic schedule */}
       <Card title="Health center">
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm"><dt className="text-[var(--color-navy-soft)]">Facility</dt><dd className="break-words font-medium">Barangay Homapon Health Center</dd><dt className="text-[var(--color-navy-soft)]">Address</dt><dd className="break-words">Brgy. Homapon, Legazpi City</dd><dt className="text-[var(--color-navy-soft)]">Regular clinic</dt><dd>Every Wednesday</dd></dl>
@@ -54,9 +59,12 @@ export default function SettingsPage() {
       {/* Live SMS status indicator plus preview ng fixed 1-SMS reminder template */}
       <Card title="SMS reminders">
         <div role="status"><p className="text-sm font-medium">{smsStatus}</p>{availability.message && <p className="mt-1 text-xs text-[var(--color-navy-soft)]">{availability.message}</p>}</div>
-        <h3 className="mt-4 text-sm font-medium">Fixed reminder template</h3><p className="mt-2 break-words rounded-xl border border-slate-200 p-3 text-sm">{SMS_TEMPLATE}</p>
-        <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Guardian, child, appointment date/time, and transaction date fill automatically. Each reminder must fit one SMS. Full names are kept; messages that are too long are blocked.</p>
-        <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Provider acceptance does not confirm delivery to the phone.</p>
+        <details className="mt-3 rounded-lg border border-[var(--color-border)] px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium">Fixed reminder template</summary>
+          <p className="mt-2 break-words text-sm">{SMS_TEMPLATE}</p>
+          <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Guardian, child, appointment date and time, and transaction date fill automatically. Each reminder must fit one SMS. Full names are kept. Messages that are too long are blocked.</p>
+          <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Delivery to the phone is tracked separately from provider acceptance.</p>
+        </details>
       </Card>
     </div>
     {/* System info card (title at summary ng capstone project) */}

@@ -121,11 +121,12 @@ export default function GrowthPanel({ child }: { child: Child }) {
   }
   return <div className="flex flex-col gap-4">
     {/* WHO decision-support paalala (hindi diagnosis) plus loading at error banners */}
-    <p className="rounded-xl bg-slate-50 p-3 text-sm">Record actual measurements only. WHO comparisons support staff review and do not determine whether a child is healthy or unhealthy. Previous weight entries without dates are not plotted. {apiEnabled ? 'Measurements are saved through the protected API.' : 'Demo: fictional measurements only, kept for this session.'}</p>
     {loading && <p role="status">Loading measurements...</p>}
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {/* Entry form pang-dagdag ng bagong dated weight, length/height, position, at oedema record */}
     <Card title="Add measurement">
+      <p className="mb-3 rounded-xl bg-[var(--color-elevated)] px-3 py-2 text-sm">Record the child’s actual measurements and the date they were taken. Use the WHO growth chart as a guide for staff review. A growth chart alone cannot determine a child’s overall health.</p>
+      {!apiEnabled && <p className="mb-3 text-xs text-[var(--color-navy-soft)]">Practice mode uses fictional measurements for this session.</p>}
       <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">Measurement date<input className="block w-full rounded border p-2" type="date" required min={child.birthDate} max={smsTodayISO()} value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <label className="text-sm">Weight (kg)<input className="block w-full rounded border p-2" type="number" min="0.01" max="200" step="0.01" value={weight} onChange={(e) => setWeight(e.target.value)} /></label>
@@ -143,7 +144,15 @@ export default function GrowthPanel({ child }: { child: Child }) {
       return <div key={m.id}><h3 className="font-semibold">{m.label}</h3><p className="text-sm">{result.label}</p>{result.score !== undefined && <p className="text-xs">WHO z-score: {result.score.toFixed(2)} (distance from reference median)</p>}</div>;
     })}</div></Card>}
     {/* Side-by-side na Weight-for-age at Length/height-for-age WHO trend charts */}
-    <div className="grid gap-4 lg:grid-cols-2"><Card title="Weight over time"><Chart rows={rows} child={child} metric="weight" /></Card><Card title="Length / height over time"><Chart rows={rows} child={child} metric="height" /></Card></div>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card title="Weight over time">
+        <Chart rows={rows} child={child} metric="weight" />
+        {!loading && !error && child.weightKg != null && !rows.some(row => row.weightKg === child.weightKg) && (
+          <p className="mt-2 text-xs text-[var(--color-navy-soft)]">The profile weight has no matching dated measurement. The chart uses dated measurements only.</p>
+        )}
+      </Card>
+      <Card title="Length / height over time"><Chart rows={rows} child={child} metric="height" /></Card>
+    </div>
     {/* History table ng raw measurements na may inline confirm-delete button para sa midwife */}
     <Card title="Measurement history">
       {!rows.length ? <p>No dated measurements recorded. Add a measurement to start the chart.</p> : <div className="overflow-x-auto"><table role="table" className="mobile-record-table ui-table w-full text-left text-sm"><caption className="sr-only">Actual recorded measurements before position adjustment</caption><thead role="rowgroup"><tr role="row">{['Date', 'Weight (kg)', 'Length / height (cm)', 'Position', 'Swelling', 'Notes', 'Actions'].map((h) => <th role="columnheader" className="p-2" key={h}>{h}</th>)}</tr></thead><tbody role="rowgroup">{rows.map((r) => <tr role="row" key={r.id} className="border-t"><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Date</span><div className="mobile-cell-value">{formatDate(r.measuredOn)}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Weight (kg)</span><div className="mobile-cell-value">{r.weightKg ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Length / height (cm)</span><div className="mobile-cell-value">{r.heightCm ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Position</span><div className="mobile-cell-value">{r.position ?? '-'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Swelling</span><div className="mobile-cell-value">{r.oedema === 'unknown' ? 'Not assessed' : r.oedema === 'yes' ? 'Present' : 'Absent'}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Notes</span><div className="mobile-cell-value">{r.notes}</div></td><td role="cell" className="p-2"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">{demoUser?.role === 'midwife' && <button type="button" disabled={saving} onClick={() => setRemoveId(r.id)} className="text-red-700 underline">Remove</button>}</div></td></tr>)}</tbody></table></div>}

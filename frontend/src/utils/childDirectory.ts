@@ -12,12 +12,26 @@
  */
 import type { Appointment, Child, DoseRecord } from '../data/mockData';
 import { childName, enrichedAppointments, extractPurok, isFullyImmunized } from '../data/mockData';
+import { completedAgeMonths, todayISO } from './dates';
+import { validScheduleDate } from './scheduleDirectory';
 
 /** Display label kung kumpleto na ba o hindi pa yung routine vaccines ni baby. */
 export type VaccinationStatus = 'Fully immunized' | 'Partially immunized';
 
 /** Mga schedule filter options para salain yung mga bata base sa urgency ng appointment nila. */
 export type DirectorySchedule = 'all' | 'upcoming' | 'overdue';
+export const AGE_GROUPS = [
+  { id: 'birth-to-two', label: 'Birth–2 months', min: 0, max: 3 },
+  { id: 'three-to-five', label: '3–5 months', min: 3, max: 6 },
+  { id: 'six-to-eight', label: '6–8 months', min: 6, max: 9 },
+  { id: 'nine-to-twelve', label: '9–12 months', min: 9, max: 13 },
+] as const;
+
+export function infantAgeGroup(birthDate: string, today: string) {
+  if (!validScheduleDate(birthDate) || birthDate > today) return undefined;
+  const months = completedAgeMonths(birthDate, today);
+  return AGE_GROUPS.find(group => months >= group.min && months < group.max)?.id;
+}
 
 /** Mga optional filter values na pinapasa sa `childDirectoryRows`. */
 export interface DirectoryFilters {
@@ -25,6 +39,7 @@ export interface DirectoryFilters {
   vaccination?: VaccinationStatus | 'all';
   schedule?: DirectorySchedule;
   purok?: string;
+  ageGroup?: typeof AGE_GROUPS[number]['id'];
 }
 
 /**
@@ -48,6 +63,8 @@ export interface DirectoryFilters {
  */
 export function childDirectoryRows(children: Child[], records: DoseRecord[], appointments: Appointment[], filters: DirectoryFilters = {}) {
   const query = filters.query?.trim().toLocaleLowerCase() ?? '';
+  const ageGroup = AGE_GROUPS.find(group => group.id === filters.ageGroup);
+  const today = ageGroup ? todayISO() : '';
   // Kunin muna nang minsanan yung mga hindi pa completed na appointments para mabilis i-check per child.
   const pending = enrichedAppointments(appointments, children, records).filter((appointment) => appointment.status !== 'completed');
   return children.flatMap((child) => {
@@ -55,6 +72,7 @@ export function childDirectoryRows(children: Child[], records: DoseRecord[], app
     if (query && !`${childName(child)} ${child.guardian}`.toLocaleLowerCase().includes(query)) return [];
     // 2. I-filter by purok kapag may piniling specific purok.
     if (filters.purok && filters.purok !== 'all' && extractPurok(child.purok) !== filters.purok) return [];
+    if (ageGroup && infantAgeGroup(child.birthDate, today) !== ageGroup.id) return [];
     // 3. I-compute yung immunization status mula sa dose records at i-apply yung filter.
     const vaccination: VaccinationStatus = isFullyImmunized(records, child.id) ? 'Fully immunized' : 'Partially immunized';
     if (filters.vaccination && filters.vaccination !== 'all' && filters.vaccination !== vaccination) return [];

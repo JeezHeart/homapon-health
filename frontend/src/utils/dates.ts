@@ -177,16 +177,18 @@ export function shiftMonthCursor(
  * - Tama yung singular vs. plural (`1 mo` vs `2 mos`, `1 yr` vs `2 yrs`) at eksaktong taon.
  */
 export function calcAge(birthISO: string, refISO: string = todayISO()): string {
-  const [by, bm, bd] = birthISO.split('-').map(Number);
-  const [ry, rm, rd] = refISO.split('-').map(Number);
-  let months = (ry - by) * 12 + (rm - bm);
-  // Huwag muna bilangin yung kasalukuyang buwan hangga't hindi pa umaabot sa birth day.
-  if (rd < bd) months -= 1;
-  if (months < 0) return '—';
+  const months = completedAgeMonths(birthISO, refISO);
+  if (months < 0 || !Number.isFinite(months)) return '—';
   if (months < 12) return `${months} mo${months === 1 ? '' : 's'}`;
   const yrs = Math.floor(months / 12);
   const rem = months % 12;
   return rem === 0
     ? `${yrs} yr${yrs === 1 ? '' : 's'}`
     : `${yrs} yr${yrs === 1 ? '' : 's'} ${rem} mo${rem === 1 ? '' : 's'}`;
+}
+
+export function completedAgeMonths(birthISO: string, refISO: string = todayISO()): number {
+  const [by, bm, bd] = birthISO.split('-').map(Number);
+  const [ry, rm, rd] = refISO.split('-').map(Number);
+  return (ry - by) * 12 + (rm - bm) - Number(rd < bd);
 }

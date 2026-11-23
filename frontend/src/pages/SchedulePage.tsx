@@ -22,7 +22,7 @@ import {
   extractPurok,
   PUROKS,
 } from '../data/mockData';
-import { vaccineById } from '../data/vaccines';
+import { VACCINES, vaccineById } from '../data/vaccines';
 import { useStore } from '../state/store-context';
 import {
   formatDate,
@@ -37,6 +37,8 @@ import type { ScheduleFilter } from '../utils/scheduleDirectory';
 import { directoryPage } from '../utils/childDirectory';
 
 // Mga options para sa status filter dropdown ng schedule.
+const PAGE_SIZE = 8;
+
 const FILTERS: { id: ScheduleFilter; label: string }[] = [
   { id: 'all', label: 'All appointments' },
   { id: 'today', label: 'Today' },
@@ -61,22 +63,33 @@ export default function SchedulePage() {
   const { children, records, appointments, addAppointment, updateAppointment } =
     useStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get('appointment');
+  function setSelectedId(id: string | null) {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('appointment', id);
+    else next.delete('appointment');
+    setSearchParams(next, { replace: true });
+  }
   // Binabasa dito lahat ng active schedule filters, selected date/month, at page size galing sa URL query params.
   const filter = FILTERS.find((item) => item.id === searchParams.get('filter'))?.id ?? 'upcoming';
   const query = searchParams.get('q') ?? '';
-  const purokFilter = PUROKS.find((purok) => purok === searchParams.get('purok')) ?? 'all';
+  const vaccine = VACCINES.find(item => item.id === searchParams.get('vaccine'))?.id ?? 'all';
+  const puroks = [...new Set<string>([...PUROKS, ...children.map(child => extractPurok(child.purok))])];
+  const purokFilter = puroks.find((purok) => purok === searchParams.get('purok')) ?? 'all';
   const selectedDay = validScheduleDate(searchParams.get('date'));
   const monthDate = validScheduleDate(`${searchParams.get('month')}-01`) ?? selectedDay ?? todayISO();
   const [year, month] = monthDate.split('-').map(Number);
   const monthCursor = { year, month: month - 1 };
-  const size = [5, 10, 25].find((value) => value === Number(searchParams.get('size'))) ?? 10;
-  const returnTo = `/schedule${searchParams.size ? `?${searchParams.toString()}` : ''}`;
+  const directoryParams = new URLSearchParams(searchParams);
+  directoryParams.delete('appointment');
+  const returnTo = '/schedule' + (directoryParams.size ? '?' + directoryParams.toString() : '');
   // Ina-update yung URL query params pag nagbago ng filter, petsa, o page size, at nire-reset ang page sa 1.
   function update(patch: Record<string, string | number>) {
     const next = new URLSearchParams(searchParams);
     next.delete('page');
+    next.delete('size');
     for (const [key, value] of Object.entries(patch)) {
-      if (value === '' || value === 'all' && key === 'purok' || key === 'size' && value === 10 || key === 'page' && value === 1) next.delete(key);
+      if (value === '' || value === 'all' && key === 'purok' || key === 'page' && value === 1) next.delete(key);
       else next.set(key, String(value));
     }
     setSearchParams(next, { replace: true });
@@ -95,10 +108,12 @@ export default function SchedulePage() {
   );
 
   // Hiwalay yung `calendarRows` (lahat ng statuses para sa count badges sa calendar) sa `filtered` (yung table sa kanan).
-  const calendarRows = filterSchedule(all, { query, purok: purokFilter, filter: 'all' });
-  const filtered = filterSchedule(all, { query, purok: purokFilter, filter, date: selectedDay });
-  const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), size);
-  const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming');
+  const selected = all.find(a => a.id === selectedId);
+  const vaccineAppointments = vaccine === 'all' ? all : all.filter(appointment => appointment.vaccineId === vaccine);
+  const calendarRows = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter: 'all' });
+  const filtered = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter, date: selectedDay });
+  const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), PAGE_SIZE);
+  const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming' || vaccine !== 'all');
   // Gini-group ang appointments per date string (`YYYY-MM-DD`) para mabilis makuha ang count ng bawat calendar cell.
   const byDay = new Map<string, EnrichedAppointment[]>();
   for (const appointment of calendarRows) {
@@ -149,15 +164,19 @@ export default function SchedulePage() {
         <div className="flex flex-wrap items-center gap-3">
           <input type="search" aria-label="Search appointments by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="min-w-0 w-full flex-none rounded-xl border border-slate-300 px-3 py-2 text-sm sm:w-auto sm:flex-1" />
           <select aria-label="Appointment status filter" value={filter} onChange={(event) => update({ filter: event.target.value, date: '' })} className={selectClass}>{FILTERS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-          <select aria-label="Filter by purok" value={purokFilter} onChange={(event) => update({ purok: event.target.value })} className={selectClass}><option value="all">All puroks</option>{PUROKS.map((purok) => <option key={purok}>{purok}</option>)}</select>
-          {activeFilters && <button type="button" onClick={() => update({ q: '', purok: '', date: '', filter: 'upcoming' })} className={selectClass}>Clear filters</button>}
+          <select aria-label="Filter by purok" value={purokFilter} onChange={(event) => update({ purok: event.target.value })} className={selectClass}><option value="all">All puroks</option>{puroks.map((purok) => <option key={purok}>{purok}</option>)}</select>
+          <select aria-label="Filter by vaccine" value={vaccine} onChange={event => update({ vaccine: event.target.value === 'all' ? '' : event.target.value })} className={selectClass}>
+            <option value="all">All vaccines</option>
+            {VACCINES.map(item => <option key={item.id} value={item.id}>{item.shortName}</option>)}
+          </select>
+          {activeFilters && <button type="button" onClick={() => update({ q: '', purok: '', date: '', filter: 'upcoming', vaccine: '' })} className={selectClass}>Clear filters</button>}
         </div>
       </Card>
 
       {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
-      <FadeContent className="grid items-start gap-4 xl:grid-cols-[268px_minmax(0,1fr)]">
+      <FadeContent className="grid items-start gap-4 xl:grid-cols-[268px_minmax(0,1fr)] xl:items-stretch">
         {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
-        <div className="min-w-0">
+        <div className="min-w-0 xl:[&>.health-card]:h-full">
           <Card title={monthLabel}>
             <div className="flex items-center justify-between pb-3">
               <span className="text-xs font-medium text-[var(--color-navy-soft)]">
@@ -223,96 +242,74 @@ export default function SchedulePage() {
               })}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--color-navy-soft)]"><span className="font-bold underline decoration-2 underline-offset-4">Today</span><span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span></div>
-            <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Counts include all statuses matching search and purok. Select a date to view its appointments.</p>
+            <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Counts include all statuses matching search, purok, and vaccine. Select a date to view its appointments.</p>
             {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="mt-3 text-xs font-medium underline">Clear selected date</button>}
           </Card>
         </div>
 
         {/* Appointments table card sa kanan kasama ang pagination footer */}
-        <div className="min-w-0">
-      <Card
-        title={`${selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} (${filtered.length})`}
-      >
+        <section aria-labelledby="appointment-list-title" className="health-card flex min-w-0 flex-col overflow-hidden !p-0">
+          <h2 id="appointment-list-title" className="border-b border-[var(--color-border)] px-4 py-3 text-base font-semibold">
+            {selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} ({filtered.length})
+          </h2>
         {filtered.length === 0 ? (
           <EmptyState
             title="No matching appointments"
             message="Try another date or clear the filters."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table role="table" className="mobile-record-table ui-table w-full text-left text-sm">
-              <caption className="sr-only">Vaccination appointments</caption>
-              <thead role="rowgroup">
-                <tr role="row" className="text-xs uppercase tracking-wide text-[var(--color-navy-soft)]">
-                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Child</th>
-                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Vaccination</th>
-                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Guardian</th>
-                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Status</th>
-                  <th role="columnheader" scope="col" className="!px-2.5 pb-2 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody role="rowgroup">
-                {pagination.visible.map((a) => {
-                  const v = vaccineById(a.vaccineId);
-                  const followUp = a.followUpStatus ?? 'Pending';
-                  return (
-                    <tr role="row" key={a.id} className="border-t border-slate-100 hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]">
-                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Child</span><div className="mobile-cell-value"><span className="block font-medium">{childName(a.child)}</span><span className="block whitespace-nowrap text-xs text-[var(--color-navy-soft)]">{extractPurok(a.child.purok)}</span></div></td>
-                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Vaccination</span><div className="mobile-cell-value">
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium">{v?.shortName} · Dose {a.doseNumber}</span>
-                          <span className="whitespace-nowrap text-xs">{formatDate(a.scheduledDate)}</span>
-                          {a.scheduleExceptionReason && (
-                            <span className="max-w-xs whitespace-normal break-words text-xs text-amber-950">
-                              Schedule exception: {a.scheduleExceptionReason}
-                            </span>
-                          )}
-                          {a.scheduledTime && (
-                            <span className="text-xs text-[var(--color-navy-soft)]">
-                              {formatTime(a.scheduledTime)}
-                            </span>
-                          )}
-                          {a.status === 'overdue' && a.daysOverdue && (
-                            <span className="text-xs font-semibold text-red-600">
-                              {a.daysOverdue} day{a.daysOverdue === 1 ? '' : 's'} overdue
-                            </span>
-                          )}
-                        </div>
-                      </div></td>
-                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Guardian</span><div className="mobile-cell-value"><span className="block">{a.child.guardian}</span><span className="block text-xs text-[var(--color-navy-soft)]">{a.child.guardianMobile}</span></div></td>
-                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Status</span><div className="mobile-cell-value">
-                        <StatusBadge status={a.status} />
-                        {a.status === 'overdue' && <div className="mt-2"><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${FOLLOW_UP_BADGE[followUp]}`}>{followUp}</span>{a.followUpNotes && <p className="mt-1 max-w-[150px] break-words text-xs text-[var(--color-navy-soft)]">{a.followUpNotes}</p>}</div>}
-                      </div></td>
-                      <td role="cell" className="!px-2.5 py-2.5"><span className="mobile-cell-label" aria-hidden="true">Actions</span><div className="mobile-cell-value">
-                        <div className="flex flex-col items-start gap-2 text-xs font-medium">
-                          <Link to={`/children/${a.child.id}`} state={{ directory: returnTo }} className="w-[104px] whitespace-nowrap rounded-lg border border-slate-300 px-2.5 py-1.5 text-center hover:bg-slate-50">View record</Link>
-                          {a.status !== 'completed' && <details className="w-[104px]">
-                            <summary className="cursor-pointer rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2">More</summary>
-                            <div className="mt-2 flex flex-col items-stretch gap-1.5">
-                              {a.status === 'overdue' && <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setFollowUpFor(a); }} className="w-full whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-red-700 hover:bg-red-50">Follow-up</button>}
-                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setRescheduling(a); }} className="w-full whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left hover:bg-slate-50">Reschedule</button>
-                              <button type="button" onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setSmsFor(a); }} className="w-full whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-2.5 py-1.5 text-center text-white">Prepare SMS</button>
-                            </div>
-                          </details>}
-                        </div>
-                      </div></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ul aria-label="Vaccination appointments" className="grid flex-1 auto-rows-fr gap-2 md:grid-cols-2">
+            {pagination.visible.map(a => (
+              <li key={a.id} className="min-w-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]">
+                <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(a.id)}
+                  className="flex h-full w-full items-center gap-3 px-3 py-2 text-left hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]">
+                  <span className="child-avatar shrink-0" aria-hidden="true">{a.child.firstName.charAt(0)}{a.child.lastName.charAt(0)}</span>
+                  <span className="min-w-0 flex-1 space-y-1">
+                    <span className="flex flex-wrap items-center justify-between gap-1"><strong>{childName(a.child)}</strong><StatusBadge status={a.status} /></span>
+                    <span className="block text-sm">{vaccineById(a.vaccineId)?.shortName ?? a.vaccineId} · Dose {a.doseNumber}</span>
+                    <span className="block text-xs text-[var(--color-navy-soft)]">{formatDate(a.scheduledDate)}{a.scheduledTime && ' · ' + formatTime(a.scheduledTime)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-      </Card>
-      {filtered.length > 0 && <nav aria-label="Schedule pagination" className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+      {filtered.length > 0 && <nav aria-label="Schedule pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] px-4 py-3 text-sm">
         <p role="status" aria-live="polite">{pagination.first}–{pagination.last} of {filtered.length} appointments</p>
-        <div className="flex flex-wrap items-center gap-2"><label htmlFor="schedule-size" className="text-xs">Rows per page</label><select id="schedule-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>{[5, 10, 25].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>
+        <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>
       </nav>}
-        </div>
+        </section>
       </FadeContent>
 
       {/* Mga modals pang-prepare ng SMS, pang-log ng overdue follow-up, pang-book, at pang-reschedule */}
+      {selected && <Dialog title="Appointment details" onClose={() => setSelectedId(null)}>
+        <div className="space-y-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-lg font-semibold">{childName(selected.child)}</h3>
+            <StatusBadge status={selected.status} />
+          </div>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            <dt>Vaccination</dt><dd>{vaccineById(selected.vaccineId)?.shortName ?? selected.vaccineId} · Dose {selected.doseNumber}</dd>
+            <dt>Schedule</dt><dd>{formatDate(selected.scheduledDate)}{selected.scheduledTime && ' · ' + formatTime(selected.scheduledTime)}</dd>
+            <dt>Guardian</dt><dd>{selected.child.guardian}</dd>
+            <dt>Contact</dt><dd>{selected.child.guardianMobile || 'No number recorded'}</dd>
+            <dt>Purok</dt><dd>{extractPurok(selected.child.purok)}</dd>
+          </dl>
+          {selected.scheduleExceptionReason && <p>Schedule exception: {selected.scheduleExceptionReason}</p>}
+          {selected.status === 'overdue' && <div>
+            <p>{selected.daysOverdue} {selected.daysOverdue === 1 ? 'day' : 'days'} overdue · <span className={FOLLOW_UP_BADGE[selected.followUpStatus ?? 'Pending']}>{selected.followUpStatus ?? 'Pending'}</span></p>
+            {selected.followUpNotes && <p className="break-words">{selected.followUpNotes}</p>}
+          </div>}
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-3">
+            <Link to={'/children/' + selected.child.id} state={{ directory: returnTo }} className="mr-auto font-medium underline">Open child profile</Link>
+            {selected.status === 'overdue' && <button type="button" className={selectClass} onClick={() => { setSelectedId(null); setFollowUpFor(selected); }}>Follow-up</button>}
+            {selected.status !== 'completed' && <>
+              <button type="button" className={selectClass} onClick={() => { setSelectedId(null); setRescheduling(selected); }}>Reschedule</button>
+              <button type="button" className="rounded-xl bg-[var(--color-accent)] px-3 py-2 text-white" onClick={() => { setSelectedId(null); setSmsFor(selected); }}>Prepare SMS</button>
+            </>}
+          </div>
+        </div>
+      </Dialog>}
       {smsFor && <SmsDialog appointment={smsFor} onClose={() => setSmsFor(null)} />}
 
       {followUpFor && (

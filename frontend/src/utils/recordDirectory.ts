@@ -33,7 +33,9 @@ import { vaccineById } from '../data/vaccines';
 export function recordDirectory(
   children: Child[],
   records: DoseRecord[],
-  { query = '', vaccine = 'all', from = '', to = '' }: { query?: string; vaccine?: string; from?: string; to?: string },
+  { query = '', vaccine = 'all', doseNumber, from = '', to = '' }: {
+    query?: string; vaccine?: string; doseNumber?: number; from?: string; to?: string;
+  },
 ) {
   const search = query.trim().toLocaleLowerCase();
   // Gawing Map yung children para mabilis (O(1)) yung lookup habang iniikutan yung dose records.
@@ -43,6 +45,7 @@ export function recordDirectory(
     const child = childrenById.get(record.childId);
     // Laktawan kapag walang kapares na bata o hindi tugma sa piniling vaccine filter.
     if (!child || vaccine !== 'all' && record.vaccineId !== vaccine) continue;
+    if (doseNumber !== undefined && record.doseNumber !== doseNumber) continue;
     // I-apply yung inclusive date range kapag may binigay na `from` at/o `to`.
     if (from && record.dateAdministered < from || to && record.dateAdministered > to) continue;
     const vaccineInfo = vaccineById(record.vaccineId);

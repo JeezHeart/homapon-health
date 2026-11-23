@@ -39,3 +39,11 @@ test('latest SMS is per child, retains uncertainty, and does not alter input his
   assert.equal(result.history.find((row) => row.id === 'old-log').status, 'Accepted');
   assert.deepEqual(log.map((row) => row.id), ['old-log', 'new-log', 'unlinked']);
 });
+
+test('SMS status filters history without changing latest reminders or merging accepted and uncertain attempts', () => {
+  const result = directory({ smsStatus: 'Accepted', purok: 'Purok 2' });
+  assert.deepEqual(result.history.map(({ id }) => id), ['old-log']);
+  assert.equal(result.latest.get('a').status, 'Unknown');
+  assert.deepEqual(result.reminders, directory({ purok: 'Purok 2' }).reminders);
+  assert.deepEqual(directory({ smsStatus: 'Unknown' }).history.map(({ id }) => id), ['new-log']);
+});

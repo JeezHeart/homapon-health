@@ -12,6 +12,7 @@ import MagicBento from '../components/MagicBento';
 import CountUp from '../components/CountUp';
 import FadeContent from '../components/FadeContent';
 import { todayISO } from '../utils/dates';
+import { AGE_GROUPS, infantAgeGroup } from '../utils/childDirectory';
 import MonthlyTrendChart from '../components/MonthlyTrendChart';
 import DashboardCalendar from '../components/DashboardCalendar';
 import DashboardAppointments from '../components/DashboardAppointments';
@@ -32,7 +33,6 @@ function TopStat({
   icon,
   description,
   to,
-  highlighted = false,
   alert = false,
   ready,
 }: {
@@ -41,7 +41,6 @@ function TopStat({
   icon: React.ReactNode;
   description: string;
   to: string;
-  highlighted?: boolean;
   alert?: boolean;
   ready: boolean;
 }) {
@@ -49,19 +48,19 @@ function TopStat({
     <Link
       to={to}
       aria-label={`${label}: ${value} — ${description}`}
-      className={`summary-stat ${highlighted ? 'summary-stat-highlight' : ''} ${alert ? 'summary-stat-alert' : ''}`}
+      className={`summary-stat${alert ? ' summary-stat-alert' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2.5">
           <span aria-hidden="true" className="summary-stat-icon">{icon}</span>
-          <span className="truncate text-sm font-medium">{label}</span>
+          <span className="min-w-0 text-sm font-medium">{label}</span>
         </span>
         <span aria-hidden="true" className="text-xs text-[var(--color-navy-soft)]">›</span>
       </div>
       <span className="summary-stat-value">
         <CountUp to={value} startWhen={ready} />
       </span>
-      <p className="text-xs text-[var(--color-navy-soft)]">{description}</p>
+      <p className="mt-auto text-xs text-[var(--color-navy-soft)]">{description}</p>
     </Link>
   );
 }
@@ -104,6 +103,12 @@ export default function DashboardPage() {
   const { children, records, appointments, dataReady } = useStore();
   const overdue = overdueAppointments(appointments, children, records);
   const fullyImmunized = children.filter((child) => isFullyImmunized(records, child.id)).length;
+  const today = todayISO();
+  const infantsByAge = new Map<string, number>();
+  for (const child of children) {
+    const group = infantAgeGroup(child.birthDate, today);
+    if (group) infantsByAge.set(group, (infantsByAge.get(group) ?? 0) + 1);
+  }
 
   return (
     <MagicBento className="dashboard-compact flex flex-col gap-3.5" summaryOnly enableBorderGlow={false} enableSpotlight spotlightRadius={300}>
@@ -115,15 +120,31 @@ export default function DashboardPage() {
       {/* Apat na compact KPI summary cards sa taas ng dashboard */}
       <FadeContent className="dashboard-stats grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <TopStat ready={dataReady !== false} label="Children" value={children.length} icon={<ChildrenIcon />} description="Registered child records" to="/children" />
-        <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" highlighted />
+        <TopStat ready={dataReady !== false} label="Fully immunized" value={fullyImmunized} icon={<ShieldCheckIcon />} description="All required doses recorded" to="/children?status=Fully%20immunized" />
         <TopStat ready={dataReady !== false} label="Overdue" value={overdue.length} icon={<AlertIcon />} description="Appointments for follow-up" to="/schedule?filter=overdue" alert={overdue.length > 0} />
         <TopStat ready={dataReady !== false} label="Doses this month" value={dosesThisMonth(records)} icon={<ShieldCheckIcon />} description={new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })} to="/records" />
       </FadeContent>
 
+      <Card title="Infants by age">
+        <ul className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {AGE_GROUPS.map(({ id, label }) => (
+            <li key={id} className="min-w-0">
+              <Link to={'/children?age=' + id}
+                className="block h-full rounded-xl border border-[var(--color-border)] px-3 py-2 hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+                <span className="block text-xs text-[var(--color-navy-soft)]">{label}</span>
+                <span className="block text-xl font-semibold tabular-nums">{dataReady === false ? '—' : infantsByAge.get(id) ?? 0}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
       {/* Magkatabing monthly vaccination trends chart at interactive clinic calendar */}
       <FadeContent className="dashboard-overview">
         <Card title="Vaccination overview" action={<div className="overview-legend"><span><i className="legend-teal" aria-hidden="true" />Doses</span><span><i className="legend-lavender" aria-hidden="true" />Appointments</span></div>}>
-          <MonthlyTrendChart records={records} appointments={appointments} />
+          <div className="my-auto w-full">
+            <MonthlyTrendChart records={records} appointments={appointments} />
+          </div>
         </Card>
         <DashboardCalendar />
       </FadeContent>

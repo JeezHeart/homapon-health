@@ -11,6 +11,19 @@ import { childName, completedDoses, enrichedAppointments, extractPurok, isFullyI
 import { vaccineById } from '../data/vaccines';
 import { validScheduleDate } from './scheduleDirectory';
 
+export function weeklyDoseCounts(records: DoseRecord[]) {
+  const counts = new Map<string, number>();
+  for (const { dateAdministered } of records) {
+    const date = validScheduleDate(dateAdministered);
+    if (!date) continue;
+    const monday = new Date(date + 'T00:00:00Z');
+    monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
+    const week = monday.toISOString().slice(0, 10);
+    counts.set(week, (counts.get(week) ?? 0) + 1);
+  }
+  return [...counts].sort(([a], [b]) => a.localeCompare(b));
+}
+
 /**
  * Kino-compute yung buong reporting dataset para sa napiling purok at `[from, to]` date window.
  *

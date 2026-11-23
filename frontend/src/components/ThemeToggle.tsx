@@ -5,9 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import NavIcon from './NavIcon';
-
-// Naka-save din sa memory yung manual choice para gumana pa rin kahit blocked ang localStorage.
-let sessionPreference: 'light' | 'dark' | null = null;
+import { rememberTheme, sessionPreference, setThemePreference, THEME_CHANGE_EVENT, THEME_KEY } from '../utils/themePreference';
 
 /** Accessible switch button na nagto-toggle ng `data-theme="light" | "dark"` sa root HTML element. */
 export default function ThemeToggle() {
@@ -20,38 +18,32 @@ export default function ThemeToggle() {
     // Sumusunod sa OS theme change kapag walang naka-save na manual preference ang user.
     const systemChanged = () => {
       let saved: string | null = null;
-      try { saved = localStorage.getItem('homapon-theme'); } catch { /* Use session choice or OS. */ }
+      try { saved = localStorage.getItem(THEME_KEY); } catch { /* Use session choice or OS. */ }
       if (sessionPreference || saved === 'light' || saved === 'dark') return;
       document.documentElement.dataset.theme = system.matches ? 'dark' : 'light';
       syncCurrentPage();
     };
     // Nagsi-sync ng theme kapag binago ito ng user sa ibang open browser tab.
     const sync = (event: StorageEvent) => {
-      if (event.key !== 'homapon-theme' && event.key !== null) return;
-      sessionPreference = event.newValue === 'light' || event.newValue === 'dark' ? event.newValue : null;
+      if (event.key !== THEME_KEY && event.key !== null) return;
+      rememberTheme(event.newValue === 'light' || event.newValue === 'dark' ? event.newValue : null);
       const next = sessionPreference ? sessionPreference === 'dark' : system.matches;
       document.documentElement.dataset.theme = next ? 'dark' : 'light';
       setDark(next);
     };
     window.addEventListener('storage', sync);
-    window.addEventListener('homapon-theme-change', syncCurrentPage);
+    window.addEventListener(THEME_CHANGE_EVENT, syncCurrentPage);
     system.addEventListener('change', systemChanged);
     return () => {
       window.removeEventListener('storage', sync);
-      window.removeEventListener('homapon-theme-change', syncCurrentPage);
+      window.removeEventListener(THEME_CHANGE_EVENT, syncCurrentPage);
       system.removeEventListener('change', systemChanged);
     };
   }, []);
 
   // Nagpapalit sa light/dark mode, nagse-save sa localStorage, at nagno-notify sa ibang components.
   function toggle() {
-    const next = document.documentElement.dataset.theme !== 'dark';
-    sessionPreference = next ? 'dark' : 'light';
-    document.documentElement.dataset.theme = next ? 'dark' : 'light';
-    setDark(next);
-    try { localStorage.setItem('homapon-theme', next ? 'dark' : 'light'); }
-    catch { /* The toggle still works when browser storage is restricted. */ }
-    window.dispatchEvent(new Event('homapon-theme-change'));
+    setThemePreference(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   }
 
   return <div className="theme-toggle no-print">

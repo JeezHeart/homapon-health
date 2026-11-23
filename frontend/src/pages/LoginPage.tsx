@@ -160,7 +160,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your staff email"
-                      autoComplete="email"
+                      autoComplete="off"
                       className={`${inputClass} pl-10`}
                     />
                   </div>
@@ -269,7 +269,7 @@ export default function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Maria Santos"
-                    autoComplete="name"
+                    autoComplete="off"
                     className={inputClass}
                   />
                 </div>

@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
+import Dialog from '../components/Dialog';
 import DailyReviewSummaryCard from '../components/DailyReviewSummaryCard';
 import EmptyState from '../components/EmptyState';
 import ReviewGuidancePanel from '../components/ReviewGuidancePanel';
@@ -20,6 +21,8 @@ import { filterReviewRows, ISSUE_LABELS, reviewRows, type ReviewFinding } from '
 type LoadState = { status: 'loading' | 'error' } | { status: 'ready'; findings: ReviewFinding[]; trackingAvailable: boolean; summary?: DailyReviewSummary };
 
 const CONTROL = 'min-w-0 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm';
+const findingId = (row: ReviewFinding) => row.findingKey ?? JSON.stringify([row.childId, row.issueType, row.recordIds]);
+const REVIEW_STATUSES = ['pending', 'verified', 'escalated', 'resolved'] as const;
 const BUTTON = 'rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-medium disabled:opacity-50';
 
 // Nagre-render ng Record Review queue kung saan tsine-check ng staff yung mga na-flag na dose records (decision support lang, hindi diagnosis).
@@ -29,12 +32,17 @@ export default function ReviewWorklistPage() {
   const canReview = apiEnabled && connected;
   const [params, setParams] = useSearchParams();
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
+  const [selectedId, setSelectedId] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   // Mga active filter/sort values na naka-store sa URL query params.
   const query = params.get('q') ?? '';
   const issue = params.get('issue') ?? 'all';
   const priority = params.get('priority') ?? 'all';
   const sort = params.get('sort') ?? 'priority';
+  const trackingAvailable = load.status === 'ready' && load.trackingAvailable;
+  const reviewStatus = trackingAvailable
+    ? REVIEW_STATUSES.find(status => status === params.get('reviewStatus')) ?? 'all'
+    : 'all';
 
   // Auto-refresh ng findings kapag bumalik yung focus ng user sa browser tab (halimbawa pagkatapos mag-edit sa ChildProfilePage).
   useEffect(() => {
@@ -58,8 +66,9 @@ export default function ReviewWorklistPage() {
 
   // Pinapares yung API findings sa loaded children list, tapos fine-filter, sino-sort, at pina-paginate via useMemo.
   const rows = useMemo(() => load.status === 'ready' ? reviewRows(load.findings, children) : [], [load, children]);
-  const filtered = useMemo(() => filterReviewRows(rows, { query, issue, priority, sort }), [rows, query, issue, priority, sort]);
-  const page = directoryPage(filtered, Number(params.get('page') ?? 1), 10);
+  const filtered = useMemo(() => filterReviewRows(rows, { query, issue, priority, sort, reviewStatus }), [rows, query, issue, priority, sort, reviewStatus]);
+  const page = directoryPage(filtered, Number(params.get('page') ?? 1), 8);
+  const selected = rows.find(row => findingId(row) === selectedId);
 
   // Ina-update yung URL param ng napiling filter/sort at nire-reset ang pagination sa page 1.
   function update(key: string, value: string) {
@@ -87,11 +96,11 @@ export default function ReviewWorklistPage() {
       </Card>
       : <>
         {/* Daily review summary card at status note kapag hindi available yung tracking table */}
-        {load.status === 'ready' && load.summary && <DailyReviewSummaryCard summary={load.summary} />}
+        {load.status === 'ready' && load.summary && <div id="daily-review-summary" tabIndex={-1}><DailyReviewSummaryCard summary={load.summary} /></div>}
         {load.status === 'ready' && !load.trackingAvailable && <p role="status" className="text-sm text-[var(--color-navy-soft)]">Review tracking is unavailable. Screening and guidance are still available.</p>}
         {/* Filter bar: search, issue category, priority, at sort order */}
         <Card>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className={`grid gap-3 sm:grid-cols-2 ${trackingAvailable ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
             <label className="space-y-1 text-sm">Search child or vaccine
               <input className={CONTROL} type="search" value={query} onChange={(event) => update('q', event.target.value)} />
             </label>
@@ -108,6 +117,15 @@ export default function ReviewWorklistPage() {
                 <option value="standard">Standard</option>
               </select>
             </label>
+            {trackingAvailable && <label className="space-y-1 text-sm">Review status
+              <select className={CONTROL} value={reviewStatus} onChange={(event) => update('reviewStatus', event.target.value)}>
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="verified">Verified</option>
+                <option value="escalated">Escalated</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </label>}
             <label className="space-y-1 text-sm">Sort by
               <select className={CONTROL} value={sort} onChange={(event) => update('sort', event.target.value)}>
                 <option value="priority">Highest priority first</option>
@@ -122,32 +140,26 @@ export default function ReviewWorklistPage() {
           message={rows.length ? 'Change the search or filters to see more findings.' : 'The screening rules found no issues in the available dose records.'}
         /> : <>
           <p role="status" className="text-sm text-[var(--color-navy-soft)]">Showing {page.first}–{page.last} of {filtered.length} findings</p>
-          <ul className="grid gap-3">
-            {page.visible.map((row) => <li key={row.findingKey ?? JSON.stringify([row.childId, row.issueType, row.recordIds])}>
-              <Card>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1 wrap-break-word">
-                    <h2 className="font-semibold">{row.name}</h2>
-                    <p className="text-sm">{ISSUE_LABELS[row.issueType] ?? 'Documentation issue'} · {row.vaccine}{row.doses.length > 0 && ` · Dose ${row.doses.join(', ')}`}</p>
-                  </div>
-                  <span className="rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-xs font-semibold">
-                    {row.priority === 'high' ? 'High review priority' : 'Standard review priority'}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm">{row.message}</p>
-                <p className="mt-1 text-sm text-[var(--color-navy-soft)]">{row.priorityReason}</p>
-                <Link className="mt-3 inline-block text-sm font-semibold text-[var(--color-accent)] underline" to={`/children/${encodeURIComponent(row.childId)}?tab=history`}>
-                  Open dose history <span className="sr-only">for {row.name}</span>
-                </Link>
-                {!row.screeningCleared && <ReviewGuidancePanel issueCode={row.issueType} />}
-                {row.reviewStatus && <ReviewTrackingPanel finding={row} role={demoUser?.role}
-                  onSaved={() => setAttempt((previous) => previous + 1)}
-                  onReload={() => {
-                    setLoad({ status: 'loading' });
-                    setAttempt((previous) => previous + 1);
-                  }} />}
-              </Card>
+          <ul aria-label="Review findings" className="grid gap-2 md:grid-cols-2">
+            {page.visible.map(row => <li key={findingId(row)} className="min-w-0">
+              <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(findingId(row))}
+                className="block h-full w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-left hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+                <strong className="block break-words">{row.name}</strong>
+                <span className="block text-sm">{ISSUE_LABELS[row.issueType] ?? 'Documentation issue'} ? {row.vaccine}{row.doses.length > 0 && ' ? Dose ' + row.doses.join(', ')}</span>
+                <span className="mt-1 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 font-medium">{row.priority === 'high' ? 'High review priority' : 'Standard review priority'}</span>
+                  {row.reviewStatus && <span className={row.reviewStatus === 'escalated' ? 'rounded-full bg-amber-100 px-2 py-0.5 font-semibold capitalize text-amber-900' : 'px-2 py-0.5 capitalize'}>{row.reviewStatus}</span>}
+                </span>
+              </button>
             </li>)}
+            {page.visible.length === 5 && load.status === 'ready' && load.summary && (
+              <li className="min-w-0">
+                <a href="#daily-review-summary" className="flex h-full min-h-20 flex-col justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+                  <span className="font-semibold">Daily review summary</span>
+                  <span className="text-sm text-[var(--color-navy-soft)]">See finding totals and review guidance</span>
+                </a>
+              </li>
+            )}
           </ul>
           {/* Pagination buttons kapag higit sa isang page yung findings */}
           {page.pages > 1 && <nav aria-label="Review findings pages" className="flex flex-wrap items-center gap-3">
@@ -157,5 +169,21 @@ export default function ReviewWorklistPage() {
           </nav>}
         </>}
       </>}
+    {canReview && selected && <Dialog title={'Review finding ? ' + selected.name} onClose={() => setSelectedId(undefined)}>
+      <div className="space-y-2">
+        <p className="font-medium">{ISSUE_LABELS[selected.issueType] ?? 'Documentation issue'} ? {selected.vaccine}{selected.doses.length > 0 && ' ? Dose ' + selected.doses.join(', ')}</p>
+        <p className="mt-3 text-sm">{selected.message}</p>
+        <p className="mt-1 text-sm text-[var(--color-navy-soft)]">{selected.priorityReason}</p>
+        <Link className="mt-3 inline-block text-sm font-semibold text-[var(--color-accent)] underline" to={`/children/${encodeURIComponent(selected.childId)}?tab=history`}>
+          Open dose history <span className="sr-only">for {selected.name}</span>
+        </Link>
+        {!selected.screeningCleared && <ReviewGuidancePanel issueCode={selected.issueType} />}
+        {selected.reviewStatus && <ReviewTrackingPanel finding={selected} role={demoUser?.role}
+          onSaved={() => setAttempt((previous) => previous + 1)}
+          onReload={() => {
+            setAttempt((previous) => previous + 1);
+          }} />}
+      </div>
+    </Dialog>}
   </div>;
 }

@@ -43,11 +43,16 @@ export default function RecordsPage() {
   // Binabasa dito yung URL-backed filters para sa search query, vaccine, date range, at page size.
   const query = params.get('q') ?? '';
   const vaccineFilter = VACCINES.find((vaccine) => vaccine.id === params.get('vaccine'))?.id ?? 'all';
+  const doseOptions = [...new Set([
+    ...VACCINES.flatMap(vaccine => vaccine.doses.map(dose => dose.doseNumber)),
+    ...records.map(record => record.doseNumber),
+  ])].sort((a, b) => a - b);
+  const doseNumber = doseOptions.find(dose => String(dose) === params.get('dose'));
   const from = validScheduleDate(params.get('from')) ?? '';
   const to = validScheduleDate(params.get('to')) ?? '';
   const invalidRange = Boolean(from && to && from > to);
   const size = [5, 10, 25].find((value) => value === Number(params.get('size'))) ?? 10;
-  const hasFilters = Boolean(query || vaccineFilter !== 'all' || from || to);
+  const hasFilters = Boolean(query || vaccineFilter !== 'all' || doseNumber !== undefined || from || to);
   const returnTo = `/records${params.size ? `?${params.toString()}` : ''}`;
 
   // Ina-update yung URL search params pag nagpalit ng filter o page size, tapos nire-reset ang page sa 1 kapag bagong filter.
@@ -73,8 +78,8 @@ export default function RecordsPage() {
 
   // Gini-group yung nag-match na dose records per bata (empty kapag baliktad yung date range) tapos pinapa-paginate per child group.
   const groups = useMemo(
-    () => (invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, from, to })),
-    [children, records, query, vaccineFilter, from, to, invalidRange],
+    () => (invalidRange ? [] : recordDirectory(children, records, { query, vaccine: vaccineFilter, doseNumber, from, to })),
+    [children, records, query, vaccineFilter, doseNumber, from, to, invalidRange],
   );
   const shownDoses = groups.reduce((total, group) => total + group.doses.length, 0);
   const pagination = directoryPage(groups, Number(params.get('page') ?? 1), size);
@@ -107,7 +112,7 @@ export default function RecordsPage() {
 
       {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
       <Card>
-        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_auto_150px_150px_auto]">
+        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(150px,1fr)_auto_auto_140px_140px_auto]">
           <input
             type="search"
             aria-label="Search by child, guardian, or vaccine"
@@ -129,9 +134,15 @@ export default function RecordsPage() {
               </option>
             ))}
           </select>
+          <select aria-label="Filter by dose number" value={doseNumber ?? 'all'}
+            onChange={(event) => update({ dose: event.target.value })}
+            className="min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+            <option value="all">All doses</option>
+            {doseOptions.map(dose => <option key={dose} value={dose}>Dose {dose}</option>)}
+          </select>
           <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">From date<input type="date" value={from} max={to || undefined} onChange={(event) => update({ from: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
           <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">To date<input type="date" value={to} min={from || undefined} onChange={(event) => update({ to: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
-          {hasFilters && <button type="button" onClick={() => update({ q: '', vaccine: 'all', from: '', to: '' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
+          {hasFilters && <button type="button" onClick={() => update({ q: '', vaccine: 'all', dose: 'all', from: '', to: '' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
         </div>
         {invalidRange && <p role="alert" className="mt-3 text-sm text-red-700">From date must be on or before To date.</p>}
       </Card>
@@ -140,7 +151,7 @@ export default function RecordsPage() {
       {groups.length === 0 ? (
         <EmptyState
           title="No matching records"
-          message="Change your search, vaccine, or date range. You can also clear the filters."
+          message="Change your search, vaccine, dose number, or date range. You can also clear the filters."
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
