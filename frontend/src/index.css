@@ -204,7 +204,8 @@ body {
   }
   button.clinic-control:not(:disabled):hover { background: var(--color-elevated); border-color: var(--color-accent); }
   .clinic-control:disabled { opacity: 0.45; }
-  .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; background: #0b101480; }
+  .dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; background: rgba(11, 16, 20, 0.44); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: page-fade 160ms ease-out both; }
+  :root[data-theme="dark"] .dialog-backdrop { background: rgba(11, 16, 20, 0.58); }
   .dialog-panel { width: 100%; max-width: 34rem; max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; margin: auto 0; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-card); padding: 1.5rem; box-shadow: 0 20px 70px #0b10142b; }
   .dialog-panel-wide { max-width: 48rem; }
   .drawer-backdrop { justify-content: flex-start; padding: 0; }
@@ -499,13 +500,22 @@ table {
   }
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  .dialog-backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(11, 16, 20, 0.72);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-switch > span { transition: none; }
   .chart-anim,
   .chart-anim-line,
   .chart-anim-fade,
   .page-enter,
-  .dialog-pop {
+  .dialog-pop,
+  .dialog-backdrop {
     animation: none !important;
   }
   .accordion-glide {
