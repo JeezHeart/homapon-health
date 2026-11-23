@@ -6,15 +6,21 @@
  */
 import type { DailyReviewSummary } from '../data/api';
 import Card from './Card';
+import KpiCard, { KPI_GRID } from './KpiCard';
 
 // Mapping mula sa backend review status keys papunta sa readable card labels.
 const STATUS_TOTALS = [
   ['pending', 'Pending findings'], ['verified', 'Verified findings'],
   ['escalated', 'Escalated findings'], ['resolved', 'Resolved findings'],
 ] as const;
+type Status = typeof STATUS_TOTALS[number][0];
 
 /** Nagre-render ng daily worklist snapshot metrics at documentation checklist sa loob ng Card. */
-export default function DailyReviewSummaryCard({ summary }: { summary: DailyReviewSummary }) {
+export default function DailyReviewSummaryCard({ summary, selectedStatus, onStatusSelect }: {
+  summary: DailyReviewSummary;
+  selectedStatus?: Status | 'all';
+  onStatusSelect?: (status: Status) => void;
+}) {
   // Fino-format yung Manila date para malinis tignan sa Philippine date format.
   const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeZone: 'Asia/Manila' })
     .format(new Date(`${summary.date}T00:00:00+08:00`));
@@ -22,7 +28,6 @@ export default function DailyReviewSummaryCard({ summary }: { summary: DailyRevi
   // Pinagsasama yung overall finding counts at per-status counts kapag available sa API response.
   const totals: [string, number][] = [
     ['Active findings', summary.findings], ['Affected children', summary.uniqueChildren],
-    ...(statuses ? STATUS_TOTALS.map(([key, label]): [string, number] => [label, statuses[key]]) : []),
   ];
 
   return <Card title="Daily review summary">
@@ -37,6 +42,12 @@ export default function DailyReviewSummaryCard({ summary }: { summary: DailyRevi
         <dd className="mt-1 text-xl font-semibold tabular-nums">{count}</dd>
       </div>)}
     </dl>
+    {statuses && <div className={`mt-2 ${KPI_GRID}`}>
+      {STATUS_TOTALS.map(([key, label]) => <KpiCard key={key} label={label} count={statuses[key]}
+        icon="review" description="Active findings" alert={key === 'escalated' && statuses[key] > 0}
+        selected={onStatusSelect ? selectedStatus === key : undefined}
+        onSelect={onStatusSelect && (() => onStatusSelect(key))} />)}
+    </div>}
     {!statuses && <p className="mt-2 text-sm text-[var(--color-navy-soft)]">Saved review statuses are unavailable.</p>}
     {/* AI-assisted o reference documentation checklist at official source links */}
     <details className="mt-3 space-y-2 rounded-xl bg-[var(--color-accent-soft)] p-3 text-sm">

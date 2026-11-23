@@ -13,6 +13,7 @@ import { daysFromNow, todayISO } from './dates';
 
 /** Mga timeframe filter tabs para sa pending SMS reminders list. */
 export type ReminderFilter = 'all' | 'today' | 'tomorrow' | 'overdue';
+export type SmsHistoryFilter = SmsEntry['status'] | 'failed-or-not-sent' | 'all';
 
 /**
  * Binubuo yung filtered reminders queue, filtered SMS history, at `latest` SMS map per child.
@@ -37,7 +38,7 @@ export type ReminderFilter = 'all' | 'today' | 'tomorrow' | 'overdue';
 export function smsDirectory(
   children: Child[], appointments: EnrichedAppointment[], smsLog: SmsEntry[],
   { query = '', purok = 'all', filter = 'all', smsStatus = 'all' }: {
-    query?: string; purok?: string; filter?: ReminderFilter; smsStatus?: SmsEntry['status'] | 'all';
+    query?: string; purok?: string; filter?: ReminderFilter; smsStatus?: SmsHistoryFilter;
   },
   today = todayISO(), tomorrow = daysFromNow(1),
 ) {
@@ -53,12 +54,20 @@ export function smsDirectory(
   for (const entry of orderedHistory) if (!latest.has(entry.childId)) latest.set(entry.childId, entry);
 
   // I-filter yung mga hindi pa completed na appointments base sa napiling tab, tapos i-sort chronologically.
-  const reminders = appointments.filter((appointment) => appointment.status !== 'completed' && matches(appointment.child) && (
+  const pending = appointments.filter(appointment => appointment.status !== 'completed' && matches(appointment.child));
+  const reminders = pending.filter((appointment) => (
     filter === 'all' || filter === 'overdue' && appointment.status === 'overdue'
     || filter === 'today' && appointment.scheduledDate === today
     || filter === 'tomorrow' && appointment.scheduledDate === tomorrow
   )).sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id));
-  const history = orderedHistory.filter((entry) =>
-    (smsStatus === 'all' || entry.status === smsStatus) && matches(byId.get(entry.childId)));
-  return { reminders, history, latest };
+  const scopedHistory = orderedHistory.filter(entry => matches(byId.get(entry.childId)));
+  const failedOrNotSent = (entry: SmsEntry) => entry.status === 'Failed' || entry.status === 'Not sent';
+  const history = scopedHistory.filter(entry => smsStatus === 'all' || entry.status === smsStatus ||
+    (smsStatus === 'failed-or-not-sent' && failedOrNotSent(entry)));
+  return { reminders, history, latest, totals: {
+    pending: pending.length,
+    accepted: scopedHistory.filter(entry => entry.status === 'Accepted').length,
+    uncertain: scopedHistory.filter(entry => entry.status === 'Unknown').length,
+    failedOrNotSent: scopedHistory.filter(failedOrNotSent).length,
+  } };
 }

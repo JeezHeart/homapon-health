@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BatchSmsDialog from '../components/BatchSmsDialog';
 import Card from '../components/Card';
+import KpiCard, { KPI_GRID } from '../components/KpiCard';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
 import SmsDialog from '../components/SmsDialog';
@@ -20,7 +21,7 @@ import { useStore } from '../state/store-context';
 import { formatDate, formatTime } from '../utils/dates';
 import { directoryPage } from '../utils/childDirectory';
 import { smsDirectory } from '../utils/smsDirectory';
-import type { ReminderFilter } from '../utils/smsDirectory';
+import type { ReminderFilter, SmsHistoryFilter } from '../utils/smsDirectory';
 import { useSmsAvailability } from '../utils/useSmsAvailability';
 
 // Mga filter options para sa pending appointments sa Prepare reminders view.
@@ -30,16 +31,17 @@ const FILTERS: { id: ReminderFilter; label: string }[] = [
   { id: 'tomorrow', label: 'Tomorrow' },
   { id: 'overdue', label: 'Overdue appointments' },
 ];
-const control = 'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm';
+const control = 'clinic-control';
 const SMS_STATUSES = [
   ['Accepted', 'Accepted · delivery unconfirmed'],
   ['Unknown', 'Uncertain · check before resending'],
   ['Not sent', 'Not sent'],
+  ['failed-or-not-sent', 'Failed or not sent'],
   ['Failed', 'Failed'],
   ['Sent', 'Legacy sent · delivery unverified'],
   ['Demo sent', 'Dry-run sent'],
   ['Demo failed', 'Dry-run failed'],
-] as const satisfies ReadonlyArray<readonly [SmsEntry['status'], string]>;
+] as const satisfies ReadonlyArray<readonly [SmsHistoryFilter, string]>;
 
 // Nagre-render ng SMS Notifications hub: iProg SMS / practice status banner, reminder prep queue, at SMS history log.
 export default function SmsPage() {
@@ -61,7 +63,7 @@ export default function SmsPage() {
   const [messageFor, setMessageFor] = useState<SmsEntry | null>(null);
   // Kino-compute ang enriched appointments, naka-filter na reminders/history, at active pagination slice.
   const all = useMemo(() => enrichedAppointments(appointments, children, records), [appointments, children, records]);
-  const { reminders, history, latest } = smsDirectory(children, all, smsLog, { query, purok, filter, smsStatus });
+  const { reminders, history, latest, totals } = smsDirectory(children, all, smsLog, { query, purok, filter, smsStatus });
   const reminderPage = directoryPage(reminders, Number(params.get('page') ?? 1), size);
   const historyPage = directoryPage(history, Number(params.get('page') ?? 1), size);
   const pagination = view === 'prepare' ? reminderPage : historyPage;
@@ -90,14 +92,23 @@ export default function SmsPage() {
     setSelectedIds((previous) => { const next = new Set(previous); for (const appointment of reminderPage.visible) { if (allShownSelected) next.delete(appointment.id); else next.add(appointment.id); } return next; });
   }
 
-  return <div className="flex flex-col gap-4">
-    {/* Header ng SMS Notifications page */}
-    <div><h1 className="page-title">SMS Notifications</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">Prepare vaccination reminders and review SMS attempts.</p></div>
+  return <div className="flex flex-col gap-3.5">
+    <h1 className="sr-only">SMS Notifications</h1>
     {/* Status banner para malinaw sa staff kung live iProg SMS, disabled, o practice-only ang mode */}
-    <div role="status" className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+    <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm">
       <p className="font-medium">{availability.status === 'disabled' ? 'SMS sending disabled' : availability.status === 'checking' ? 'Checking SMS availability' : availability.status === 'unavailable' ? 'SMS availability could not be verified' : availability.status === 'practice' ? 'Offline preview — no real SMS is sent' : availability.dryRun === true ? 'SMS sending enabled (Dry-run — no real SMS sent)' : 'SMS sending enabled (iProg SMS)'}</p>
       <p className="mt-1 text-xs text-[var(--color-navy-soft)]">{availability.message || (availability.status === 'practice' ? 'Practice entries are labeled separately from real SMS attempts.' : 'Provider acceptance does not confirm delivery to the phone.')}</p>
     </div>
+    <section aria-label="SMS totals" className={KPI_GRID}>
+      <KpiCard label="Reminders to prepare" count={totals.pending} icon="calendar" description="Pending appointments"
+        selected={view === 'prepare' && filter === 'all'} onSelect={() => update({ view: 'prepare', filter: 'all' })} />
+      <KpiCard label="Provider accepted" count={totals.accepted} icon="sms" description="Handset delivery unconfirmed"
+        selected={view === 'history' && smsStatus === 'Accepted'} onSelect={() => update({ view: 'history', smsStatus: 'Accepted' })} />
+      <KpiCard label="Uncertain" count={totals.uncertain} icon="bell" description="Check before resending"
+        selected={view === 'history' && smsStatus === 'Unknown'} onSelect={() => update({ view: 'history', smsStatus: 'Unknown' })} />
+      <KpiCard label="Failed or not sent" count={totals.failedOrNotSent} icon="mail" description="Attempts to check"
+        selected={view === 'history' && smsStatus === 'failed-or-not-sent'} onSelect={() => update({ view: 'history', smsStatus: 'failed-or-not-sent' })} />
+    </section>
     {/* Toggle buttons sa pagitan ng "Prepare reminders" at "SMS history" */}
     <div role="group" aria-label="SMS views" className="flex flex-wrap gap-2">
       {(['prepare', 'history'] as const).map((value) => <button key={value} type="button" aria-pressed={view === value} onClick={() => update({ view: value })} className={`rounded-xl px-4 py-2 text-sm font-medium ${view === value ? 'bg-[var(--color-lavender-soft)] text-[var(--color-navy)]' : 'border border-slate-300 bg-white'}`}>{value === 'prepare' ? 'Prepare reminders' : 'SMS history'}</button>)}
@@ -105,7 +116,7 @@ export default function SmsPage() {
     {/* Filter card: search, purok, at appointment timing filter (lumalabas lang sa prepare view) */}
     <Card>
       <div className="flex flex-wrap gap-3">
-        <input type="search" aria-label="Search SMS by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="min-w-0 w-full flex-none rounded-xl border border-slate-300 px-3 py-2 text-sm md:w-auto md:flex-1" />
+        <input type="search" aria-label="Search SMS by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="clinic-control w-full flex-none md:w-auto md:flex-1" />
         <select aria-label="Filter by purok" value={purok} onChange={(event) => update({ purok: event.target.value })} className={control}><option value="all">All puroks</option>{PUROKS.map((value) => <option key={value}>{value}</option>)}</select>
         {view === 'prepare' && <select aria-label="Reminder appointment filter" value={filter} onChange={(event) => update({ filter: event.target.value })} className={control}>{FILTERS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>}
         {view === 'history' && <select aria-label="Filter by SMS status" value={smsStatus} onChange={(event) => update({ smsStatus: event.target.value })} className={control}>
@@ -122,7 +133,7 @@ export default function SmsPage() {
         <ul className="grid gap-3 md:grid-cols-2">{reminderPage.visible.map((appointment) => {
           const vaccine = vaccineById(appointment.vaccineId);
           const last = latest.get(appointment.childId);
-          return <li key={appointment.id} className="flex min-w-0 items-start rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 text-sm hover:border-[var(--color-accent)]">
+          return <li key={appointment.id} className="clinic-entry flex items-start pl-3 text-sm">
             <input type="checkbox" aria-label={`Select reminder for ${childName(appointment.child)}, ${vaccine?.shortName ?? appointment.vaccineId} dose ${appointment.doseNumber}, ${formatDate(appointment.scheduledDate)}`} checked={selectedIds.has(appointment.id)} onChange={() => selectOne(appointment.id)} className="mt-1 h-4 w-4 shrink-0" />
             <button type="button" aria-haspopup="dialog" onClick={() => setSmsFor(appointment)}
               className="h-full min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-left hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]">
@@ -138,7 +149,7 @@ export default function SmsPage() {
     </Card> : <Card title={`SMS history (${history.length})`}>
       {history.length === 0 ? <EmptyState title="No matching SMS history" message="SMS attempts will appear here. Try clearing any active filters." /> : <ul className="grid gap-3 md:grid-cols-2">{historyPage.visible.map((entry) => {
         const child = childById(children, entry.childId);
-        return <li key={entry.id} className="min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]">
+        return <li key={entry.id} className="clinic-entry">
           <button type="button" aria-haspopup="dialog" onClick={() => setMessageFor(entry)}
             className="block h-full w-full rounded-xl px-3 py-2.5 text-left text-sm hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]">
             <span className="flex flex-wrap items-center justify-between gap-2"><strong>{child ? childName(child) : 'Child record unavailable'}</strong><span className="text-xs font-medium">{entry.status}</span></span>

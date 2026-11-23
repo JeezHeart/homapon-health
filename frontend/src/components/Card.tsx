@@ -7,19 +7,21 @@ import type { ReactNode } from 'react';
 
 interface CardProps {
   title?: string;
+  titleIcon?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
 }
 
 /** Standard white card box na pwedeng lagyan ng heading (`title`) at button/tabs (`action`). */
-export default function Card({ title, action, children }: CardProps) {
+export default function Card({ title, titleIcon, action, children }: CardProps) {
   return (
     <div className="health-card">
       {/* Optional header row para sa card title at right-side action controls */}
       {(title ?? action) && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="health-card-header">
           {title && (
-            <h2 className="text-base font-medium text-[var(--color-navy)]">
+            <h2 className={titleIcon ? 'health-card-title flex items-center gap-2' : 'health-card-title'}>
+              {titleIcon && <span className="summary-stat-icon" aria-hidden="true">{titleIcon}</span>}
               {title}
             </h2>
           )}

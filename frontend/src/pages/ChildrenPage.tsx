@@ -7,6 +7,7 @@
  */
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import KpiCard from '../components/KpiCard';
 import ChildForm from '../components/ChildForm';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
@@ -20,7 +21,7 @@ import type { DirectorySchedule, VaccinationStatus } from '../utils/childDirecto
 import { exportChildrenList } from '../utils/csv';
 import { calcAge, formatDate, formatTime } from '../utils/dates';
 
-const selectClass = 'rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm';
+const selectClass = 'clinic-control';
 
 // Nagpapakita ng compact child directory table kung saan pwedeng i-click ang kahit anong row para buksan ang child profile.
 export default function ChildrenPage() {
@@ -41,10 +42,12 @@ export default function ChildrenPage() {
   const size = [5, 10, 25].find((value) => value === Number(searchParams.get('size'))) ?? 10;
   const requestedPage = Number(searchParams.get('page') ?? 1);
   // Kino-compute yung naka-filter na rows at current page slice gamit yung pure helpers sa utils/childDirectory.
-  const filtered = useMemo(
-    () => childDirectoryRows(children, records, appointments, { query, vaccination: status, schedule, purok, ageGroup }),
-    [children, records, appointments, query, status, schedule, purok, ageGroup],
+  const matchingChildren = useMemo(
+    () => childDirectoryRows(children, records, appointments, { query, schedule, purok, ageGroup }),
+    [children, records, appointments, query, schedule, purok, ageGroup],
   );
+  const fullyImmunized = matchingChildren.filter(row => row.vaccination === 'Fully immunized').length;
+  const filtered = status === 'all' ? matchingChildren : matchingChildren.filter(row => row.vaccination === status);
   const pagination = directoryPage(filtered, requestedPage, size);
   const activeFilters = Boolean(query || status !== 'all' || schedule !== 'all' || purok !== 'all' || ageGroup);
   const returnTo = `/children${searchParams.size ? `?${searchParams.toString()}` : ''}`;
@@ -62,33 +65,15 @@ export default function ChildrenPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Compact page header: count ng nag-match na bata, CSV export, at Register child button */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div>
-          <h1 className="page-title">Child Records</h1>
-          <p className="mt-0.5 text-xs text-[var(--color-navy-soft)]">
-            {filtered.length} of {children.length} children · click any row to open child details
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            title="Export all filtered children, across all pages"
-            onClick={() => exportChildrenList(filtered.map((row) => row.child), appointments, records)}
-            className="rounded-xl border border-slate-300 bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium hover:bg-[var(--color-elevated)]"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => setRegistering(true)}
-            className="rounded-xl bg-[var(--color-accent)] px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-dark)]"
-          >
-            Register child
-          </button>
-        </div>
-      </div>
-
+      <h1 className="sr-only">Child Records</h1>
+      <section aria-label="Child records totals" className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+        <KpiCard label="Registered children" count={matchingChildren.length} icon="children" description="Matching directory filters"
+          selected={status === 'all'} onSelect={() => update({ status: 'all' })} />
+        <KpiCard label="Fully immunized" count={fullyImmunized} icon="records" description="All required doses recorded"
+          selected={status === 'Fully immunized'} onSelect={() => update({ status: 'Fully immunized' })} />
+        <KpiCard label="Partially immunized" count={matchingChildren.length - fullyImmunized} icon="review" description="Required dose records incomplete"
+          selected={status === 'Partially immunized'} onSelect={() => update({ status: 'Partially immunized' })} />
+      </section>
       {/* Compact search & filter bar */}
       <div className="health-card !p-3.5">
         <div className="flex flex-col items-start gap-2.5 xl:flex-row">
@@ -98,7 +83,7 @@ export default function ChildrenPage() {
             placeholder="Search child or guardian"
             value={query}
             onChange={(event) => update({ q: event.target.value })}
-            className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm"
+            className="clinic-control w-full"
           />
           <div className="directory-filters flex shrink-0 flex-wrap gap-2">
             <select aria-label="Filter by purok" className={selectClass} value={purok} onChange={(event) => update({ purok: event.target.value })}>
@@ -123,16 +108,27 @@ export default function ChildrenPage() {
               <button
                 type="button"
                 onClick={() => update({ q: '', status: 'all', schedule: 'all', purok: 'all', age: 'all' })}
-                className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-[var(--color-elevated)]"
+                className="clinic-control"
               >
                 Clear filters
               </button>
             )}
           </div>
         </div>
-        <p className="mt-2 text-xs text-[var(--color-navy-soft)]">
-          Vaccination status uses recorded doses; overdue refers to appointment dates.
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[var(--color-navy-soft)]">
+            Vaccination status uses recorded doses; overdue refers to appointment dates.
+          </p>
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
+            <button type="button" title="Export all filtered children, across all pages"
+              onClick={() => exportChildrenList(filtered.map((row) => row.child), appointments, records)}
+              className="clinic-control font-medium">Export CSV</button>
+            <button type="button" onClick={() => setRegistering(true)}
+              className="min-h-10 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]">
+              Register child
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Compact 5-column click-to-open directory table */}

@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
+import KpiCard, { KPI_GRID } from '../components/KpiCard';
 import AppointmentDialog from '../components/AppointmentDialog';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
@@ -112,6 +113,13 @@ export default function SchedulePage() {
   const vaccineAppointments = vaccine === 'all' ? all : all.filter(appointment => appointment.vaccineId === vaccine);
   const calendarRows = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter: 'all' });
   const filtered = filterSchedule(vaccineAppointments, { query, purok: purokFilter, filter, date: selectedDay });
+  const countScope = selectedDay ? calendarRows.filter(appointment => appointment.scheduledDate === selectedDay) : calendarRows;
+  const scheduleTotals = [
+    { filter: 'upcoming', label: 'Upcoming', count: countScope.filter(item => item.status === 'upcoming' || item.status === 'due-today').length, description: 'Includes appointments due today' },
+    { filter: 'today', label: 'Due today', count: countScope.filter(item => item.status === 'due-today').length, description: 'Pending appointments today' },
+    { filter: 'overdue', label: 'Overdue', count: countScope.filter(item => item.status === 'overdue').length, description: 'Appointments for follow-up' },
+    { filter: 'completed', label: 'Completed', count: countScope.filter(item => item.status === 'completed').length, description: 'Appointments with a recorded dose' },
+  ] as const;
   const pagination = directoryPage(filtered, Number(searchParams.get('page') ?? 1), PAGE_SIZE);
   const activeFilters = Boolean(query || purokFilter !== 'all' || selectedDay || filter !== 'upcoming' || vaccine !== 'all');
   // Gini-group ang appointments per date string (`YYYY-MM-DD`) para mabilis makuha ang count ng bawat calendar cell.
@@ -136,29 +144,17 @@ export default function SchedulePage() {
   }
 
   const selectClass =
-    'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]';
+    'clinic-control';
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header ng Schedule page na may Book Appointment button */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="page-title">
-            Immunization Schedule
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-            Book vaccinations and manage follow-ups.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setBooking(true)}
-          className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
-        >
-          Book Appointment
-        </button>
-      </div>
-
+    <div className="flex flex-col gap-3.5">
+      <h1 className="sr-only">Immunization Schedule</h1>
+      <section aria-label="Appointment totals" className={KPI_GRID}>
+        {scheduleTotals.map(item => <KpiCard key={item.filter} label={item.label} count={item.count}
+          description={item.description} icon={item.filter === 'overdue' ? 'bell' : 'calendar'}
+          alert={item.filter === 'overdue' && item.count > 0} selected={filter === item.filter}
+          onSelect={() => update({ filter: item.filter })} />)}
+      </section>
       {/* Filter card: search bar, status dropdown, at purok selector */}
       <Card>
         <div className="flex flex-wrap items-center gap-3">
@@ -170,55 +166,39 @@ export default function SchedulePage() {
             {VACCINES.map(item => <option key={item.id} value={item.id}>{item.shortName}</option>)}
           </select>
           {activeFilters && <button type="button" onClick={() => update({ q: '', purok: '', date: '', filter: 'upcoming', vaccine: '' })} className={selectClass}>Clear filters</button>}
+          <button type="button" onClick={() => setBooking(true)}
+            className="ml-auto min-h-10 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]">
+            Book Appointment
+          </button>
         </div>
       </Card>
 
       {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
-      <FadeContent className="grid items-start gap-4 xl:grid-cols-[268px_minmax(0,1fr)] xl:items-stretch">
+      <FadeContent className="grid gap-3.5 lg:grid-cols-[minmax(17rem,1fr)_minmax(0,2fr)]">
         {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
-        <div className="min-w-0 xl:[&>.health-card]:h-full">
-          <Card title={monthLabel}>
-            <div className="flex items-center justify-between pb-3">
-              <span className="text-xs font-medium text-[var(--color-navy-soft)]">
-                Select a date
-              </span>
-              <div className="flex gap-1">
-                <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })} className="rounded-lg border border-slate-300 px-2 py-1 text-xs hover:bg-[var(--color-elevated)]">Today</button>
-                <button
-                  type="button"
-                  onClick={() => shiftMonth(-1)}
-                  aria-label="Previous month"
-                  className="rounded-lg border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  onClick={() => shiftMonth(1)}
-                  aria-label="Next month"
-                  className="rounded-lg border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50"
-                >
-                  ›
-                </button>
-              </div>
+          <Card title="Calendar" action={
+            <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })}
+              className="rounded-lg border border-[var(--color-control-border)] px-2.5 py-1 text-xs hover:bg-[var(--color-elevated)]">Today</button>
+          }>
+            <div className="calendar-month-nav">
+              <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" className="calendar-arrow">‹</button>
+              <p aria-live="polite" className="text-sm">{monthLabel}</p>
+              <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" className="calendar-arrow">›</button>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                <div key={d} className="py-1 font-semibold text-[var(--color-navy-soft)]">
-                  {d}
-                </div>
+            <div className="dashboard-calendar">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                <span key={i} className="calendar-weekday" aria-hidden="true">{day}</span>
               ))}
               {cells.map((iso, i) => {
                 if (!iso) {
-                  return <div key={`empty-${i}`} className="p-2" />;
+                  return <span key={`empty-${i}`} aria-hidden="true" />;
                 }
                 const dayNumber = Number(iso.split('-')[2]);
-                const count = byDay.get(iso)?.length ?? 0;
+                const dayAppointments = byDay.get(iso) ?? [];
+                const count = dayAppointments.length;
                 const isSelected = selectedDay === iso;
                 const isToday = iso === todayISO();
-                const hasOverdue = (byDay.get(iso) ?? []).some(
-                  (a) => a.status === 'overdue',
-                );
+                const hasOverdue = dayAppointments.some(a => a.status === 'overdue');
                 return (
                   <button
                     key={iso}
@@ -227,29 +207,29 @@ export default function SchedulePage() {
                     aria-pressed={isSelected}
                     aria-current={isToday ? 'date' : undefined}
                     aria-label={`${formatDate(iso)}: ${count} appointment${count === 1 ? '' : 's'}${isToday ? ', Today' : ''}${isSelected ? ', Selected date' : ''}`}
-                    className={`flex flex-col items-center rounded-xl p-2 transition-colors motion-reduce:transition-none ${isToday ? 'font-bold underline decoration-2 underline-offset-4' : ''} ${
+                    className={`calendar-day ${isToday ? 'calendar-today font-semibold' : ''} ${
                       isSelected
                         ? 'bg-[var(--color-accent-soft)] text-[var(--color-navy)] ring-2 ring-inset ring-[var(--color-accent)]'
-                        : isToday
-                          ? 'bg-amber-100 font-bold text-amber-900'
-                          : 'hover:bg-slate-100'
+                        : ''
                     }`}
                   >
-                    <span>{dayNumber}</span>
-                    <span className={`mt-1 text-[10px] ${hasOverdue ? 'font-semibold text-red-700' : 'text-[var(--color-navy-soft)]'}`}>{count > 0 ? count : '\u00a0'}</span>
+                    <span className={count > 0 ? '-translate-y-0.5' : undefined}>{dayNumber}</span>
+                    {count > 0 && <span aria-hidden="true" className={`absolute bottom-px text-[0.5625rem] leading-none ${hasOverdue ? 'font-semibold text-[var(--color-danger)]' : 'text-[var(--color-navy-soft)]'}`}>{count}</span>}
                   </button>
                 );
               })}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--color-navy-soft)]"><span className="font-bold underline decoration-2 underline-offset-4">Today</span><span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span></div>
-            <p className="mt-3 text-xs text-[var(--color-navy-soft)]">Counts include all statuses matching search, purok, and vaccine. Select a date to view its appointments.</p>
-            {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="mt-3 text-xs font-medium underline">Clear selected date</button>}
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-navy-soft)]">
+              <span className="calendar-today rounded px-1.5 py-0.5 font-semibold">Today</span>
+              <span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span>
+              {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="font-medium underline">Clear date</button>}
+            </div>
+            <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Select a date to see its appointments.</p>
           </Card>
-        </div>
 
-        {/* Appointments table card sa kanan kasama ang pagination footer */}
-        <section aria-labelledby="appointment-list-title" className="health-card flex min-w-0 flex-col overflow-hidden !p-0">
-          <h2 id="appointment-list-title" className="border-b border-[var(--color-border)] px-4 py-3 text-base font-semibold">
+        {/* On desktop the calendar sets the row height, and only the appointment list scrolls. */}
+        <section aria-labelledby="appointment-list-title" className="health-card flex min-w-0 flex-col overflow-hidden !p-0 lg:[contain:size]">
+          <h2 id="appointment-list-title" className="shrink-0 border-b border-[var(--color-border)] px-4 py-3 text-base font-semibold">
             {selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} ({filtered.length})
           </h2>
         {filtered.length === 0 ? (
@@ -258,9 +238,9 @@ export default function SchedulePage() {
             message="Try another date or clear the filters."
           />
         ) : (
-          <ul aria-label="Vaccination appointments" className="grid flex-1 auto-rows-fr gap-2 md:grid-cols-2">
+          <ul aria-label="Vaccination appointments" className={`grid auto-rows-max content-start gap-2 p-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto ${pagination.visible.length > 1 ? 'md:grid-cols-2' : ''}`}>
             {pagination.visible.map(a => (
-              <li key={a.id} className="min-w-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]">
+              <li key={a.id} className="clinic-entry overflow-hidden">
                 <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(a.id)}
                   className="flex h-full w-full items-center gap-3 px-3 py-2 text-left hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]">
                   <span className="child-avatar shrink-0" aria-hidden="true">{a.child.firstName.charAt(0)}{a.child.lastName.charAt(0)}</span>
@@ -274,9 +254,9 @@ export default function SchedulePage() {
             ))}
           </ul>
         )}
-      {filtered.length > 0 && <nav aria-label="Schedule pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] px-4 py-3 text-sm">
+      {filtered.length > 0 && <nav aria-label="Schedule pagination" className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] px-4 py-3 text-sm">
         <p role="status" aria-live="polite">{pagination.first}–{pagination.last} of {filtered.length} appointments</p>
-        <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>
+        {pagination.pages > 1 && <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} disabled:opacity-40`}>Previous</button><span className="text-xs">Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} disabled:opacity-40`}>Next</button></div>}
       </nav>}
         </section>
       </FadeContent>

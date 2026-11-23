@@ -6,6 +6,7 @@
  */
 import { useState } from 'react';
 import Card from '../components/Card';
+import NavIcon from '../components/NavIcon';
 import { apiEnabled } from '../data/api';
 import { SMS_TEMPLATE } from '../data/mockData';
 import { ROLE_LABEL, useStore } from '../state/store-context';
@@ -35,14 +36,14 @@ export default function SettingsPage() {
     : availability.status === 'practice' ? 'Practice only - no real SMS is sent' : 'SMS sending enabled';
 
   return <div className="flex flex-col gap-3 [&_.health-card]:!p-3.5 [&_.health-card>div:first-child]:mb-3">
-    <div><h1 className="page-title">Settings</h1><p className="mt-1 text-sm text-[var(--color-navy-soft)]">Staff account, appearance, and health-center information.</p></div>
+    <h1 className="sr-only">Settings</h1>
     <div className="grid gap-3 md:grid-cols-2">
       {/* Staff profile card: pangalan at assigned RBAC role */}
-      <Card title="Staff account">
+      <Card title="Staff account" titleIcon={<NavIcon name="children" />}>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm"><dt className="text-[var(--color-navy-soft)]">Name</dt><dd className="break-words font-medium">{demoUser?.name ?? 'Not available'}</dd><dt className="text-[var(--color-navy-soft)]">Role</dt><dd className="break-words font-medium">{demoUser ? ROLE_LABEL[demoUser.role] : 'Not available'}</dd></dl>
         {!apiEnabled && <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Local practice session.</p>}
       </Card>
-      <Card title="Staff access">
+      <Card title="Staff access" titleIcon={<NavIcon name="review" />}>
         <p className="text-sm font-medium">Record Review</p>
         <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
           {!apiEnabled ? 'Record Review is available in the connected staff system.'
@@ -52,12 +53,12 @@ export default function SettingsPage() {
         </p>
       </Card>
       {/* Static info ng Barangay Homapon Health Center at regular Wednesday clinic schedule */}
-      <Card title="Health center">
+      <Card title="Health center" titleIcon={<NavIcon name="calendar" />}>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm"><dt className="text-[var(--color-navy-soft)]">Facility</dt><dd className="break-words font-medium">Barangay Homapon Health Center</dd><dt className="text-[var(--color-navy-soft)]">Address</dt><dd className="break-words">Brgy. Homapon, Legazpi City</dd><dt className="text-[var(--color-navy-soft)]">Regular clinic</dt><dd>Every Wednesday</dd></dl>
         <p className="mt-3 text-xs text-[var(--color-navy-soft)]">When a clinic day is a holiday, staff choose the replacement date in Schedule.</p>
       </Card>
       {/* Live SMS status indicator plus preview ng fixed 1-SMS reminder template */}
-      <Card title="SMS reminders">
+      <Card title="SMS reminders" titleIcon={<NavIcon name="sms" />}>
         <div role="status"><p className="text-sm font-medium">{smsStatus}</p>{availability.message && <p className="mt-1 text-xs text-[var(--color-navy-soft)]">{availability.message}</p>}</div>
         <details className="mt-3 rounded-lg border border-[var(--color-border)] px-3 py-2">
           <summary className="cursor-pointer text-sm font-medium">Fixed reminder template</summary>
@@ -70,6 +71,6 @@ export default function SettingsPage() {
     {/* System info card (title at summary ng capstone project) */}
     <Card title="About this system"><p className="break-words font-medium">AI-Powered Child Immunization Health Monitoring and Management System with SMS Notification in Barangay Homapon, Legazpi City</p><p className="mt-3 text-sm text-[var(--color-navy-soft)]">Manages child immunization records, appointments, dated growth measurements, reports, and SMS reminders.</p></Card>
     {/* Demo-only reset card: pang-clear ng temporary local practice records (hindi gagalawin ang real DB) */}
-    {!apiEnabled && <Card title="Local practice data"><p className="text-sm text-[var(--color-navy-soft)]">Local preview starts empty. Clear removes only records added in this local session; it does not change connected database records.</p>{resetDone && <p role="status" className="mt-3 text-sm text-emerald-800">Local practice data cleared.</p>}{resetError && <p role="alert" className="mt-3 text-sm text-red-700">{resetError}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={resetting} onClick={() => { setResetDone(false); void handleReset(); }} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium disabled:opacity-40">{resetting ? 'Clearing...' : confirmReset ? 'Confirm clear' : 'Clear local practice data'}</button>{confirmReset && <button type="button" disabled={resetting} onClick={() => { setConfirmReset(false); setResetError(''); }} className="rounded-xl border border-slate-300 px-4 py-2 text-sm">Cancel reset</button>}</div></Card>}
+    {!apiEnabled && <Card title="Local practice data"><p className="text-sm text-[var(--color-navy-soft)]">Local preview starts empty. Clear removes only records added in this local session; it does not change connected database records.</p>{resetDone && <p role="status" className="mt-3 text-sm text-emerald-800">Local practice data cleared.</p>}{resetError && <p role="alert" className="mt-3 text-sm text-red-700">{resetError}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={resetting} onClick={() => { setResetDone(false); void handleReset(); }} className="clinic-control font-medium">{resetting ? 'Clearing...' : confirmReset ? 'Confirm clear' : 'Clear local practice data'}</button>{confirmReset && <button type="button" disabled={resetting} onClick={() => { setConfirmReset(false); setResetError(''); }} className="clinic-control">Cancel reset</button>}</div></Card>}
   </div>;
 }

@@ -9,9 +9,12 @@ import Layout from '../src/components/Layout.tsx';
 import Worklist from '../src/pages/ReviewWorklistPage.tsx';
 import Dashboard from '../src/pages/DashboardPage.tsx';
 import ChildProfile from '../src/pages/ChildProfilePage.tsx';
+import Children from '../src/pages/ChildrenPage.tsx';
+import Records from '../src/pages/RecordsPage.tsx';
 import Schedule from '../src/pages/SchedulePage.tsx';
 import Sms from '../src/pages/SmsPage.tsx';
 import Reports from '../src/pages/ReportsPage.tsx';
+import Settings from '../src/pages/SettingsPage.tsx';
 import { daysFromNow } from '../src/utils/dates.ts';
 import { StoreContext } from '../src/state/store-context.ts';
 import '../src/index.css';
@@ -86,23 +89,100 @@ async function checkScheduleSmsAndReports() {
     smsLog: [{ id: 'uncertain', childId: child.id, status: 'Unknown', sentAt: daysFromNow(0), message: 'Fictional message' },
       { id: 'accepted', childId: child.id, status: 'Accepted', sentAt: daysFromNow(0), message: 'Fictional accepted message' }] };
   api.smsAvailability = async () => ({ enabled: false, dryRun: true });
-  const mount = (path, Screen) => flushSync(() => root.render(el(StoreContext.Provider, { value: store },
+  const mount = (path, Screen, data = store) => flushSync(() => root.render(el(StoreContext.Provider, { value: data },
     el(MemoryRouter, { key: path, initialEntries: [path] }, el(Routes, {}, el(Route, { element: el(Layout) },
       el(Route, { path: '*', element: el(Screen) })))))));
   const dialog = () => document.querySelector('[role=dialog]');
+  const inFilterCard = (label, filter) => {
+    assert(button(label)?.closest('.health-card')?.contains(document.querySelector(filter)),
+      label + ' should share the filter card');
+  };
+  const opensDialog = async (label, title) => {
+    button(label).click(); await tick();
+    assert(dialog()?.getAttribute('aria-label') === title, label + ' did not open its form');
+    dialog().querySelector('[aria-label="Close dialog"]').click(); await tick();
+  };
   const fit = (label, element = document.documentElement) => {
     assert(element && element.scrollWidth <= element.clientWidth + 1, label + ' overflows horizontally');
+    assert(parseFloat(getComputedStyle(document.querySelector('main')).paddingTop) <= 12,
+      label + ' content starts too far below the header');
   };
   for (const theme of ['light', 'dark']) {
     document.documentElement.dataset.theme = theme;
-    mount('/schedule', Schedule); await tick();
+    mount('/children', Children); await tick();
+    fit('Child Records');
+    inFilterCard('Export CSV', '[aria-label="Search by child or guardian name"]');
+    inFilterCard('Register child', '[aria-label="Search by child or guardian name"]');
+    await opensDialog('Register child', 'Register child');
+    const partialKpi = document.querySelector('[aria-label="Child records totals"] button:nth-child(3)');
+    assert(partialKpi.querySelector('strong').textContent === '1', 'Child Records KPI count incorrect');
+    partialKpi.click(); await tick();
+    assert(document.querySelector('[aria-label="Filter by vaccination status"]').value === 'Partially immunized', 'Child Records KPI did not filter');
+    mount('/records', Records); await tick();
+    fit('Records');
+    inFilterCard('Add Vaccination Record', '[aria-label="Search by child, guardian, or vaccine"]');
+    await opensDialog('Add Vaccination Record', 'Add vaccination record');
+    assert([...document.querySelectorAll('[aria-label="Vaccination record totals"] strong')].map(node => node.textContent).join() === '1,1',
+      'Vaccination record KPI counts incorrect');
+    mount('/settings', Settings); await tick();
+    fit('Settings');
+    assert(document.querySelectorAll('main h2 .summary-stat-icon').length === 4, 'Settings card icons missing');
+    // Keep the same available width even when one page is tall enough to scroll.
+    document.documentElement.style.scrollbarGutter = 'stable';
+    mount('/dashboard', Dashboard); await tick();
+    fit('Dashboard');
+    const dashboardDate = document.querySelector('.calendar-day');
+    const dashboardDay = dashboardDate.getBoundingClientRect();
+    const dashboardCalendarWidth = dashboardDate.closest('.health-card').getBoundingClientRect().width;
+    mount('/schedule?month=' + appointment.scheduledDate.slice(0, 7), Schedule); await tick();
     fit('Schedule');
+    inFilterCard('Book Appointment', '[aria-label="Appointment status filter"]');
+    await opensDialog('Book Appointment', 'Schedule appointment');
+    const overdueKpi = document.querySelector('[aria-label="Appointment totals"] button:nth-child(3)');
+    overdueKpi.click(); await tick();
+    assert(overdueKpi.getAttribute('aria-pressed') === 'true' &&
+      document.querySelector('[aria-label="Appointment status filter"]').value === 'overdue', 'Schedule KPI did not change the status filter');
+    document.querySelector('[aria-label="Appointment totals"] button').click(); await tick();
+    const appointmentDay = [...document.querySelectorAll('button[aria-pressed]')].find(day =>
+      day.getAttribute('aria-label')?.includes(': 1 appointment'));
+    const dayBounds = appointmentDay.getBoundingClientRect();
+    assert(dayBounds.height === dashboardDay.height && dayBounds.width === dashboardDay.width,
+      'Schedule date control dimensions differ from Dashboard');
+    const scheduleCalendar = appointmentDay.closest('.health-card');
+    const scheduleCalendarWidth = scheduleCalendar.getBoundingClientRect().width;
+    assert(Math.abs(scheduleCalendarWidth - dashboardCalendarWidth) <= 1,
+      `Calendar width differs: Schedule ${scheduleCalendarWidth}, Dashboard ${dashboardCalendarWidth}, grid ${getComputedStyle(scheduleCalendar.parentElement).gridTemplateColumns}`);
+    document.documentElement.style.scrollbarGutter = '';
+    appointmentDay.click(); await tick();
+    const list = document.querySelector('[aria-label="Vaccination appointments"]');
+    const appointmentBounds = list.querySelector('li').getBoundingClientRect();
+    const sideBySide = matchMedia('(min-width: 1024px)').matches;
+    const aligned = (calendar, panel) => {
+      const left = calendar.getBoundingClientRect();
+      const right = panel.getBoundingClientRect();
+      return Math.abs(left.top - right.top) <= 1 && Math.abs(left.bottom - right.bottom) <= 1;
+    };
+    if (sideBySide) assert(aligned(scheduleCalendar, list.closest('section')), 'Single appointment panel does not align with calendar');
+    assert(appointmentBounds.height < 130, 'A single appointment stretches vertically');
+    assert(appointmentBounds.width >= list.clientWidth - 32, 'A single appointment leaves an empty grid column');
     document.querySelector('[aria-label="Vaccination appointments"] button').click(); await tick();
     assert(dialog()?.getAttribute('aria-label') === 'Appointment details', 'Appointment details did not open');
     fit('Appointment details', dialog());
     button('Reschedule').click(); await tick();
     assert(dialog()?.getAttribute('aria-label') === 'Reschedule appointment', 'Reschedule did not open');
     fit('Reschedule', dialog());
+    const fullSchedule = ['penta', 'bcg', 'hep-b', 'opv', 'ipv', 'pcv', 'mmr', 'rota'].map((vaccineId, i) =>
+      ({ ...appointment, id: 'booked-' + i, vaccineId, scheduledTime: `09:${String(i * 5).padStart(2, '0')}` }));
+    mount('/schedule?date=' + appointment.scheduledDate, Schedule, { ...store, appointments: fullSchedule }); await tick();
+    const fullList = document.querySelector('[aria-label="Vaccination appointments"]');
+    assert(fullList.children.length === 8, 'Schedule page should keep all eight appointments');
+    if (sideBySide) {
+      const calendar = document.querySelector('.calendar-day').closest('.health-card');
+      const panel = fullList.closest('section');
+      assert(aligned(calendar, panel), 'Full appointment panel does not align with calendar');
+      fullList.scrollTop = fullList.scrollHeight;
+      assert(fullList.scrollTop > 0, `Overflowing appointments cannot be scrolled (${fullList.clientHeight} client, ${fullList.scrollHeight} content)`);
+    }
     mount('/sms', Sms); await tick();
     const checkbox = document.querySelector('main input[type=checkbox]');
     checkbox.click(); await tick();
@@ -111,14 +191,18 @@ async function checkScheduleSmsAndReports() {
     assert(dialog()?.getAttribute('aria-label') === 'Send SMS reminder', 'Reminder card did not open the preview');
     fit('SMS preview', dialog());
     mount('/sms?view=history', Sms); await tick();
-    change(document.querySelector('[aria-label="Filter by SMS status"]'), 'Unknown'); await tick();
+    const uncertainKpi = document.querySelector('[aria-label="SMS totals"] button:nth-child(3)');
+    uncertainKpi.click(); await tick();
+    assert(uncertainKpi.getAttribute('aria-pressed') === 'true', 'Uncertain SMS KPI did not activate');
     assert(document.querySelector('main').textContent.includes('Fictional message') &&
       !document.querySelector('main').textContent.includes('Fictional accepted message'), 'SMS status filter did not isolate uncertain messages');
     fit('SMS History');
     mount('/reports', Reports); await tick();
+    assert(document.querySelectorAll('[aria-label="Current registry summary"] a.kpi-card').length === 4, 'Reports KPI links missing');
     assert(document.querySelector('main').textContent.includes('Weekly doses given'), 'Reports weekly chart missing');
     assert(document.querySelector('main table caption') && document.querySelector('[class~="print:block"] tbody tr'), 'Printable report tables missing');
     fit('Reports');
+    inFilterCard('Print / Save as PDF', '[aria-label="Report purok"]');
     let printRequested = false;
     window.print = () => { printRequested = true; };
     button('Print / Save as PDF').click();
@@ -143,10 +227,67 @@ async function checkDashboardAndProfile() {
       el(Route, { path: 'children', element: el('a', { href: '#child' }, 'Fixture directory') }),
       el(Route, { path: 'children/:id', element: el(ChildProfile) })))))));
     await tick(); await tick();
+    window.scrollTo(0, 0);
+    const header = document.querySelector('.app-header').getBoundingClientRect();
+    assert(header.height <= 56, 'Shared header is taller than the compact layout');
+    if (matchMedia('(min-width: 1024px)').matches) {
+      const brand = document.querySelector('.sidebar-brand').getBoundingClientRect();
+      assert(Math.abs(brand.bottom - header.bottom) <= 1,
+        `Sidebar and header borders do not align (${brand.bottom}, ${header.bottom}, scroll ${window.scrollY})`);
+    } else {
+      assert(document.querySelector('[aria-label="Open navigation"]').getBoundingClientRect().height >= 44,
+        'Compact header reduced the navigation touch target');
+    }
+    const series = document.querySelector('.overview-chart-reveal');
+    assert(series, 'Dashboard chart data series missing');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('output').dataset.motion = reducedMotion ? 'reduced' : 'normal';
+    const reveal = getComputedStyle(series).animationName;
+    assert(reducedMotion ? reveal === 'none' : reveal === 'overview-chart-sweep', 'Dashboard chart motion preference was not applied');
+    if (!reducedMotion) {
+      const keyframes = series.getAnimations()[0]?.effect.getKeyframes();
+      assert(keyframes?.[0].clipPath.includes('100%') && !keyframes.at(-1).clipPath.includes('100%'),
+        'Dashboard chart reveal did not open from the left');
+    }
     const calendarDay = document.querySelector('.dashboard-calendar button[aria-label*=", 1 appointment"]');
     if (renderError) throw renderError;
     assert(calendarDay, 'Dashboard calendar appointment missing: ' + document.querySelector('main')?.textContent.slice(0,250));
     assert(document.querySelector('a[href="/children?age=three-to-five"]'), 'Infant age link missing');
+    const dashboardCard = (title) => [...document.querySelectorAll('main h2')]
+      .find(heading => heading.textContent.trim() === title)?.closest('.health-card');
+    const growth = dashboardCard('Growth Monitoring Summary');
+    const infants = dashboardCard('Infants by age');
+    const summaryRow = infants.parentElement;
+    assert(growth?.parentElement === summaryRow && growth.nextElementSibling === infants &&
+      summaryRow.previousElementSibling.matches('.dashboard-stats') &&
+      summaryRow.nextElementSibling.matches('.dashboard-overview'), 'Growth and age summaries must follow the totals together');
+    const growthBounds = growth.getBoundingClientRect();
+    const ageBounds = infants.getBoundingClientRect();
+    assert(Math.abs(growthBounds.width - ageBounds.width) <= 1, 'Dashboard summary columns have different widths');
+    if (matchMedia('(min-width: 1024px)').matches) {
+      assert(Math.abs(growthBounds.top - ageBounds.top) <= 1 && growthBounds.right < ageBounds.left,
+        'Growth must be to the left of infants on desktop');
+    } else {
+      assert(growthBounds.bottom < ageBounds.top, 'Summary cards should stack on narrow screens');
+    }
+    const growthTileButtons = () => dashboardCard('Growth Monitoring Summary')?.querySelectorAll(':scope > .grid > button');
+    // Wait for both the lazy widget and its measurements request.
+    for (let i = 0; i < 35 && growthTileButtons()?.length !== 4; i++) await tick();
+    const viewGrowth = dashboardCard('Growth Monitoring Summary')?.querySelector('button');
+    assert(viewGrowth, 'Growth summary did not finish loading');
+    if (matchMedia('(min-width: 1024px)').matches) {
+      const growthTiles = growthTileButtons();
+      const ageTiles = infants.querySelectorAll('li a');
+      assert(growthTiles?.length === 4 && ageTiles.length === 4, 'Dashboard summary tiles missing');
+      assert([0, 2].every(index => Math.abs(growthTiles[index].getBoundingClientRect().top -
+        ageTiles[index].getBoundingClientRect().top) <= 1), 'Growth and age tiles must line up');
+      assert(summaryRow.getBoundingClientRect().height <= 160, 'Dashboard summary row is too tall');
+    }
+    viewGrowth.click(); await tick();
+    const growthDialog = document.querySelector('[role=dialog][aria-label="All growth monitoring records"]');
+    assert(growthDialog?.querySelector('a[href="/children/preview?tab=growth"]'), 'Growth summary no longer links to child growth');
+    growthDialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await tick();
     calendarDay.click(); await tick();
     const preview = document.querySelector('#dashboard-date-preview');
     assert(preview?.textContent.includes('Fictional Infant'), 'Calendar did not preview the fictional appointment');
@@ -204,7 +345,9 @@ async function checkWorklist(draft) {
     return { findings: mode === 'empty' ? [] : findings.map((item, i) => available && i === 11
       ? { ...item, reviewStatus: status, eventId: status === 'pending' ? null : String(writes) } : item),
     trackingAvailable: available, summary: { date: '2026-11-21', findings: mode === 'empty' ? 0 : 12,
-      uniqueChildren: mode === 'empty' ? 0 : 12, statuses: null,
+      uniqueChildren: mode === 'empty' ? 0 : 12,
+      statuses: available ? { pending: 11 + Number(status === 'pending'), verified: Number(status === 'verified'),
+        escalated: Number(status === 'escalated'), resolved: Number(status === 'resolved') } : null,
       guidance: { source: available ? 'ai_assisted' : 'reference', explanation: 'Check documentation', checklist: ['Compare records'], references: [] } } };
   };
   api.transitionReview = async (input) => {
@@ -235,6 +378,7 @@ async function checkWorklist(draft) {
   }
   findNav()?.click();
   await tick();
+  assert(parseFloat(getComputedStyle(main()).paddingTop) <= 12, 'Record Review content starts too far below the header');
   assert(main().textContent.includes('Loading review findings'), 'Loading state missing');
   await settle();
   assert(main().querySelector('[role=alert]')?.textContent.includes('could not be loaded'), 'Timeout error state missing');
@@ -261,6 +405,10 @@ async function checkWorklist(draft) {
   change(search, 'Child 11'); await settle();
   mode = 'tracked'; window.dispatchEvent(new Event('focus')); await settle();
   assert(main().textContent.includes('AI-assisted documentation checklist'), 'AI summary state missing');
+  const pendingKpi = main().querySelector('#daily-review-summary .kpi-card');
+  pendingKpi.click(); await settle();
+  assert(pendingKpi.getAttribute('aria-pressed') === 'true' && headings().length === 1, 'Review KPI did not filter pending findings');
+  pendingKpi.click(); await settle();
   const trigger = main().querySelector('button[aria-haspopup=dialog]');
   trigger.focus(); trigger.click(); await settle();
   const detail = () => document.querySelector('[role=dialog]');

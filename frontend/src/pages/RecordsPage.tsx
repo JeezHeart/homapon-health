@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
+import KpiCard from '../components/KpiCard';
 import AppointmentDialog from '../components/AppointmentDialog';
 import CorrectionForm from '../components/CorrectionForm';
 import Dialog from '../components/Dialog';
@@ -91,41 +92,27 @@ export default function RecordsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header ng page: count ng nag-match na doses at Add Vaccination Record button */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="page-title">
-            Vaccination Records
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-            {shownDoses} of {records.length} recorded doses · click a child to view or fix past entries
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setAddingForChildId(null)}
-          className="rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-accent-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
-        >
-          Add Vaccination Record
-        </button>
-      </div>
-
+      <h1 className="sr-only">Vaccination Records</h1>
+      <section aria-label="Vaccination record totals" className="grid grid-cols-2 gap-2.5">
+        <KpiCard label="Recorded doses" count={shownDoses} icon="records" description="Matching current filters" />
+        <KpiCard label="Children with records" count={groups.length} icon="children" description="At least one matching dose" />
+      </section>
       {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
       <Card>
-        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(150px,1fr)_auto_auto_140px_140px_auto]">
+        <div className="flex flex-wrap items-end gap-2.5">
           <input
             type="search"
             aria-label="Search by child, guardian, or vaccine"
             placeholder="Search child, guardian, or vaccine"
             value={query}
             onChange={(e) => update({ q: e.target.value })}
-            className="min-w-0 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm sm:col-span-2 xl:col-span-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="clinic-control flex-[1_1_100%] lg:flex-[1_1_11rem]"
           />
           <select
             aria-label="Filter by vaccine"
             value={vaccineFilter}
             onChange={(e) => update({ vaccine: e.target.value })}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="clinic-control"
           >
             <option value="all">All vaccines</option>
             {VACCINES.map((v) => (
@@ -136,13 +123,17 @@ export default function RecordsPage() {
           </select>
           <select aria-label="Filter by dose number" value={doseNumber ?? 'all'}
             onChange={(event) => update({ dose: event.target.value })}
-            className="min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+            className="clinic-control">
             <option value="all">All doses</option>
             {doseOptions.map(dose => <option key={dose} value={dose}>Dose {dose}</option>)}
           </select>
-          <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">From date<input type="date" value={from} max={to || undefined} onChange={(event) => update({ from: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
-          <label className="min-w-0 flex-1 text-xs text-[var(--color-navy-soft)]">To date<input type="date" value={to} min={from || undefined} onChange={(event) => update({ to: event.target.value })} className="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
-          {hasFilters && <button type="button" onClick={() => update({ q: '', vaccine: 'all', dose: 'all', from: '', to: '' })} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">Clear filters</button>}
+          <label className="min-w-0 flex-[1_1_8rem] text-xs text-[var(--color-navy-soft)]">From date<input type="date" value={from} max={to || undefined} onChange={(event) => update({ from: event.target.value })} className="clinic-control mt-1 block w-full" /></label>
+          <label className="min-w-0 flex-[1_1_8rem] text-xs text-[var(--color-navy-soft)]">To date<input type="date" value={to} min={from || undefined} onChange={(event) => update({ to: event.target.value })} className="clinic-control mt-1 block w-full" /></label>
+          {hasFilters && <button type="button" onClick={() => update({ q: '', vaccine: 'all', dose: 'all', from: '', to: '' })} className="clinic-control">Clear filters</button>}
+          <button type="button" onClick={() => setAddingForChildId(null)}
+            className="ml-auto min-h-10 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]">
+            Add Vaccination Record
+          </button>
         </div>
         {invalidRange && <p role="alert" className="mt-3 text-sm text-red-700">From date must be on or before To date.</p>}
       </Card>
@@ -170,7 +161,7 @@ export default function RecordsPage() {
               <section
                 key={child.id}
                 aria-label={`Records for ${childName(child)}`}
-                className="flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-colors hover:border-[var(--color-accent)]"
+                className="clinic-entry flex flex-col justify-between overflow-hidden"
               >
                 <button
                   type="button"

@@ -76,14 +76,14 @@ test('dashboard session links to its booked date and empty state avoids confirmi
   assert.match(html, /Jan 8, 2099/);
   const empty = renderDashboard([]);
   assert.match(empty, /No appointments booked/);
-  assert.match(empty, /Confirm holiday changes with staff/);
+  assert.match(empty, /Next regular Wednesday/);
   assert.doesNotMatch(empty, /href="\/schedule\?date=2099-01-08/);
 });
 
 test('calendar markers describe appointment status in words as well as color', async () => {
   const { todayISO } = await server.ssrLoadModule('/src/utils/dates.ts');
   const html = renderDashboard([{ id: 'today', childId: child.id, vaccineId: 'bcg', doseNumber: 1, scheduledDate: todayISO() }]);
-  assert.match(html, /aria-current="date" aria-label="[^"]*1 appointment, Due today" title="Due today"/);
+  assert.match(html, /<button\b(?=[^>]*aria-current="date")(?=[^>]*aria-label="[^"]*1 appointment, Due today")[^>]*>/);
 });
 
 test('session date links select the correct calendar month and day; invalid dates are ignored', async () => {
@@ -96,12 +96,11 @@ test('session date links select the correct calendar month and day; invalid date
   const html = renderSchedule('2099-01-08');
   assert.match(html, /January 2099/);
   assert.match(html, /Jan 8, 2099/);
-  assert.match(html, /aria-pressed="true"/);
-  assert.match(html, /aria-label="[^"]*, Selected date"/);
+  assert.match(html, /aria-pressed="true" aria-label="[^"]*, Selected date"/);
   const { todayISO } = await server.ssrLoadModule('/src/utils/dates.ts');
   assert.match(renderSchedule(todayISO()), /aria-pressed="true" aria-current="date" aria-label="[^"]*, Today, Selected date"/);
   for (const invalid of ['2099-02-31', 'not-a-date']) {
-    assert.doesNotMatch(renderSchedule(invalid), /aria-pressed="true"/);
+    assert.doesNotMatch(renderSchedule(invalid), /aria-label="[^"]*, Selected date"/);
     assert.doesNotMatch(renderSchedule(invalid), /January 2099/);
   }
 });

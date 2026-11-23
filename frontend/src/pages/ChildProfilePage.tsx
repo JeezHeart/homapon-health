@@ -130,7 +130,7 @@ export default function ChildProfilePage() {
     next && next.status !== 'completed' ? next : undefined;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3.5">
       {/* Back link pabalik sa pinanggalingang directory, schedule, o records page */}
       <Link
         to={returnTo}
@@ -171,7 +171,7 @@ export default function ChildProfilePage() {
         <button
           type="button"
           onClick={() => setEditingChild(true)}
-          className="rounded-xl border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="clinic-control font-semibold"
         >
           Edit record
         </button>

@@ -9,6 +9,17 @@
 import type { Appointment, DoseRecord } from '../data/mockData';
 import { todayISO } from './dates';
 
+export function dosesByDayThisMonth(records: Pick<DoseRecord, 'dateAdministered'>[], referenceISO = todayISO()) {
+  const month = referenceISO.slice(0, 7);
+  const counts = Array<number>(Number(referenceISO.slice(8, 10))).fill(0);
+  for (const { dateAdministered } of records) {
+    if (dateAdministered.slice(0, 7) !== month || dateAdministered > referenceISO) continue;
+    const index = Number(dateAdministered.slice(8, 10)) - 1;
+    if (index >= 0 && index < counts.length) counts[index]++;
+  }
+  return counts;
+}
+
 /**
  * Gumagawa ng 6 monthly buckets (oldest hanggang pinakabago) na nagtatapos sa buwan ng `referenceISO`.
  * Recorded counts lang ito: hindi porke may naka-schedule na appointment ay ibig sabihin um-attend na.

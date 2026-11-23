@@ -4,7 +4,13 @@ import { createServer } from 'vite';
 
 const server = await createServer({ envDir: false, server: { middlewareMode: true, watch: null, hmr: false } });
 test.after(() => server.close());
-const { overviewMonths } = await server.ssrLoadModule('/src/utils/dashboardOverview.ts');
+const { dosesByDayThisMonth, overviewMonths } = await server.ssrLoadModule('/src/utils/dashboardOverview.ts');
+
+test('month-to-date sparkline includes zero-dose days and excludes future dates and other months', () => {
+  const records = ['2026-10-31', '2026-11-01', '2026-11-01', '2026-11-03', '2026-11-04']
+    .map(dateAdministered => ({ dateAdministered }));
+  assert.deepEqual(dosesByDayThisMonth(records, '2026-11-03'), [2, 0, 1]);
+});
 
 test('six-month window crosses years and excludes dates outside the displayed period', () => {
   const result = overviewMonths([

@@ -21,12 +21,19 @@ test('fictional Record Review workflow in desktop and narrow Edge windows', {
     build: { outDir, lib: { entry, formats: ['iife'], name: 'ReviewTest', cssFileName: 'ReviewTest', fileName: () => 'fixture.js' } } });
   const page = join(outDir, 'index.html');
   await writeFile(page, '<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="ReviewTest.css"><div id="root"></div><output id="result"></output><script src="fixture.js"></script>');
-  for (const width of [1280, 500]) {
+  for (const { width, reducedMotion } of [
+    { width: 1280, reducedMotion: false },
+    { width: 500, reducedMotion: false },
+    { width: 500, reducedMotion: true },
+  ]) {
     const { stdout } = await promisify(execFile)(process.env.REVIEW_TEST_BROWSER, [
     '--headless', '--disable-gpu', '--disable-background-networking', '--no-first-run',
-    '--user-data-dir=' + join(profile, 'browser-' + width), '--window-size=' + width + ',900',
+    '--user-data-dir=' + join(profile, 'browser-' + width + '-' + reducedMotion), '--window-size=' + width + ',900',
+    ...(reducedMotion ? ['--force-prefers-reduced-motion'] : []),
     '--virtual-time-budget=5000', '--dump-dom', pathToFileURL(page).href,
   ], { timeout: 45000 });
-    assert.match(stdout.match(/<output[^>]*>.*?<\/output>/)?.[0] ?? '', /PASS/, `Viewport ${width}`);
+    const result = stdout.match(/<output[^>]*>.*?<\/output>/)?.[0] ?? '';
+    assert.match(result, /PASS/, `Viewport ${width}, reduced motion ${reducedMotion}`);
+    if (reducedMotion) assert.match(result, /data-motion="reduced"/);
   }
 });

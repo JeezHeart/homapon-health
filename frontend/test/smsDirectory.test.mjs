@@ -47,3 +47,15 @@ test('SMS status filters history without changing latest reminders or merging ac
   assert.deepEqual(result.reminders, directory({ purok: 'Purok 2' }).reminders);
   assert.deepEqual(directory({ smsStatus: 'Unknown' }).history.map(({ id }) => id), ['new-log']);
 });
+
+test('failure KPI and filter include failed or unsent attempts and exclude demo failures', () => {
+  const history = [
+    ...log,
+    ...['Failed', 'Not sent', 'Demo failed'].map((status) => ({ ...log[0], id: status, status })),
+  ];
+  const summarize = (filters) => smsDirectory(children, appointments, history, filters, '2026-11-12', '2026-11-13');
+  const result = summarize({ smsStatus: 'failed-or-not-sent' });
+  assert.deepEqual(result.history.map(({ status }) => status).sort(), ['Failed', 'Not sent']);
+  assert.equal(result.totals.failedOrNotSent, 2);
+  assert.deepEqual(result.totals, summarize({}).totals);
+});

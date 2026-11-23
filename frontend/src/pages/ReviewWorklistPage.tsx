@@ -20,10 +20,10 @@ import { filterReviewRows, ISSUE_LABELS, reviewRows, type ReviewFinding } from '
 
 type LoadState = { status: 'loading' | 'error' } | { status: 'ready'; findings: ReviewFinding[]; trackingAvailable: boolean; summary?: DailyReviewSummary };
 
-const CONTROL = 'min-w-0 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm';
+const CONTROL = 'clinic-control w-full';
 const findingId = (row: ReviewFinding) => row.findingKey ?? JSON.stringify([row.childId, row.issueType, row.recordIds]);
 const REVIEW_STATUSES = ['pending', 'verified', 'escalated', 'resolved'] as const;
-const BUTTON = 'rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-medium disabled:opacity-50';
+const BUTTON = 'clinic-control font-medium';
 
 // Nagre-render ng Record Review queue kung saan tsine-check ng staff yung mga na-flag na dose records (decision support lang, hindi diagnosis).
 export default function ReviewWorklistPage() {
@@ -78,12 +78,8 @@ export default function ReviewWorklistPage() {
     setParams(next, { replace: true });
   }
 
-  return <div className="flex flex-col gap-4">
-    {/* Header ng Record Review worklist */}
-    <header>
-      <h1 className="page-title">Record Review</h1>
-      <p className="mt-1 text-sm text-[var(--color-navy-soft)]">Check vaccination documentation. Priority tells you which records to verify first.</p>
-    </header>
+  return <div className="flex flex-col gap-3.5">
+    <h1 className="sr-only">Record Review</h1>
     {/* Guard states: offline/disconnected, loading, error with retry, o ready view */}
     {!canReview ? <EmptyState title="Staff connection required" message="Connect to the staff system to review saved vaccination records." />
       : load.status === 'loading' ? <p role="status">Loading review findings…</p>
@@ -96,7 +92,10 @@ export default function ReviewWorklistPage() {
       </Card>
       : <>
         {/* Daily review summary card at status note kapag hindi available yung tracking table */}
-        {load.status === 'ready' && load.summary && <div id="daily-review-summary" tabIndex={-1}><DailyReviewSummaryCard summary={load.summary} /></div>}
+        {load.status === 'ready' && load.summary && <div id="daily-review-summary" tabIndex={-1}>
+          <DailyReviewSummaryCard summary={load.summary} selectedStatus={reviewStatus}
+            onStatusSelect={trackingAvailable ? (status) => update('reviewStatus', reviewStatus === status ? 'all' : status) : undefined} />
+        </div>}
         {load.status === 'ready' && !load.trackingAvailable && <p role="status" className="text-sm text-[var(--color-navy-soft)]">Review tracking is unavailable. Screening and guidance are still available.</p>}
         {/* Filter bar: search, issue category, priority, at sort order */}
         <Card>
@@ -143,7 +142,7 @@ export default function ReviewWorklistPage() {
           <ul aria-label="Review findings" className="grid gap-2 md:grid-cols-2">
             {page.visible.map(row => <li key={findingId(row)} className="min-w-0">
               <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(findingId(row))}
-                className="block h-full w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-left hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+                className="clinic-entry block h-full w-full px-3 py-2.5 text-left">
                 <strong className="block break-words">{row.name}</strong>
                 <span className="block text-sm">{ISSUE_LABELS[row.issueType] ?? 'Documentation issue'} ? {row.vaccine}{row.doses.length > 0 && ' ? Dose ' + row.doses.join(', ')}</span>
                 <span className="mt-1 flex flex-wrap gap-2 text-xs">
@@ -154,7 +153,7 @@ export default function ReviewWorklistPage() {
             </li>)}
             {page.visible.length === 5 && load.status === 'ready' && load.summary && (
               <li className="min-w-0">
-                <a href="#daily-review-summary" className="flex h-full min-h-20 flex-col justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]">
+                <a href="#daily-review-summary" className="clinic-entry flex h-full min-h-20 flex-col justify-center px-3 py-2.5">
                   <span className="font-semibold">Daily review summary</span>
                   <span className="text-sm text-[var(--color-navy-soft)]">See finding totals and review guidance</span>
                 </a>

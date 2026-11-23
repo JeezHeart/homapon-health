@@ -81,13 +81,7 @@ export default function GrowthSummary() {
           </div>
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 text-xs text-[var(--color-navy-soft)]">
-              <p>
-                <strong className="font-semibold text-[var(--color-navy)]">{recorded}</strong> of {children.length} registered children have dated measurements.{!apiEnabled && ' Demo records only.'}
-              </p>
-              <p>Review indicators only, not diagnoses.</p>
-            </div>
-            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1.5">
               {groups.map((group) => {
                 const count = rows.filter((r) => r.group === group.id).length;
                 return (
@@ -95,17 +89,17 @@ export default function GrowthSummary() {
                     key={group.id}
                     type="button"
                     onClick={() => setSelected(group.id)}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]"
+                    className="flex min-h-9 min-w-0 items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] px-2.5 text-left hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                   >
-                    <span className="min-w-0">
-                      <span className="block text-xl font-semibold leading-tight text-[var(--color-navy)]">{count}</span>
-                      <span className="mt-0.5 block text-xs text-[var(--color-navy-soft)]">{group.label}</span>
-                    </span>
-                    <span aria-hidden="true" className="text-xs text-[var(--color-navy-soft)]">›</span>
+                    <span className="min-w-0 text-xs text-[var(--color-navy-soft)]">{group.label}</span>
+                    <span className="text-base font-semibold tabular-nums">{count}</span>
                   </button>
                 );
               })}
             </div>
+            <p className="mt-1.5 text-xs text-[var(--color-navy-soft)]">
+              {recorded} of {children.length} children have dated measurements. Review indicators only.{!apiEnabled && ' Demo records only.'}
+            </p>
           </>
         )}
       </Card>

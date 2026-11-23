@@ -23,7 +23,7 @@ test('labels exact findings and children separately and omits unavailable status
 test('renders supplied status counts and distinguishes model-assisted from reference guidance', () => {
   const summary = { ...data, statuses: { pending: 0, verified: 1, escalated: 2, resolved: 1 } };
   const html = renderToStaticMarkup(createElement(Summary, { summary }));
-  assert.match(html, /Pending findings<\/dt><dd[^>]*>0<\/dd>/);
+  assert.match(html, /Pending findings<\/span><\/span><strong[^>]*>0<\/strong>/);
   assert.match(html, /Reference guidance/);
   const assisted = { ...summary, guidance: { ...summary.guidance, source: 'ai_assisted' } };
   assert.match(renderToStaticMarkup(createElement(Summary, { summary: assisted })), /AI-assisted documentation checklist/);
