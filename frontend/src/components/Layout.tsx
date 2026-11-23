@@ -4,7 +4,7 @@
  * Hawak nito yung left sidebar menu (plus mobile drawer), top header na may child search bar,
  * dark/light theme toggle, overdue alert badge, staff name/role badge, at yung React Router `<Outlet />`.
  */
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
@@ -139,7 +139,9 @@ export default function Layout() {
       {/* Dito lumalabas yung active page content plus warning banner pag offline o down ang API */}
       <main id="main-content" tabIndex={-1} key={location.pathname} className={`app-content${['/', '/children', '/schedule'].includes(location.pathname) ? '' : ' page-enter'}`}>
         {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
-        <Outlet />
+        <Suspense fallback={<p role="status" className="text-sm text-[var(--color-navy-soft)]">Loading page…</p>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
     {/* Slide-over navigation drawer para sa cellphone at tablet screens */}

@@ -6,22 +6,24 @@
  * `/schedule`, `/records`, `/review`, `/sms`, `/reports`, `/settings`) papunta sa kani-kanilang page.
  * Check mo dito kapag may broken route, stuck sa loading, ayaw lumabas ng LoginPage, o lumalabas yung "Records could not be loaded".
  */
+import { lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
-import ChildProfilePage from './pages/ChildProfilePage';
-import ChildrenPage from './pages/ChildrenPage';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
-import RecordsPage from './pages/RecordsPage';
-import ReviewWorklistPage from './pages/ReviewWorklistPage';
-import ReportsPage from './pages/ReportsPage';
-import SchedulePage from './pages/SchedulePage';
-import SettingsPage from './pages/SettingsPage';
-import SmsPage from './pages/SmsPage';
 import { StoreProvider } from './state/store';
 import { useStore } from './state/store-context';
 import { apiEnabled } from './data/api';
 import { supabase } from './data/supabaseClient';
+
+const ChildProfilePage = lazy(() => import('./pages/ChildProfilePage'));
+const ChildrenPage = lazy(() => import('./pages/ChildrenPage'));
+const RecordsPage = lazy(() => import('./pages/RecordsPage'));
+const ReviewWorklistPage = lazy(() => import('./pages/ReviewWorklistPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const SchedulePage = lazy(() => import('./pages/SchedulePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SmsPage = lazy(() => import('./pages/SmsPage'));
 
 // Binabasa yung auth at connection status mula sa StoreProvider para pumili kung loading, LoginPage, error screen, o main routes ang ipapakita.
 function Shell() {
