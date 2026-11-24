@@ -244,19 +244,19 @@ const PREPARATION = [
   { title: 'Dose entry check', fields: ['Vaccine and dose to check', 'Detail to confirm', 'What the source shows', 'Unresolved detail'] },
   { title: 'Midwife handoff', fields: ['Sources already checked', 'Remaining discrepancy', 'Question for the midwife'] },
 ];
-// Static English + Filipino FAQ cards na kasama sa preparation guidance para madaling basahin ng BHW/staff.
+// Static English + everyday Tagalog/Taglish FAQ cards na kasama sa preparation guidance para madaling basahin ng BHW/staff.
 const QUESTIONS = [
   {
     question: 'Which source should I check?',
-    filipinoQuestion: 'Aling tala ang dapat kong tingnan?',
+    filipinoQuestion: 'Aling record ang dapat kong i-check?',
     en: 'Start with the immunization card and clinic register. Compare them with the flagged entry.',
-    fil: 'Tingnan muna ang immunization card at rehistro ng klinika. Ihambing ang mga ito sa minarkahang tala.',
+    fil: 'I-check muna ang immunization card ng bata at ang logbook ng clinic, tapos ikumpara sa naka-flag na record dito.',
   },
   {
     question: 'What if I cannot confirm the entry?',
-    filipinoQuestion: 'Paano kung hindi ko makumpirma ang tala?',
+    filipinoQuestion: 'Paano kung hindi ko ma-confirm ang record?',
     en: 'Document what you checked and what remains unclear. Bring unresolved discrepancies to the midwife.',
-    fil: 'Itala ang iyong sinuri at kung ano ang hindi pa malinaw. Ipaalam sa midwife ang hindi pa nalulutas na pagkakaiba.',
+    fil: 'Isulat lang sa remarks kung ano ang na-check mo at kung alin ang hindi pa sigurado, tapos i-refer sa midwife.',
   },
 ];
 
