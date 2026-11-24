@@ -1,11 +1,11 @@
-// Resolve appearance before React or CSS paints. Saved choices override the OS.
+// Resolve appearance before React or CSS paints. Defaults to light mode; saved choices override.
 (function () {
-  var theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var theme = 'light';
   try {
     var saved = localStorage.getItem('homapon-theme');
     if (saved === 'light' || saved === 'dark') theme = saved;
   } catch {
-    // The OS preference still works when storage is unavailable.
+    // Light mode stays the safe default when storage is unavailable.
   }
   document.documentElement.dataset.theme = theme;
 })();

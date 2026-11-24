@@ -10,34 +10,23 @@ import { rememberTheme, sessionPreference, setThemePreference, THEME_CHANGE_EVEN
 /** Accessible switch button na nagto-toggle ng `data-theme="light" | "dark"` sa root HTML element. */
 export default function ThemeToggle() {
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark');
-  // Nakikinig sa OS dark-mode changes at localStorage events para laging in-sync ang theme across tabs.
+  // Nakikinig sa localStorage events para laging in-sync ang theme across browser tabs (default: light mode).
   useEffect(() => {
-    const system = window.matchMedia('(prefers-color-scheme: dark)');
     // Nire-refresh ang local switch state base sa current `data-theme` ng document.
     const syncCurrentPage = () => setDark(document.documentElement.dataset.theme === 'dark');
-    // Sumusunod sa OS theme change kapag walang naka-save na manual preference ang user.
-    const systemChanged = () => {
-      let saved: string | null = null;
-      try { saved = localStorage.getItem(THEME_KEY); } catch { /* Use session choice or OS. */ }
-      if (sessionPreference || saved === 'light' || saved === 'dark') return;
-      document.documentElement.dataset.theme = system.matches ? 'dark' : 'light';
-      syncCurrentPage();
-    };
     // Nagsi-sync ng theme kapag binago ito ng user sa ibang open browser tab.
     const sync = (event: StorageEvent) => {
       if (event.key !== THEME_KEY && event.key !== null) return;
       rememberTheme(event.newValue === 'light' || event.newValue === 'dark' ? event.newValue : null);
-      const next = sessionPreference ? sessionPreference === 'dark' : system.matches;
+      const next = sessionPreference === 'dark';
       document.documentElement.dataset.theme = next ? 'dark' : 'light';
       setDark(next);
     };
     window.addEventListener('storage', sync);
     window.addEventListener(THEME_CHANGE_EVENT, syncCurrentPage);
-    system.addEventListener('change', systemChanged);
     return () => {
       window.removeEventListener('storage', sync);
       window.removeEventListener(THEME_CHANGE_EVENT, syncCurrentPage);
-      system.removeEventListener('change', systemChanged);
     };
   }, []);
 

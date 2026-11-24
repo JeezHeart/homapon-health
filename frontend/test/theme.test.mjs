@@ -14,18 +14,18 @@ function resolveTheme({ saved = null, dark = false, blocked = false, mediaAvaila
   return document.documentElement.dataset.theme;
 }
 
-test('first-visit appearance follows the operating system before React loads', () => {
-  assert.equal(resolveTheme({ dark: true }), 'dark');
+test('first-visit appearance defaults to light mode before React loads', () => {
+  assert.equal(resolveTheme({ dark: true }), 'light');
   assert.equal(resolveTheme({ dark: false }), 'light');
 });
 
-test('saved light and dark preferences override the operating system', () => {
+test('saved light and dark preferences override the default', () => {
   assert.equal(resolveTheme({ saved: 'light', dark: true }), 'light');
   assert.equal(resolveTheme({ saved: 'dark', dark: false }), 'dark');
 });
 
-test('unavailable storage and invalid preferences safely use the operating system', () => {
-  assert.equal(resolveTheme({ blocked: true, dark: true }), 'dark');
-  assert.equal(resolveTheme({ saved: 'invalid', dark: true }), 'dark');
+test('unavailable storage and invalid preferences safely use light mode', () => {
+  assert.equal(resolveTheme({ blocked: true, dark: true }), 'light');
+  assert.equal(resolveTheme({ saved: 'invalid', dark: true }), 'light');
   assert.equal(resolveTheme({ mediaAvailable: false }), 'light');
 });
