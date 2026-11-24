@@ -11,6 +11,7 @@ import Card from '../components/Card';
 import Dialog from '../components/Dialog';
 import DailyReviewSummaryCard from '../components/DailyReviewSummaryCard';
 import EmptyState from '../components/EmptyState';
+import PageSkeleton from '../components/PageSkeleton';
 import ReviewGuidancePanel from '../components/ReviewGuidancePanel';
 import ReviewTrackingPanel from '../components/ReviewTrackingPanel';
 import { api, apiEnabled, type DailyReviewSummary } from '../data/api';
@@ -82,7 +83,7 @@ export default function ReviewWorklistPage() {
     <h1 className="sr-only">Record Review</h1>
     {/* Guard states: offline/disconnected, loading, error with retry, o ready view */}
     {!canReview ? <EmptyState title="Staff connection required" message="Connect to the staff system to review saved vaccination records." />
-      : load.status === 'loading' ? <p role="status">Loading review findings…</p>
+      : load.status === 'loading' ? <PageSkeleton label="Loading review findings…" />
       : load.status === 'error' ? <Card>
         <p role="alert" className="mb-3">Review findings could not be loaded.</p>
         <button type="button" className={BUTTON} onClick={() => {

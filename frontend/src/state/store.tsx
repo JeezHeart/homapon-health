@@ -19,6 +19,7 @@ import type { Appointment, Child, DoseRecord, SmsEntry } from '../data/mockData'
 import { api, apiEnabled, apiError } from '../data/api';
 import { supabase } from '../data/supabaseClient';
 import { setThemePreference } from '../utils/themePreference';
+import { showToast } from '../utils/toast';
 import type { DemoUser, StoreValue } from './store-context';
 import { StoreContext } from './store-context';
 
@@ -146,6 +147,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             const child = await api.createChild(data);
             setChildList((prev) => [...prev, child]);
+            showToast('Child record saved');
             return child;
           } catch (e) {
             throw new Error(apiError(e));
@@ -156,6 +158,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const child: Child = { ...childData, id: crypto.randomUUID() };
         setDemoGrowth((prev) => [...prev, { ...initialMeasurement, id: crypto.randomUUID(), childId: child.id }]);
         setChildList((prev) => [...prev, child]);
+        showToast('Child record saved');
         return child;
       },
       // Sine-save yung na-edit na child details sa backend API at ina-update agad sa local React state.
@@ -164,6 +167,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             const child = await api.updateChild(id, patch);
             setChildList((prev) => prev.map((c) => (c.id === id ? child : c)));
+            showToast('Child record updated');
             return;
           } catch (e) {
             throw new Error(apiError(e));
@@ -172,6 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setChildList((prev) =>
           prev.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         );
+        showToast('Child record updated');
       },
       // Midwife-only delete: binubura yung child record sa backend at nililinis din yung doses, appointments, growth, at SMS niya sa state.
       deleteChild: async (id) => {
@@ -187,6 +192,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecordList((prev) => prev.filter((r) => r.childId !== id));
         setAppointmentList((prev) => prev.filter((a) => a.childId !== id));
         setSmsLog((prev) => prev.filter((s) => s.childId !== id));
+        showToast('Child record deleted');
         return { ok: true };
       },
       // Ina-update yung isang existing dose entry habang pinipigilan yung duplicate na child + vaccine + dose number.
@@ -198,6 +204,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             setRecordList((prev) =>
               prev.map((r) => (r.id === id ? res.record : r)),
             );
+            showToast('Vaccination record updated');
             return { ok: true };
           } catch (e) {
             return fail(e);
@@ -221,6 +228,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
         }
         setRecordList((prev) => prev.map((r) => (r.id === id ? next : r)));
+        showToast('Vaccination record updated');
         return { ok: true };
       },
       // Binubura yung isang vaccination dose record sa backend API o sa local state.
@@ -229,12 +237,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             await api.deleteDose(id);
             setRecordList((prev) => prev.filter((r) => r.id !== id));
+            showToast('Vaccination record removed');
             return { ok: true };
           } catch (e) {
             return fail(e);
           }
         }
         setRecordList((prev) => prev.filter((r) => r.id !== id));
+        showToast('Vaccination record removed');
         return { ok: true };
       },
       // Binubura yung isang scheduled appointment sa backend API o sa local state.
@@ -243,12 +253,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             await api.deleteAppointment(id);
             setAppointmentList((prev) => prev.filter((a) => a.id !== id));
+            showToast('Appointment removed');
             return { ok: true };
           } catch (e) {
             return fail(e);
           }
         }
         setAppointmentList((prev) => prev.filter((a) => a.id !== id));
+        showToast('Appointment removed');
         return { ok: true };
       },
       // Nagre-record ng bagong bakuna na naibigay at humaharang kapag duplicate na yung child + vaccine + dose number.
@@ -257,6 +269,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             const res = await api.createDose(data);
             setRecordList((prev) => [...prev, res.record]);
+            showToast('Vaccination record saved');
             return { ok: true, record: res.record };
           } catch (e) {
             return fail(e);
@@ -280,6 +293,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecordList((prev) =>
           isDuplicate(prev) ? prev : [...prev, record],
         );
+        showToast('Vaccination record saved');
         return { ok: true, record };
       },
       // Nagbu-book ng bagong vaccination appointment sa backend API o sa local state.
@@ -288,6 +302,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             const appt = await api.createAppointment(data);
             setAppointmentList((prev) => [...prev, appt]);
+            showToast('Appointment scheduled');
             return appt;
           } catch (e) {
             throw new Error(apiError(e));
@@ -295,6 +310,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         const appt: Appointment = { ...data, id: nextId('a') };
         setAppointmentList((prev) => [...prev, appt]);
+        showToast('Appointment scheduled');
         return appt;
       },
       // Ina-update yung schedule date/time, exception reason, o overdue follow-up status/notes ng isang appointment.
@@ -305,6 +321,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             setAppointmentList((prev) =>
               prev.map((a) => (a.id === id ? appt : a)),
             );
+            showToast('Appointment updated');
             return;
           } catch (e) {
             throw new Error(apiError(e));
@@ -313,6 +330,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setAppointmentList((prev) =>
           prev.map((a) => (a.id === id ? { ...a, ...patch } : a)),
         );
+        showToast('Appointment updated');
       },
       // Nagdadagdag ng bagong demo/manual SMS log entry sa pinakataas ng SMS history list.
       logSms: async (childId, message, status, sentAt) => {

@@ -10,7 +10,9 @@ import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
 import Dialog from './Dialog';
 import NavIcon from './NavIcon';
+import PageSkeleton from './PageSkeleton';
 import ThemeToggle from './ThemeToggle';
+import ToastHost from './ToastHost';
 import { childName, overdueAppointments } from '../data/mockData';
 import { vaccineById } from '../data/vaccines';
 
@@ -152,11 +154,12 @@ export default function Layout() {
       {/* Dito lumalabas yung active page content plus warning banner pag offline o down ang API */}
       <main id="main-content" tabIndex={-1} key={location.pathname} className={`app-content${['/', '/children', '/schedule'].includes(location.pathname) ? '' : ' page-enter'}`}>
         {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
-        <Suspense fallback={<p role="status" className="text-sm text-[var(--color-navy-soft)]">Loading page…</p>}>
+        <Suspense fallback={<PageSkeleton label="Loading page…" />}>
           <Outlet />
         </Suspense>
       </main>
     </div>
+    <ToastHost />
     {/* Slide-over navigation drawer para sa cellphone at tablet screens */}
     {menuOpen && <Dialog title="Navigation" variant="drawer" onClose={() => setMenuOpen(false)} returnFocusRef={menuButton}>
       <Link to="/" aria-label="Homapon Health dashboard" onClick={() => setMenuOpen(false)} className="mb-6 block rounded-lg"><Brand /></Link>{navigation()}

@@ -17,6 +17,7 @@ import DoseEntryForm from '../components/DoseEntryForm';
 import SmsDialog from '../components/SmsDialog';
 import EmptyState from '../components/EmptyState';
 import ImmunizationDocument from '../components/ImmunizationDocument';
+import PageSkeleton from '../components/PageSkeleton';
 import StatusBadge from '../components/StatusBadge';
 import type { AppointmentStatus, DoseRecord, EnrichedAppointment, NewChild } from '../data/mockData';
 import {
@@ -209,7 +210,7 @@ export default function ChildProfilePage() {
       </div>
 
       {/* Growth monitoring tab (naka-lazy load yung WHO GrowthPanel component) */}
-      {tab === 'growth' && <Suspense fallback={<p>Loading growth monitoring...</p>}><GrowthPanel key={child.id} child={child} /></Suspense>}
+      {tab === 'growth' && <Suspense fallback={<Card><PageSkeleton compact label="Loading growth monitoring…" /></Card>}><GrowthPanel key={child.id} child={child} /></Suspense>}
 
       {/* Overview tab: detalye ng guardian at overall dose progress bar ng bata */}
       {tab === 'overview' && (

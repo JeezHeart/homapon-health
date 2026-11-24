@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import { KpiSparkline } from '../components/KpiCard';
 import MagicBento from '../components/MagicBento';
+import PageSkeleton from '../components/PageSkeleton';
 import CountUp from '../components/CountUp';
 import FadeContent from '../components/FadeContent';
 import { todayISO } from '../utils/dates';
@@ -183,7 +184,7 @@ export default function DashboardPage() {
       </FadeContent>
 
       <FadeContent className="grid gap-3 lg:grid-cols-2 [&>.health-card]:!p-3 [&>.health-card>.health-card-header]:mb-1.5 [&>.health-card>.health-card-header]:min-h-6">
-        <Suspense fallback={<Card title="Growth Monitoring Summary"><p role="status" className="text-sm text-[var(--color-navy-soft)]">Loading growth summary...</p></Card>}>
+        <Suspense fallback={<Card title="Growth Monitoring Summary"><PageSkeleton compact label="Loading growth summary…" /></Card>}>
           <GrowthSummary />
         </Suspense>
         <Card title="Infants by age">

@@ -14,6 +14,7 @@ import { childName, isFullyImmunized, completedDoses, extractPurok } from '../da
 import { vaccineById } from '../data/vaccines';
 import { calcAge, todayISO } from './dates';
 import { childDirectoryRows } from './childDirectory';
+import { showToast } from './toast';
 
 /**
  * Nililinis at ine-escape yung isang cell value para hindi masira yung columns ng CSV.
@@ -72,6 +73,7 @@ export function downloadCsv(filename: string, csvContent: string): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  showToast('CSV exported');
 }
 
 /**
