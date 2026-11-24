@@ -29,33 +29,60 @@ const REFERENCES = {
   },
 };
 
-// Pre-approved guidance templates na naka-group by issue family.
+// Pre-approved guidance templates na naka-group by issue family (English + everyday Tagalog/Taglish).
 // Nakakulong lahat ng wording dito para hindi makapag-imbento ng medical advice yung AI.
 const dates = {
   references: ['doh'],
   explanations: ['The documented date needs verification against the original record.', 'Confirm the administration date before relying on this entry.'],
+  filipinoExplanations: [
+    'Kailangan munang i-double check ang nakalagay na petsa sa original na record.',
+    'I-confirm muna ang totoong petsa ng bakuna bago ito gamitin sa record.',
+  ],
   checks: [
     'Compare the recorded dose with the immunization card or clinic register.',
     'Confirm the administration date and distinguish it from an appointment date.',
     'If the original record is unclear, refer it to the midwife for verification.',
   ],
+  filipinoChecks: [
+    'Ikumpara ang naka-encode na bakuna sa immunization card ng bata o logbook ng clinic.',
+    'I-confirm kung totoong petsa ito ng turok at hindi lang petsa ng appointment.',
+    'Kung malabo pa rin sa original na record, i-refer ito sa midwife para ma-verify.',
+  ],
 };
 const sequence = {
   references: ['doh'],
   explanations: ['The recorded dates or dose numbers need to be reconciled with the source.', 'Check that each date belongs to the correct dose number.'],
+  filipinoExplanations: [
+    'Hindi tugma ang petsa o dose number — kailangan itong i-check sa original na record.',
+    'I-check kung tamang dose number ang nakalagay sa bawat petsa ng bakuna.',
+  ],
   checks: [
     'Compare each affected vaccine, dose number, and administration date against the original record.',
     'Check whether a date was assigned to the wrong dose number.',
     'Refer unresolved discrepancies to the midwife.',
   ],
+  filipinoChecks: [
+    'Ikumpara ang vaccine, dose number, at petsa ng bakuna sa original na card o logbook.',
+    'I-check kung napagbaligtad o mali lang ang nalagay na dose number sa petsa.',
+    'I-refer sa midwife kung hindi pa rin tugma o malinaw ang record.',
+  ],
 };
 const duplicate = {
   references: ['doh'],
   explanations: ['The entries may document the same administration. Verify both source entries.', 'A shared date is a reason to check whether the same administration was entered twice.'],
+  filipinoExplanations: [
+    'Mukhang nadoble ang pag-encode ng parehong bakuna. I-check muna pareho sa original na record.',
+    'Magkapareho ang petsa ng dalawang record — i-check kung iisang turok lang ito na dalawang beses na-encode.',
+  ],
   checks: [
     'Compare the affected entries with the immunization card and clinic register.',
     'Verify whether there is separate source documentation for each entry.',
     'Refer uncertain matches to the midwife before making a correction.',
+  ],
+  filipinoChecks: [
+    'Ikumpara ang dalawang record sa immunization card ng bata at logbook ng clinic.',
+    'I-check kung may hiwalay bang record ang bawat turok o nadoble lang ng lagay.',
+    'I-refer muna sa midwife bago magbago o mag-correct kung hindi sigurado.',
   ],
 };
 // Allowlist ng mga supported issue codes at ang kanya-kanyang approved explanations, checks, at references.
@@ -70,19 +97,37 @@ const CATALOG = {
   below_minimum_interval: {
     references: ['penta'],
     explanations: ['The recorded gap needs verification against the primary pentavalent schedule.', 'Verify both administration dates before relying on the recorded interval.'],
+    filipinoExplanations: [
+      'Masyadong maikli ang pagitan ng dalawang Pentavalent dose — i-check ito laban sa DOH schedule.',
+      'I-double check muna pareho ang petsa ng bakuna bago pagbasehan ang agwat ng mga dose.',
+    ],
     checks: [
       'Compare both dates and dose numbers with the original record.',
       'Verify the applicable primary-series interval against the cited reference.',
       'Refer the finding to the midwife for review.',
     ],
+    filipinoChecks: [
+      'Ikumpara ang dalawang petsa at dose number sa original na card o logbook.',
+      'I-check kung pasok sa minimum 4-week (28 days) interval ng DOH para sa Pentavalent.',
+      'I-refer sa midwife para ma-review ang record.',
+    ],
   },
   prior_dose_not_recorded: {
     references: ['doh'],
     explanations: ['The earlier dose has no entry in this history. Check the source documentation.', 'The earlier dose may be documented elsewhere. Verify before classifying the record.'],
+    filipinoExplanations: [
+      'Walang naka-encode na mas naunang dose dito. I-check muna sa immunization card o logbook.',
+      'Baka sa ibang clinic o card nakasulat ang naunang dose — i-verify muna bago i-update.',
+    ],
     checks: [
       'Look for the earlier dose in the immunization card and clinic register.',
       'Keep the earlier dose unverified if documentation cannot be located.',
       'Refer the unresolved record to the midwife.',
+    ],
+    filipinoChecks: [
+      'Hanapin ang mas naunang dose sa immunization card ng bata at logbook ng clinic.',
+      'Huwag muna i-mark na verified ang naunang dose kung walang makitang katibayan.',
+      'I-refer sa midwife kung kulang o hindi pa mahanap ang naunang record.',
     ],
   },
 };
@@ -95,12 +140,14 @@ function isGuidanceIssue(issue) {
 
 // Bino-build yung guidance response object gamit yung napiling explanation index at checklist order.
 // Inputs: entry (CATALOG item), source ('ai_assisted' | 'reference'), explanation (0|1), order (permutation ng [0,1,2]).
-// Output: { source, explanation, checklist, references }.
+// Output: { source, explanation, checklist, filipinoExplanation, filipinoChecklist, references }.
 function render(entry, source, explanation = 0, order = [0, 1, 2]) {
   return {
     source,
     explanation: entry.explanations[explanation],
     checklist: order.map((index) => entry.checks[index]),
+    filipinoExplanation: entry.filipinoExplanations[explanation],
+    filipinoChecklist: order.map((index) => entry.filipinoChecks[index]),
     references: entry.references.map((id) => {
       const { title, url } = REFERENCES[id];
       return { title, url };
@@ -240,9 +287,9 @@ function createGuidanceService(options) {
 
 // Pre-approved documentation worksheets na lumalabas kapag 'preparation' mode.
 const PREPARATION = [
-  { title: 'Source comparison', fields: ['Sources checked', 'Entry in the card', 'Entry in the register', 'Discrepancy to verify'] },
-  { title: 'Dose entry check', fields: ['Vaccine and dose to check', 'Detail to confirm', 'What the source shows', 'Unresolved detail'] },
-  { title: 'Midwife handoff', fields: ['Sources already checked', 'Remaining discrepancy', 'Question for the midwife'] },
+  { title: 'Source comparison', filipinoTitle: 'Pagkumpara ng record', fields: ['Sources checked', 'Entry in the card', 'Entry in the register', 'Discrepancy to verify'] },
+  { title: 'Dose entry check', filipinoTitle: 'Pag-check ng dose', fields: ['Vaccine and dose to check', 'Detail to confirm', 'What the source shows', 'Unresolved detail'] },
+  { title: 'Midwife handoff', filipinoTitle: 'Handoff sa midwife', fields: ['Sources already checked', 'Remaining discrepancy', 'Question for the midwife'] },
 ];
 // Static English + everyday Tagalog/Taglish FAQ cards na kasama sa preparation guidance para madaling basahin ng BHW/staff.
 const QUESTIONS = [

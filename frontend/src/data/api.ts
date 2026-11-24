@@ -75,6 +75,8 @@ export type ReviewGuidance = {
   source: 'ai_assisted' | 'reference';
   explanation: string;
   checklist: string[];
+  filipinoExplanation?: string;
+  filipinoChecklist?: string[];
   references: { title: string; url: string }[];
 };
 export type DailyReviewSummary = {
@@ -85,7 +87,7 @@ export type DailyReviewSummary = {
   guidance: ReviewGuidance;
 };
 export type ReviewPreparation = ReviewGuidance & {
-  worksheet: { title: string; fields: string[] };
+  worksheet: { title: string; filipinoTitle?: string; fields: string[] };
   questions: { question: string; filipinoQuestion: string; en: string; fil: string; reference: string; url: string }[];
 };
 
