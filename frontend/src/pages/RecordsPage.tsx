@@ -126,9 +126,9 @@ export default function RecordsPage() {
       <h1 className="sr-only">Vaccination Records</h1>
       <section aria-label="Vaccination record totals" className="grid grid-cols-2 gap-2.5">
         <KpiCard label="Recorded doses" count={shownDoses} icon="records" description="Matching current filters"
-          visual={<KpiSparkline counts={recordTrends.doses} labels={recordTrends.labels} color="var(--color-chart-teal)" />} />
+          visual={<KpiSparkline wide counts={recordTrends.doses} labels={recordTrends.labels} color="var(--color-chart-teal)" />} />
         <KpiCard label="Children with records" count={groups.length} icon="children" description="At least one matching dose"
-          visual={<KpiSparkline counts={recordTrends.children} labels={recordTrends.labels} color="var(--color-secondary)" />} />
+          visual={<KpiSparkline wide counts={recordTrends.children} labels={recordTrends.labels} color="var(--color-secondary)" />} />
       </section>
       {/* Filter card: search box, vaccine dropdown, at from/to date inputs */}
       <Card>

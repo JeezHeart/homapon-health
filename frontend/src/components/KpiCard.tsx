@@ -8,27 +8,44 @@ export function KpiSparkline({
   counts,
   labels,
   color = 'var(--color-chart-teal)',
+  wide = false,
 }: {
   counts: number[];
   labels?: string[];
   color?: string;
+  wide?: boolean;
 }) {
   if (!counts.length) return null;
+  const vbWidth = wide ? 180 : 86;
+  const vbHeight = wide ? 40 : 34;
+  const padX = wide ? 5 : 3;
+  const baseY = vbHeight - 5;
+  const plotH = vbHeight - 10;
   const peak = Math.max(1, ...counts);
   const points = counts.map((count, index) => {
-    const x = counts.length === 1 ? 43 : 3 + (index * 80) / (counts.length - 1);
-    const y = 29 - (count / peak) * 24;
+    const x =
+      counts.length === 1
+        ? vbWidth / 2
+        : padX + (index * (vbWidth - padX * 2)) / (counts.length - 1);
+    const y = baseY - (count / peak) * plotH;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
   const [lastX, lastY] = points[points.length - 1].split(',');
-  const areaPoints = `3,32 ${points.join(' ')} ${lastX},32`;
+  const areaPoints = `${padX},${vbHeight - 2} ${points.join(' ')} ${lastX},${vbHeight - 2}`;
   const title = labels
     ? counts.map((count, index) => `${labels[index] ?? ''}: ${count}`).join(' · ')
     : undefined;
 
   return (
     <span aria-hidden="true" title={title} className="sparkline-wrap shrink-0">
-      <svg viewBox="0 0 86 34" className="h-9 w-[clamp(3rem,36%,5.5rem)] overflow-visible">
+      <svg
+        viewBox={`0 0 ${vbWidth} ${vbHeight}`}
+        className={
+          wide
+            ? 'h-11 w-[clamp(6.5rem,45%,11.5rem)] overflow-visible'
+            : 'h-9 w-[clamp(3rem,36%,5.5rem)] overflow-visible'
+        }
+      >
         {counts.length > 1 && (
           <>
             <polygon
