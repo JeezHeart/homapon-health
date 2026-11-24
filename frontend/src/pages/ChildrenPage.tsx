@@ -100,9 +100,9 @@ export default function ChildrenPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5 lg:h-[calc(100dvh-6rem)] lg:min-h-[34rem]">
       <h1 className="sr-only">Child Records</h1>
-      <section aria-label="Child records totals" className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+      <section aria-label="Child records totals" className="grid shrink-0 grid-cols-2 gap-2.5 lg:grid-cols-3">
         <KpiCard label="Registered children" count={matchingChildren.length} icon="children" description="Matching directory filters"
           visual={<KpiSparkline counts={kpiTrends.registered} labels={kpiTrends.labels} />}
           selected={status === 'all'} onSelect={() => update({ status: 'all' })} />
@@ -114,7 +114,7 @@ export default function ChildrenPage() {
           selected={status === 'Partially immunized'} onSelect={() => update({ status: 'Partially immunized' })} />
       </section>
       {/* Compact single-row search, filters, and primary actions */}
-      <div className="health-card !p-3.5">
+      <div className="health-card shrink-0 !p-2.5">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <input
             type="search"
@@ -163,22 +163,25 @@ export default function ChildrenPage() {
         </div>
       </div>
 
-      {/* Compact 5-column click-to-open directory table */}
-      <FadeContent className="flex flex-col gap-3">
+      {/* Full-height 5-column click-to-open directory card locked to 1 viewport page on desktop */}
+      <FadeContent className="flex flex-1 flex-col lg:min-h-0">
+        <section className="health-card flex min-w-0 flex-1 flex-col overflow-hidden !p-0 lg:min-h-0">
         {filtered.length === 0 ? (
-          <EmptyState
-            title={children.length ? 'No matching records' : 'No children registered'}
-            message={children.length ? 'Change your search or clear the filters.' : 'Register a child to start the registry.'}
-          />
+          <div className="flex flex-1 items-center justify-center p-6">
+            <EmptyState
+              title={children.length ? 'No matching records' : 'No children registered'}
+              message={children.length ? 'Change your search or clear the filters.' : 'Register a child to start the registry.'}
+            />
+          </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <div className="flex-1 overflow-auto lg:min-h-0">
               <table role="table" className="mobile-record-table ui-table w-full text-left">
                 <caption className="sr-only">Child directory</caption>
-                <thead role="rowgroup">
+                <thead role="rowgroup" className="lg:sticky lg:top-0 lg:z-10">
                   <tr role="row">
                     {['Child', 'Guardian', 'Purok', 'Vaccination status', 'Next vaccination'].map((label) => (
-                      <th role="columnheader" key={label} scope="col" className="!px-3 !py-1.5">{label}</th>
+                      <th role="columnheader" key={label} scope="col" className="!px-3.5 !py-2">{label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -193,7 +196,7 @@ export default function ChildrenPage() {
                         onClick={() => navigate(`/children/${child.id}`, { state: { directory: returnTo } })}
                         className="cursor-pointer hover:bg-[var(--color-elevated)] focus-within:bg-[var(--color-elevated)]"
                       >
-                        <td role="cell" className="!px-3 !py-1.5">
+                        <td role="cell" className="!px-3.5 !py-1.5">
                           <span className="mobile-cell-label" aria-hidden="true">Child</span>
                           <div className="mobile-cell-value">
                             <Link
@@ -216,21 +219,21 @@ export default function ChildrenPage() {
                             </Link>
                           </div>
                         </td>
-                        <td role="cell" className="!px-3 !py-1.5">
+                        <td role="cell" className="!px-3.5 !py-1.5">
                           <span className="mobile-cell-label" aria-hidden="true">Guardian</span>
                           <div className="mobile-cell-value">
                             <span className="block font-medium">{child.guardian}</span>
                             <span className="block text-xs text-[var(--color-navy-soft)]">{child.guardianMobile}</span>
                           </div>
                         </td>
-                        <td role="cell" className="!px-3 !py-1.5 whitespace-nowrap">
+                        <td role="cell" className="!px-3.5 !py-1.5 whitespace-nowrap">
                           <span className="mobile-cell-label" aria-hidden="true">Purok</span>
                           <div className="mobile-cell-value">{extractPurok(child.purok)}</div>
                         </td>
-                        <td role="cell" className="!px-3 !py-1.5">
+                        <td role="cell" className="!px-3.5 !py-1.5">
                           <span className="mobile-cell-label" aria-hidden="true">Vaccination status</span>
                           <div className="mobile-cell-value">
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${vaccination === 'Fully immunized' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>
                                 {vaccination}
                               </span>
@@ -243,7 +246,7 @@ export default function ChildrenPage() {
                             </div>
                           </div>
                         </td>
-                        <td role="cell" className="!px-3 !py-1.5">
+                        <td role="cell" className="!px-3.5 !py-1.5">
                           <span className="mobile-cell-label" aria-hidden="true">Next vaccination</span>
                           <div className="mobile-cell-value">
                             <div className="flex items-center justify-between gap-3">
@@ -274,23 +277,24 @@ export default function ChildrenPage() {
               </table>
             </div>
 
-            {/* Compact pagination footer na naka-sync sa `page` at `size` URL params */}
-            <nav aria-label="Child directory pagination" className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            {/* Compact pagination footer pinned to card bottom edge */}
+            <nav aria-label="Child directory pagination" className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] px-4 py-2 text-xs">
               <p role="status" aria-live="polite" className="text-[var(--color-navy-soft)]">
                 {pagination.first}–{pagination.last} of {filtered.length} children
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <label htmlFor="directory-size" className="text-xs">Rows per page</label>
-                <select id="directory-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={selectClass}>
+                <label htmlFor="directory-size" className="text-xs text-[var(--color-navy-soft)]">Rows per page</label>
+                <select id="directory-size" value={size} onChange={(event) => update({ size: Number(event.target.value) })} className={`${selectClass} !min-h-8 !py-1`}>
                   {[5, 10, 25].map((value) => <option key={value}>{value}</option>)}
                 </select>
-                <button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Previous</button>
-                <span className="text-xs">Page {pagination.page} of {pagination.pages}</span>
-                <button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Next</button>
+                <button type="button" disabled={pagination.page === 1} onClick={() => update({ page: pagination.page - 1 })} className={`${selectClass} !min-h-8 !py-1 disabled:opacity-40`}>Previous</button>
+                <span className="text-xs text-[var(--color-navy-soft)]">Page {pagination.page} of {pagination.pages}</span>
+                <button type="button" disabled={pagination.page === pagination.pages} onClick={() => update({ page: pagination.page + 1 })} className={`${selectClass} !min-h-8 !py-1 disabled:opacity-40`}>Next</button>
               </div>
             </nav>
           </>
         )}
+        </section>
       </FadeContent>
 
       {/* Modal dialog para sa pag-register ng bagong bata */}

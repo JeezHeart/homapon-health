@@ -199,9 +199,9 @@ export default function SchedulePage() {
     'clinic-control';
 
   return (
-    <div className="flex flex-col gap-3.5 lg:h-[calc(100dvh-5.75rem)] lg:min-h-[39rem]">
+    <div className="flex flex-col gap-2.5 lg:h-[calc(100dvh-6rem)] lg:min-h-[34rem]">
       <h1 className="sr-only">Immunization Schedule</h1>
-      <section aria-label="Appointment totals" className={KPI_GRID}>
+      <section aria-label="Appointment totals" className={`shrink-0 ${KPI_GRID}`}>
         {scheduleTotals.map(item => <KpiCard key={item.filter} label={item.label} count={item.count}
           description={item.description} icon={item.filter === 'overdue' ? 'bell' : 'calendar'}
           alert={item.filter === 'overdue' && item.count > 0} selected={filter === item.filter}
@@ -209,8 +209,8 @@ export default function SchedulePage() {
           onSelect={() => update({ filter: item.filter })} />)}
       </section>
       {/* Filter card: search bar, status dropdown, at purok selector */}
-      <Card>
-        <div className="flex flex-wrap items-center gap-3">
+      <Card className="shrink-0 !p-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <input type="search" aria-label="Search appointments by child or guardian" placeholder="Search child or guardian" value={query} onChange={(event) => update({ q: event.target.value })} className="min-w-0 w-full flex-none rounded-xl border border-slate-300 px-3 py-2 text-sm sm:w-auto sm:flex-1" />
           <select aria-label="Appointment status filter" value={filter} onChange={(event) => update({ filter: event.target.value, date: '' })} className={selectClass}>{FILTERS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
           <select aria-label="Filter by purok" value={purokFilter} onChange={(event) => update({ purok: event.target.value })} className={selectClass}><option value="all">All puroks</option>{puroks.map((purok) => <option key={purok}>{purok}</option>)}</select>
@@ -227,7 +227,7 @@ export default function SchedulePage() {
       </Card>
 
       {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
-      <FadeContent className="grid gap-3.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(17rem,1fr)_minmax(0,2fr)]">
+      <FadeContent className="grid gap-2.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(17rem,1fr)_minmax(0,2fr)]">
         {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
           <Card title="Calendar" className="flex flex-col lg:min-h-0" action={
             <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })}
