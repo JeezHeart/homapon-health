@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { to: '/children', label: 'Child Records', icon: 'children' },
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
   { to: '/records', label: 'Records', icon: 'records' },
-  { to: '/review', label: 'Record Review', icon: 'records' },
+  { to: '/review', label: 'AI Record Review', icon: 'sparkles' },
   { to: '/sms', label: 'SMS', icon: 'sms' },
   { to: '/reports', label: 'Reports', icon: 'reports' },
   { to: '/settings', label: 'Settings', icon: 'settings' },

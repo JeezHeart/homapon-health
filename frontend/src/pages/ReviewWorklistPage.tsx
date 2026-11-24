@@ -88,7 +88,7 @@ export default function ReviewWorklistPage() {
   }
 
   return <div className="flex flex-col gap-3 lg:min-h-[calc(100dvh-5.75rem)]">
-    <h1 className="sr-only">Record Review</h1>
+    <h1 className="sr-only">AI Record Review</h1>
     {/* Guard states: offline/disconnected, loading, error with retry, o ready view */}
     {!canReview ? <EmptyState title="Staff connection required" message="Connect to the staff system to review saved vaccination records." />
       : load.status === 'loading' ? <PageSkeleton label="Loading review findings…" />

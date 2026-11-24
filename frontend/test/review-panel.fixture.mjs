@@ -362,7 +362,7 @@ async function checkWorklist(draft) {
     el(Route, { index: true, element: el('p', {}, 'Fixture dashboard') }),
     el(Route, { path: 'review', element: el(Worklist) }),
     el(Route, { path: 'children/:id', element: el(ChildRoute) })))))));
-  const findNav = () => [...document.querySelectorAll('nav a')].find(a => a.textContent.trim() === 'Record Review' && a.getClientRects().length);
+  const findNav = () => [...document.querySelectorAll('nav a')].find(a => a.textContent.trim() === 'AI Record Review' && a.getClientRects().length);
   const main = () => document.querySelector('main');
   const headings = () => [...main().querySelectorAll('ul[aria-label="Review findings"] strong')].map(n => n.textContent);
   const settle = async () => { await tick(); await tick(); await tick(); };

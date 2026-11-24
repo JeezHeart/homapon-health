@@ -43,10 +43,10 @@ export default function SettingsPage() {
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm"><dt className="text-[var(--color-navy-soft)]">Name</dt><dd className="break-words font-medium">{demoUser?.name ?? 'Not available'}</dd><dt className="text-[var(--color-navy-soft)]">Role</dt><dd className="break-words font-medium">{demoUser ? ROLE_LABEL[demoUser.role] : 'Not available'}</dd></dl>
         {!apiEnabled && <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Local practice session.</p>}
       </Card>
-      <Card title="Staff access" titleIcon={<NavIcon name="review" />}>
-        <p className="text-sm font-medium">Record Review</p>
+      <Card title="Staff access" titleIcon={<NavIcon name="sparkles" />}>
+        <p className="text-sm font-medium">AI Record Review</p>
         <p className="mt-1 text-sm text-[var(--color-navy-soft)]">
-          {!apiEnabled ? 'Record Review is available in the connected staff system.'
+          {!apiEnabled ? 'AI Record Review is available in the connected staff system.'
             : demoUser?.role === 'midwife' ? 'You can verify findings, flag them for review, and resolve escalations.'
             : demoUser?.role === 'bhw' ? 'You can verify findings and escalate them to the midwife. The midwife handles resolution.'
             : 'Sign in with a staff account to review findings.'}
