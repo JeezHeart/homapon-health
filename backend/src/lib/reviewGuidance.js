@@ -287,9 +287,24 @@ function createGuidanceService(options) {
 
 // Pre-approved documentation worksheets na lumalabas kapag 'preparation' mode.
 const PREPARATION = [
-  { title: 'Source comparison', filipinoTitle: 'Pagkumpara ng record', fields: ['Sources checked', 'Entry in the card', 'Entry in the register', 'Discrepancy to verify'] },
-  { title: 'Dose entry check', filipinoTitle: 'Pag-check ng dose', fields: ['Vaccine and dose to check', 'Detail to confirm', 'What the source shows', 'Unresolved detail'] },
-  { title: 'Midwife handoff', filipinoTitle: 'Handoff sa midwife', fields: ['Sources already checked', 'Remaining discrepancy', 'Question for the midwife'] },
+  {
+    title: 'Source comparison',
+    filipinoTitle: 'Pagkumpara ng record',
+    fields: ['Sources checked', 'Entry in the card', 'Entry in the register', 'Discrepancy to verify'],
+    filipinoFields: ['Mga record na na-check', 'Nakalagay sa immunization card', 'Nakalagay sa logbook ng clinic', 'Pagkakaiba na i-verify'],
+  },
+  {
+    title: 'Dose entry check',
+    filipinoTitle: 'Pag-check ng dose',
+    fields: ['Vaccine and dose to check', 'Detail to confirm', 'What the source shows', 'Unresolved detail'],
+    filipinoFields: ['Vaccine at dose na i-check', 'Detalye na i-confirm', 'Nakalagay sa original na record', 'Hindi pa malinaw'],
+  },
+  {
+    title: 'Midwife handoff',
+    filipinoTitle: 'Handoff sa midwife',
+    fields: ['Sources already checked', 'Remaining discrepancy', 'Question for the midwife'],
+    filipinoFields: ['Mga record na na-check na', 'Hindi pa tugmang detalye', 'Tanong para sa midwife'],
+  },
 ];
 // Static English + everyday Tagalog/Taglish FAQ cards na kasama sa preparation guidance para madaling basahin ng BHW/staff.
 const QUESTIONS = [

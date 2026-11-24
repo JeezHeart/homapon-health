@@ -87,7 +87,7 @@ export type DailyReviewSummary = {
   guidance: ReviewGuidance;
 };
 export type ReviewPreparation = ReviewGuidance & {
-  worksheet: { title: string; filipinoTitle?: string; fields: string[] };
+  worksheet: { title: string; filipinoTitle?: string; fields: string[]; filipinoFields?: string[] };
   questions: { question: string; filipinoQuestion: string; en: string; fil: string; reference: string; url: string }[];
 };
 
