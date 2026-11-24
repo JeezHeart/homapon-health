@@ -38,6 +38,7 @@ export default function DailyReviewSummaryCard({ summary, findings, selectedStat
 
   return <Card
     title="Daily review summary"
+    className="!p-3.5"
     action={
       <dl className="flex flex-wrap items-center gap-2 text-xs">
         {totals.map(([label, count]) => (
@@ -49,10 +50,10 @@ export default function DailyReviewSummaryCard({ summary, findings, selectedStat
     }
   >
     {/* Petsa ng worklist snapshot */}
-    <p className="text-sm text-[var(--color-navy-soft)]">
+    <p className="-mt-1 text-xs text-[var(--color-navy-soft)]">
       <time dateTime={summary.date}>{date}</time> · Current worklist snapshot, including findings from earlier days
     </p>
-    {statuses && <div className={`mt-3 ${KPI_GRID}`}>
+    {statuses && <div className={`mt-2.5 ${KPI_GRID}`}>
       {STATUS_TOTALS.map(([key, label, color]) => {
         const visual = findings ? (
           <KpiSparkline
@@ -72,7 +73,7 @@ export default function DailyReviewSummaryCard({ summary, findings, selectedStat
     </div>}
     {!statuses && <p className="mt-2 text-sm text-[var(--color-navy-soft)]">Saved review statuses are unavailable.</p>}
     {/* AI-assisted o reference documentation checklist at official source links */}
-    <details className="mt-3 space-y-2 rounded-xl bg-[var(--color-accent-soft)] p-3 text-sm">
+    <details className="mt-2.5 space-y-2 rounded-xl bg-[var(--color-accent-soft)] px-3 py-2 text-sm">
       <summary className="cursor-pointer font-medium">Show daily guidance</summary>
       <h3 className="font-semibold">{guidance.source === 'ai_assisted' ? 'AI-assisted documentation checklist' : 'Reference guidance'}</h3>
       <p>{guidance.explanation}</p>
