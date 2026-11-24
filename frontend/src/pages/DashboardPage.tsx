@@ -12,7 +12,7 @@ import { KpiSparkline } from '../components/KpiCard';
 import PageSkeleton from '../components/PageSkeleton';
 import CountUp from '../components/CountUp';
 import FadeContent from '../components/FadeContent';
-import { todayISO } from '../utils/dates';
+import { completedAgeMonths, todayISO } from '../utils/dates';
 import { AGE_GROUPS, infantAgeGroup } from '../utils/childDirectory';
 import { dosesByDayThisMonth } from '../utils/dashboardOverview';
 import MonthlyTrendChart from '../components/MonthlyTrendChart';
@@ -151,9 +151,16 @@ export default function DashboardPage() {
   const dailyLabels = dailyDoses.map((_, i) => `${monthShort} ${i + 1}`);
   const dosesThisMonth = dailyDoses.reduce((sum, count) => sum + count, 0);
   const infantsByAge = new Map<string, number>();
+  let infantsCount = 0;
+  let olderCount = 0;
   for (const child of children) {
     const group = infantAgeGroup(child.birthDate, today);
-    if (group) infantsByAge.set(group, (infantsByAge.get(group) ?? 0) + 1);
+    if (group) {
+      infantsByAge.set(group, (infantsByAge.get(group) ?? 0) + 1);
+      infantsCount += 1;
+    } else if (completedAgeMonths(child.birthDate, today) >= 13) {
+      olderCount += 1;
+    }
   }
   const overdueByAge = [
     { label: '1–7 days', count: overdue.filter(appointment => (appointment.daysOverdue ?? 0) <= 7).length },
@@ -198,6 +205,13 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
+          <p className="mt-1.5 text-xs text-[var(--color-navy-soft)]">
+            {dataReady === false
+              ? 'Loading age breakdown…'
+              : olderCount > 0
+                ? `${infantsCount} of ${children.length} children are 0–12 months (${olderCount} aged 13+ months).`
+                : `${infantsCount} of ${children.length} registered children are aged 0–12 months.`}
+          </p>
         </Card>
       </FadeContent>
 
