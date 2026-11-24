@@ -113,31 +113,21 @@ export default function ChildrenPage() {
           visual={<KpiSparkline counts={kpiTrends.partial} labels={kpiTrends.labels} color="var(--color-chart-lavender)" />}
           selected={status === 'Partially immunized'} onSelect={() => update({ status: 'Partially immunized' })} />
       </section>
-      {/* Compact search & filter bar */}
+      {/* Compact single-row search, filters, and primary actions */}
       <div className="health-card !p-3.5">
-        <div className="flex flex-col items-start gap-2.5 xl:flex-row">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <input
             type="search"
             aria-label="Search by child or guardian name"
             placeholder="Search child or guardian"
             value={query}
             onChange={(event) => update({ q: event.target.value })}
-            className="clinic-control w-full"
+            className="clinic-control w-full lg:min-w-0 lg:flex-1"
           />
-          <div className="directory-filters flex shrink-0 flex-wrap gap-2">
+          <div className="directory-filters flex shrink-0 flex-wrap items-center gap-2">
             <select aria-label="Filter by purok" className={selectClass} value={purok} onChange={(event) => update({ purok: event.target.value })}>
               <option value="all">All puroks</option>
               {puroks.map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
-            <select aria-label="Filter by vaccination status" className={selectClass} value={status} onChange={(event) => update({ status: event.target.value })}>
-              <option value="all">All vaccination records</option>
-              <option>Fully immunized</option>
-              <option>Partially immunized</option>
-            </select>
-            <select aria-label="Filter by appointment status" className={selectClass} value={schedule} onChange={(event) => update({ schedule: event.target.value })}>
-              <option value="all">All appointments</option>
-              <option value="upcoming">Upcoming / due today</option>
-              <option value="overdue">Overdue appointments</option>
             </select>
             <select aria-label="Filter by age group" className={selectClass} value={ageGroup ?? 'all'} onChange={(event) => update({ age: event.target.value })}>
               <option value="all">All ages</option>
@@ -153,17 +143,20 @@ export default function ChildrenPage() {
               </button>
             )}
           </div>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-[var(--color-navy-soft)]">
-            Vaccination status uses recorded doses; overdue refers to appointment dates.
-          </p>
-          <div className="ml-auto flex flex-wrap justify-end gap-2">
-            <button type="button" title="Export all filtered children, across all pages"
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 lg:ml-auto">
+            <button
+              type="button"
+              title="Export all filtered children, across all pages"
               onClick={() => exportChildrenList(filtered.map((row) => row.child), appointments, records)}
-              className="clinic-control font-medium">Export CSV</button>
-            <button type="button" onClick={() => setRegistering(true)}
-              className="min-h-10 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]">
+              className="clinic-control font-medium"
+            >
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setRegistering(true)}
+              className="min-h-10 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]"
+            >
               Register child
             </button>
           </div>
