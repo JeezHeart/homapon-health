@@ -9,13 +9,14 @@ interface CardProps {
   title?: string;
   titleIcon?: ReactNode;
   action?: ReactNode;
+  className?: string;
   children: ReactNode;
 }
 
 /** Standard white card box na pwedeng lagyan ng heading (`title`) at button/tabs (`action`). */
-export default function Card({ title, titleIcon, action, children }: CardProps) {
+export default function Card({ title, titleIcon, action, className = '', children }: CardProps) {
   return (
-    <div className="health-card">
+    <div className={className ? `health-card ${className}` : 'health-card'}>
       {/* Optional header row para sa card title at right-side action controls */}
       {(title ?? action) && (
         <div className="health-card-header">

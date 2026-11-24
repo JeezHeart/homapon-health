@@ -199,7 +199,7 @@ export default function SchedulePage() {
     'clinic-control';
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3.5 lg:h-[calc(100dvh-5.75rem)] lg:min-h-[39rem]">
       <h1 className="sr-only">Immunization Schedule</h1>
       <section aria-label="Appointment totals" className={KPI_GRID}>
         {scheduleTotals.map(item => <KpiCard key={item.filter} label={item.label} count={item.count}
@@ -227,18 +227,18 @@ export default function SchedulePage() {
       </Card>
 
       {/* Main layout: kaliwa yung monthly calendar picker, kanan yung appointments table + pagination */}
-      <FadeContent className="grid gap-3.5 lg:grid-cols-[minmax(17rem,1fr)_minmax(0,2fr)]">
+      <FadeContent className="grid gap-3.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(17rem,1fr)_minmax(0,2fr)]">
         {/* Monthly calendar card na may Today/Prev/Next controls at count badge per araw */}
-          <Card title="Calendar" action={
+          <Card title="Calendar" className="flex flex-col lg:min-h-0" action={
             <button type="button" onClick={() => update({ date: todayISO(), month: todayISO().slice(0, 7), filter: 'today' })}
               className="rounded-lg border border-[var(--color-control-border)] px-2.5 py-1 text-xs hover:bg-[var(--color-elevated)]">Today</button>
           }>
-            <div className="calendar-month-nav">
+            <div className="calendar-month-nav shrink-0">
               <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" className="calendar-arrow">‹</button>
               <p aria-live="polite" className="text-sm">{monthLabel}</p>
               <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" className="calendar-arrow">›</button>
             </div>
-            <div className="dashboard-calendar">
+            <div className="dashboard-calendar lg:flex-1 lg:auto-rows-fr lg:items-center">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
                 <span key={i} className="calendar-weekday" aria-hidden="true">{day}</span>
               ))}
@@ -260,7 +260,7 @@ export default function SchedulePage() {
                     aria-pressed={isSelected}
                     aria-current={isToday ? 'date' : undefined}
                     aria-label={`${formatDate(iso)}: ${count} appointment${count === 1 ? '' : 's'}${isToday ? ', Today' : ''}${isSelected ? ', Selected date' : ''}`}
-                    className={`calendar-day ${isToday ? 'calendar-today font-semibold' : ''} ${
+                    className={`calendar-day lg:!h-9 lg:!w-9 ${isToday ? 'calendar-today font-semibold' : ''} ${
                       isSelected
                         ? 'bg-[var(--color-accent-soft)] text-[var(--color-navy)] ring-2 ring-inset ring-[var(--color-accent)]'
                         : ''
@@ -272,26 +272,30 @@ export default function SchedulePage() {
                 );
               })}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-navy-soft)]">
-              <span className="calendar-today rounded px-1.5 py-0.5 font-semibold">Today</span>
-              <span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span>
-              {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="font-medium underline">Clear date</button>}
+            <div className="mt-3 shrink-0 border-t border-[var(--color-border)] pt-3 lg:mt-auto">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-navy-soft)]">
+                <span className="calendar-today rounded px-1.5 py-0.5 font-semibold">Today</span>
+                <span className="rounded border border-[var(--color-accent)] px-1.5 py-0.5">Selected date</span>
+                {selectedDay && <button type="button" onClick={() => update({ date: '' })} className="font-medium underline">Clear date</button>}
+              </div>
+              <p className="mt-1.5 text-xs text-[var(--color-navy-soft)]">Select a date to see its appointments.</p>
             </div>
-            <p className="mt-2 text-xs text-[var(--color-navy-soft)]">Select a date to see its appointments.</p>
           </Card>
 
-        {/* On desktop the calendar sets the row height, and only the appointment list scrolls. */}
-        <section aria-labelledby="appointment-list-title" className="health-card flex min-w-0 flex-col overflow-hidden !p-0 lg:[contain:size]">
+        {/* On desktop both cards stretch cleanly to the bottom edge and the appointment list scrolls inside if needed. */}
+        <section aria-labelledby="appointment-list-title" className="health-card flex min-w-0 flex-col overflow-hidden !p-0 lg:min-h-0">
           <h2 id="appointment-list-title" className="shrink-0 border-b border-[var(--color-border)] px-4 py-3 text-base font-semibold">
             {selectedDay ? formatDate(selectedDay) : FILTERS.find((f) => f.id === filter)?.label} ({filtered.length})
           </h2>
         {filtered.length === 0 ? (
-          <EmptyState
-            title="No matching appointments"
-            message="Try another date or clear the filters."
-          />
+          <div className="flex flex-1 items-center justify-center p-4">
+            <EmptyState
+              title="No matching appointments"
+              message="Try another date or clear the filters."
+            />
+          </div>
         ) : (
-          <ul aria-label="Vaccination appointments" className={`grid auto-rows-max content-start gap-2 p-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto ${pagination.visible.length > 1 ? 'md:grid-cols-2' : ''}`}>
+          <ul aria-label="Vaccination appointments" className={`grid auto-rows-max content-start gap-2.5 p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto ${pagination.visible.length > 1 ? 'md:grid-cols-2' : ''}`}>
             {pagination.visible.map(a => (
               <li key={a.id} className="clinic-entry overflow-hidden">
                 <button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(a.id)}
