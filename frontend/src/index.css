@@ -518,9 +518,27 @@ table {
   .dialog-backdrop {
     animation: none !important;
   }
+  .chart-anim-line {
+    stroke-dashoffset: 0 !important;
+  }
   .accordion-glide {
     transition: none !important;
   }
+}
+
+@keyframes spark-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sparkline-area { fill-opacity: 0.12; transition: fill-opacity 180ms ease-out; }
+.sparkline-line { transition: stroke-width 180ms ease-out; }
+.sparkline-halo { fill-opacity: 0.16; transition: fill-opacity 180ms ease-out; }
+.summary-stat:hover .sparkline-area { fill-opacity: 0.22; }
+.summary-stat:hover .sparkline-line { stroke-width: 2.35; }
+.summary-stat:hover .sparkline-halo { fill-opacity: 0.34; }
+@media print {
+  .chart-anim-line { animation: none !important; stroke-dashoffset: 0 !important; }
+  .chart-anim-fade { animation: none !important; }
 }
 
 /* System-wide entrance motion: fast, subtle, purposeful */

@@ -27,11 +27,16 @@ export function KpiSparkline({
     : undefined;
 
   return (
-    <span aria-hidden="true" title={title} className="shrink-0">
+    <span aria-hidden="true" title={title} className="sparkline-wrap shrink-0">
       <svg viewBox="0 0 86 34" className="h-9 w-[clamp(3rem,36%,5.5rem)] overflow-visible">
         {counts.length > 1 && (
           <>
-            <polygon points={areaPoints} fill={color} opacity="0.12" />
+            <polygon
+              points={areaPoints}
+              fill={color}
+              className="sparkline-area chart-anim-fade"
+              style={{ animation: 'spark-fade 450ms ease-out 180ms both' }}
+            />
             <polyline
               points={points.join(' ')}
               fill="none"
@@ -39,10 +44,29 @@ export function KpiSparkline({
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
+              pathLength={1}
+              strokeDasharray="1"
+              className="sparkline-line chart-anim-line"
+              style={{ animation: 'chart-draw 650ms cubic-bezier(0.22, 1, 0.36, 1) both' }}
             />
           </>
         )}
-        <circle cx={lastX} cy={lastY} r="2.8" fill={color} />
+        <circle
+          cx={lastX}
+          cy={lastY}
+          r="5.5"
+          fill={color}
+          className="sparkline-halo chart-anim-fade"
+          style={{ animation: 'spark-fade 320ms ease-out 420ms both' }}
+        />
+        <circle
+          cx={lastX}
+          cy={lastY}
+          r="2.8"
+          fill={color}
+          className="sparkline-dot chart-anim-fade"
+          style={{ animation: 'spark-fade 320ms ease-out 420ms both' }}
+        />
       </svg>
     </span>
   );
