@@ -9,6 +9,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { apiEnabled } from '../data/api';
 import { ROLE_LABEL, useStore } from '../state/store-context';
 import Dialog from './Dialog';
+import MagicBento from './MagicBento';
 import NavIcon from './NavIcon';
 import PageSkeleton from './PageSkeleton';
 import ThemeToggle from './ThemeToggle';
@@ -153,10 +154,12 @@ export default function Layout() {
       </header>
       {/* Dito lumalabas yung active page content plus warning banner pag offline o down ang API */}
       <main id="main-content" tabIndex={-1} key={location.pathname} className={`app-content${['/', '/children', '/schedule'].includes(location.pathname) ? '' : ' page-enter'}`}>
-        {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
-        <Suspense fallback={<PageSkeleton label="Loading page…" />}>
-          <Outlet />
-        </Suspense>
+        <MagicBento summaryOnly enableBorderGlow={false} enableSpotlight spotlightRadius={300}>
+          {apiEnabled && !connected && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">Could not load records from the server. Check your connection, then refresh the page.</p>}
+          <Suspense fallback={<PageSkeleton label="Loading page…" />}>
+            <Outlet />
+          </Suspense>
+        </MagicBento>
       </main>
     </div>
     <ToastHost />

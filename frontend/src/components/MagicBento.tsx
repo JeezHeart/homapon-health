@@ -1,8 +1,8 @@
 /**
  * MagicBento.tsx
  * Guide: Wrapper component na nagdadagdag ng subtle glow/spotlight hover effect sa mga
- * dashboard cards gamit ang mouse pointer (pure CSS variables, walang extra animation library).
- * Ginagamit sa DashboardPage; auto-off sa touch screens, print mode, at reduced-motion.
+ * KPI summary cards gamit ang mouse pointer (pure CSS variables, walang extra animation library).
+ * Ginagamit sa Layout (system-wide sa lahat ng pages); auto-off sa touch screens, print mode, at reduced-motion.
  */
 import { useEffect, useRef, type ReactNode } from 'react';
 import './MagicBento.css';
@@ -62,7 +62,25 @@ export default function MagicBento({ children, className = '', enableBorderGlow 
       frame = 0;
       if (!enabled || !pointer) return;
       const { x, y, target } = pointer;
-      const hovered = target instanceof Element ? target.closest(selector) : null;
+      const hovered = target instanceof Element ? target.closest<HTMLElement>(selector) : null;
+      // Fast O(1) path kapag spotlight-only (walang border glow): i-measure lang ang isang card na nasa ilalim ng cursor.
+      if (!enableBorderGlow) {
+        for (const card of touched) {
+          if (card !== hovered) {
+            for (const variable of VARIABLES) card.style.removeProperty(variable);
+            touched.delete(card);
+          }
+        }
+        if (!hovered || !root!.contains(hovered)) return;
+        const rect = hovered.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        touched.add(hovered);
+        hovered.style.setProperty('--mb-x', `${x - rect.left}px`);
+        hovered.style.setProperty('--mb-y', `${y - rect.top}px`);
+        hovered.style.setProperty('--mb-edge-opacity', '0');
+        hovered.style.setProperty('--mb-spot-opacity', enableSpotlight ? '1' : '0');
+        return;
+      }
       // Read all bounds before writing styles; newly mounted growth cards are included.
       const cards = [...root!.querySelectorAll<HTMLElement>(selector)].map((card) => ({ card, rect: card.getBoundingClientRect() }));
       for (const { card, rect } of cards) {

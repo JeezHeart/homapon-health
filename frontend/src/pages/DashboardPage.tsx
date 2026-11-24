@@ -9,7 +9,6 @@ import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import { KpiSparkline } from '../components/KpiCard';
-import MagicBento from '../components/MagicBento';
 import PageSkeleton from '../components/PageSkeleton';
 import CountUp from '../components/CountUp';
 import FadeContent from '../components/FadeContent';
@@ -163,7 +162,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <MagicBento className="dashboard-compact flex flex-col gap-3.5" summaryOnly enableBorderGlow={false} enableSpotlight spotlightRadius={300}>
+    <div className="dashboard-compact flex flex-col gap-3.5">
       {/* Hidden page heading pang-screen reader accessibility (a11y) */}
       <div className="sr-only">
         <h1 className="page-title">Immunization dashboard</h1>
@@ -220,6 +219,6 @@ export default function DashboardPage() {
       {/* Panel para sa upcoming at overdue appointments na may click-to-open detail card */}
       <DashboardAppointments />
 
-    </MagicBento>
+    </div>
   );
 }
