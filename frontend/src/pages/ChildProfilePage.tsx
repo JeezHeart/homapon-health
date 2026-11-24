@@ -62,7 +62,7 @@ export default function ChildProfilePage() {
   // Safe na kinukuha kung saan babalik yung "Back" link (Children, Schedule, o Records) habang pinapanatili yung dating filters.
   const returnTo = typeof location.state?.directory === 'string' && /^\/(?:children|schedule|records|reports)(?:\?|$)/.test(location.state.directory) ? location.state.directory : '/children';
   const backLabel = returnTo.startsWith('/reports') ? 'Back to reports' : returnTo.startsWith('/schedule') ? 'Back to schedule' : returnTo.startsWith('/records') ? 'Back to vaccination records' : 'Back to child records';
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { children, records, appointments, smsLog, demoUser, deleteChild, addDoseRecord, addAppointment, updateChild, updateAppointment } =
     useStore();
   // Local React states para sa pag-open/close ng modals (edit, delete, add/correct doses, schedule, at SMS reminders).
@@ -80,10 +80,15 @@ export default function ChildProfilePage() {
     doseNumber: number;
   } | null>(null);
   const child = id ? childById(children, id) : undefined;
-  // Active na tab sa profile; kinukuha muna sa `?tab=...` kung valid, otherwise default sa `overview`.
-  const [tab, setTab] = useState<TabId>(
-    TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') as TabId : 'overview',
-  );
+  // Active na tab sa profile naka-sync sa `?tab=...` para hindi mawala kapag nag-refresh ng page.
+  const rawTab = searchParams.get('tab');
+  const tab: TabId = TABS.some((t) => t.id === rawTab) ? (rawTab as TabId) : 'overview';
+  function setTab(nextTab: TabId) {
+    const next = new URLSearchParams(searchParams);
+    if (nextTab === 'overview') next.delete('tab');
+    else next.set('tab', nextTab);
+    setSearchParams(next, { replace: true, state: location.state });
+  }
 
   // Midwife-only RBAC action: permanenteng binubura yung child record pati lahat ng connected records via StoreProvider.deleteChild.
   async function removeChild() {
@@ -177,7 +182,7 @@ export default function ChildProfilePage() {
         </button>
         {demoUser?.role === 'midwife' && <details className="relative">
           <summary className="cursor-pointer rounded-xl border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold">More</summary>
-          <div className="absolute right-0 top-full z-10 mt-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-lg">
+          <div className="absolute left-0 top-full z-10 mt-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-lg sm:left-auto sm:right-0">
             <button type="button" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} className="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold text-[var(--color-danger)] hover:bg-[var(--color-elevated)]">Delete child record</button>
           </div>
         </details>}

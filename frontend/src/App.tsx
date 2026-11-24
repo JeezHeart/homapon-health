@@ -7,7 +7,8 @@
  * Check mo dito kapag may broken route, stuck sa loading, ayaw lumabas ng LoginPage, o lumalabas yung "Records could not be loaded".
  */
 import { lazy } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import EmptyState from './components/EmptyState';
 import Layout from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
@@ -55,6 +56,23 @@ function Shell() {
           <Route path="sms" element={<SmsPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route
+            path="*"
+            element={
+              <EmptyState
+                title="Page not found"
+                message="This page does not exist in Homapon Health."
+                action={
+                  <Link
+                    to="/"
+                    className="mt-2 inline-flex rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-dark)]"
+                  >
+                    Back to Dashboard
+                  </Link>
+                }
+              />
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

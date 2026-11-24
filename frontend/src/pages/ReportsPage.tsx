@@ -122,7 +122,7 @@ export default function ReportsPage() {
             icon="calendar" alert={report.overdue.length > 0} to={overdueUrl} />
         </div>
         <p className="mt-3 text-sm font-medium">{percentage}% fully immunized among registered children</p>
-        <div className="mt-4"><h3 className="font-medium">Appointment follow-up</h3><dl className="mt-3 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt>Upcoming / due today</dt><dd className="font-semibold">{report.upcoming.length} appointments</dd></div><div className="flex justify-between gap-3"><dt>Overdue appointments</dt><dd className="font-semibold">{report.overdue.length} appointments</dd></div></dl><div className="no-print mt-3 flex flex-wrap gap-3 text-sm"><Link className="underline" to={`/schedule?filter=upcoming${purok !== 'all' ? `&purok=${encodeURIComponent(purok)}` : ''}`}>View upcoming in Schedule</Link></div><p className="mt-2 text-xs text-[var(--color-navy-soft)]">Overdue refers to the appointment date and needs staff follow-up.</p></div>
+        <div className="mt-4"><h3 className="font-medium">Appointment follow-up</h3><dl className="mt-3 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt>Upcoming / due today</dt><dd className="font-semibold">{report.upcoming.length} {report.upcoming.length === 1 ? 'appointment' : 'appointments'}</dd></div><div className="flex justify-between gap-3"><dt>Overdue appointments</dt><dd className="font-semibold">{report.overdue.length} {report.overdue.length === 1 ? 'appointment' : 'appointments'}</dd></div></dl><div className="no-print mt-3 flex flex-wrap gap-3 text-sm"><Link className="underline" to={`/schedule?filter=upcoming${purok !== 'all' ? `&purok=${encodeURIComponent(purok)}` : ''}`}>View upcoming in Schedule</Link></div><p className="mt-2 text-xs text-[var(--color-navy-soft)]">Overdue refers to the appointment date and needs staff follow-up.</p></div>
       </Card>
     </section>
     {/* Table ng current registry counts naka-breakdown per purok */}
@@ -159,7 +159,7 @@ export default function ReportsPage() {
             <Link to={'/children/' + encodeURIComponent(child.id) + '?tab=history'} state={{ directory: '/reports' + (params.size ? '?' + params.toString() : '') }}
               className="clinic-entry block h-full px-3 py-2.5">
               <span className="flex flex-wrap items-center justify-between gap-2"><strong>{childName(child)}</strong><span className="text-xs font-medium">{status}</span></span>
-              <span className="mt-1 block text-xs text-[var(--color-navy-soft)]">{extractPurok(child.purok)} ? {done} recorded {done === 1 ? 'dose' : 'doses'}</span>
+              <span className="mt-1 block text-xs text-[var(--color-navy-soft)]">{extractPurok(child.purok)} · {done} recorded {done === 1 ? 'dose' : 'doses'}</span>
             </Link>
           </li>
         ))}

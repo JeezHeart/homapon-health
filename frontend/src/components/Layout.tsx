@@ -49,6 +49,15 @@ export default function Layout() {
   const current = NAV_ITEMS.find((item) => item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to));
   const pageTitle = location.pathname.startsWith('/children/') ? 'Child Profile' : current?.label ?? 'Homapon Health';
 
+  // Sini-sync yung browser tab title sa active page at nire-reset ang scroll sa taas kapag lumipat ng page.
+  useEffect(() => {
+    document.title = pageTitle === 'Homapon Health' ? 'Homapon Health' : `${pageTitle} · Homapon Health`;
+  }, [pageTitle]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // React effect para automatic magsara yung mobile drawer pag lumaki na yung screen into desktop size.
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 1024px)');
@@ -81,7 +90,7 @@ export default function Layout() {
     <a href="#main-content" className="skip-link">Skip to main content</a>
     {/* Left sidebar pang-desktop (automatic naka-hide pag nag-print ng ITR o reports) */}
     <aside aria-label="Main navigation sidebar" className="app-sidebar no-print">
-      <Link to="/" aria-label="Homapon Health dashboard" className="sidebar-brand"><Brand /></Link>
+      <Link to="/" aria-label="Homapon Health dashboard" className="sidebar-brand transition-colors hover:bg-[var(--color-elevated)]/60"><Brand /></Link>
       <div className="flex-1 overflow-y-auto px-3 py-4">{navigation()}</div>
       <div className="border-t border-[var(--color-border)] p-4">
         <button type="button" onClick={signOut} className="nav-item w-full text-left"><NavIcon name="logout" />Sign out</button>
@@ -120,20 +129,24 @@ export default function Layout() {
                   <ul className="space-y-2">
                     {overdue.slice(0, 5).map(appointment => (
                       <li key={appointment.id}>
-                        <div className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
+                        <Link
+                          to={`/schedule?filter=overdue&appointment=${encodeURIComponent(appointment.id)}`}
+                          onClick={() => setFollowUpOpen(false)}
+                          className="block rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-elevated)]"
+                        >
                           <strong className="block">{childName(appointment.child)}</strong>
                           <span>{vaccineById(appointment.vaccineId)?.shortName ?? appointment.vaccineId} · Dose {appointment.doseNumber}</span>
                           <span className="block text-xs text-[var(--color-navy-soft)]">{appointment.daysOverdue} {appointment.daysOverdue === 1 ? 'day' : 'days'} overdue</span>
-                        </div>
+                        </Link>
                       </li>
                     ))}
                   </ul>}
                 {overdueCount > 0 && <Link to="/schedule?filter=overdue" onClick={() => setFollowUpOpen(false)} className="mt-3 inline-block text-sm font-medium underline">View all overdue</Link>}
               </section>}
           </div>
-          <div className="header-identity"><div className="hidden min-w-0 text-right lg:block"><p className="max-w-28 truncate text-sm xl:max-w-48">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
+          <Link to="/settings" aria-label="Staff account settings" className="header-identity rounded-lg py-1 pr-1 transition-opacity hover:opacity-85"><div className="hidden min-w-0 text-right lg:block"><p className="max-w-28 truncate text-sm xl:max-w-48">{demoUser?.name ?? 'Health Worker'}</p><p className="text-xs text-[var(--color-navy-soft)]">{demoUser ? ROLE_LABEL[demoUser.role] : 'Staff'}</p></div>
           <span aria-hidden="true" className="staff-avatar">{(demoUser?.name.trim().charAt(0) || 'H').toUpperCase()}</span>
-          </div>
+          </Link>
         </div>
       </header>
       {/* Dito lumalabas yung active page content plus warning banner pag offline o down ang API */}
